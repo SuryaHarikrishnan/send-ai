@@ -38,21 +38,46 @@ export default function AICoach({ user }) {
     };
 
     const prompt = mode === "diagnosis"
-      ? `You are an expert climbing coach. Analyze this climber's data and give a detailed plateau diagnosis. Be specific, direct, and actionable. Use climbing terminology. Identify their weaknesses based on the data patterns.
+  ? `You are a concise expert climbing coach. Analyze this climber's data and give a plateau diagnosis.
 
 Climber data: ${JSON.stringify(summary)}
 
-Give:
-1. Why they're plateauing (specific reasons based on data)
-2. Top 3 weaknesses identified
-3. What to focus on next 4 weeks`
-      : `You are an expert climbing coach. Create a personalized 4-week training plan for this climber.
+Respond in exactly this format, no markdown symbols, no hashtags, no asterisks:
+
+WHY YOU'RE PLATEAUING
+2-3 sentences max. Be direct and specific to their data.
+
+TOP 3 WEAKNESSES
+1. [weakness] - one sentence
+2. [weakness] - one sentence  
+3. [weakness] - one sentence
+
+NEXT 4 WEEKS
+Focus on: [specific thing]
+Drill: [specific exercise]
+Volume: [specific recommendation]
+
+Keep it short, sharp, and actionable. No fluff.`
+  : `You are a concise expert climbing coach. Create a training plan for this climber.
 
 Climber data: ${JSON.stringify(summary)}
 Goal grade: ${goalGrade || "one grade above current top send"}
 
-Give a structured week-by-week plan with specific exercises, volume, and focus areas. Be specific with climbing drills and training techniques.`;
+Respond in exactly this format, no markdown symbols, no hashtags, no asterisks:
 
+WEEK 1 - [focus area]
+[2-3 specific exercises with sets/reps]
+
+WEEK 2 - [focus area]
+[2-3 specific exercises with sets/reps]
+
+WEEK 3 - [focus area]
+[2-3 specific exercises with sets/reps]
+
+WEEK 4 - [focus area]
+[2-3 specific exercises with sets/reps]
+
+Keep each week concise. No fluff. Climbing terminology only.`;
     try {
         const res = await fetch("/api/coach", {
             method: "POST",
@@ -104,13 +129,13 @@ Give a structured week-by-week plan with specific exercises, volume, and focus a
 
       {response && (
         <div className="ai-response">
-          {response.split("\n").map((line, i) => (
-            <p key={i} className={line.startsWith("#") || /^\d\./.test(line) ? "ai-heading" : "ai-line"}>
-              {line}
-            </p>
-          ))}
-        </div>
-      )}
+          {response.split("\n").filter(l => l.trim()).map((line, i) => (
+            <p key={i} className={line === line.toUpperCase() && line.length > 3 ? "ai-heading" : "ai-line"}>
+          {line}
+        </p>
+      ))}
+    </div>
+  )}
     </div>
   );
 }
