@@ -52,8 +52,8 @@ export default function Dashboard({ user }) {
 function LogTab({ user }) {
   const [grade, setGrade] = useState("");
   const [style, setStyle] = useState("boulder");
-  const [angle, setAngle] = useState("overhang");
-  const [holdType, setHoldType] = useState("crimp");
+  const [angle, setAngle] = useState([]);
+  const [holdType, setHoldType] = useState([]);
   const [attempts, setAttempts] = useState(1);
   const [sent, setSent] = useState(false);
   const [notes, setNotes] = useState("");
@@ -65,10 +65,22 @@ function LogTab({ user }) {
 
   const grades = style === "boulder" ? boulderGrades : sportGrades;
 
+  function toggleAngle(a) {
+    setAngle(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
+  }
+
+  function toggleHold(h) {
+    setHoldType(prev => prev.includes(h) ? prev.filter(x => x !== h) : [...prev, h]);
+  }
+
   async function handleSave() {
     if (!grade) return;
+    if (holdType.length === 0 || angle.length === 0) {
+      alert("Please select at least one hold type and wall angle.");
+      return;
+    }
     setSaving(true);
-    const { data, error } = await supabase.from("climbs").insert({
+    const { error } = await supabase.from("climbs").insert({
       user_id: user.id,
       grade,
       style,
@@ -84,6 +96,8 @@ function LogTab({ user }) {
     } else {
       setSaved(true);
       setGrade("");
+      setAngle([]);
+      setHoldType([]);
       setAttempts(1);
       setSent(false);
       setNotes("");
@@ -112,18 +126,18 @@ function LogTab({ user }) {
           </select>
         </div>
         <div className="form-row">
-          <label>Wall angle</label>
+          <label>Wall angle <span style={{color:"rgba(240,237,230,0.3)", fontSize:"10px", letterSpacing:"1px"}}>SELECT ALL THAT APPLY</span></label>
           <div className="btn-group">
             {["slab", "vertical", "overhang", "cave"].map(a => (
-              <button key={a} className={angle === a ? "active" : ""} onClick={() => setAngle(a)}>{a}</button>
+              <button key={a} className={angle.includes(a) ? "active" : ""} onClick={() => toggleAngle(a)}>{a}</button>
             ))}
           </div>
         </div>
         <div className="form-row">
-          <label>Hold type</label>
+          <label>Hold type <span style={{color:"rgba(240,237,230,0.3)", fontSize:"10px", letterSpacing:"1px"}}>SELECT ALL THAT APPLY</span></label>
           <div className="btn-group">
             {["crimp", "sloper", "pinch", "jug", "pocket", "mixed"].map(h => (
-              <button key={h} className={holdType === h ? "active" : ""} onClick={() => setHoldType(h)}>{h}</button>
+              <button key={h} className={holdType.includes(h) ? "active" : ""} onClick={() => toggleHold(h)}>{h}</button>
             ))}
           </div>
         </div>
