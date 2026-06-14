@@ -2,9 +2,10 @@ import { useState } from "react";
 import { supabase } from "./supabase";
 import Analytics from "./Analytics";
 import AICoach from "./AICoach";
+import Home from "./Home";
 
 export default function Dashboard({ user }) {
-  const [tab, setTab] = useState("log");
+  const [tab, setTab] = useState("home");
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -24,7 +25,7 @@ export default function Dashboard({ user }) {
           SEND<span>-AI</span>
         </div>
         <div className="dash-tabs">
-          {["log", "analytics", "training", "news"].map(t => (
+          {["home", "log", "analytics", "training", "news"].map(t => (
             <button
               key={t}
               className={`dash-tab ${tab === t ? "active" : ""}`}
@@ -38,6 +39,7 @@ export default function Dashboard({ user }) {
       </nav>
 
       <div className="dash-content">
+        {tab === "home" && <Home user={user} onNavigate={setTab} />}
         {tab === "log" && <LogTab user={user} />}
         {tab === "analytics" && <Analytics user={user} />}
         {tab === "training" && <AICoach user={user} />}
@@ -93,7 +95,6 @@ function LogTab({ user }) {
   return (
     <div className="log-tab">
       <h2 className="tab-title">Log a Climb</h2>
-
       <div className="log-form">
         <div className="form-row">
           <label>Style</label>
@@ -103,7 +104,6 @@ function LogTab({ user }) {
             ))}
           </div>
         </div>
-
         <div className="form-row">
           <label>Grade</label>
           <select value={grade} onChange={e => setGrade(e.target.value)} className="log-select">
@@ -111,7 +111,6 @@ function LogTab({ user }) {
             {grades.map(g => <option key={g} value={g}>{g}</option>)}
           </select>
         </div>
-
         <div className="form-row">
           <label>Wall angle</label>
           <div className="btn-group">
@@ -120,7 +119,6 @@ function LogTab({ user }) {
             ))}
           </div>
         </div>
-
         <div className="form-row">
           <label>Hold type</label>
           <div className="btn-group">
@@ -129,7 +127,6 @@ function LogTab({ user }) {
             ))}
           </div>
         </div>
-
         <div className="form-row">
           <label>Attempts</label>
           <div className="attempts-row">
@@ -138,7 +135,6 @@ function LogTab({ user }) {
             <button onClick={() => setAttempts(attempts + 1)}>+</button>
           </div>
         </div>
-
         <div className="form-row">
           <label>Sent?</label>
           <div className="btn-group">
@@ -146,7 +142,6 @@ function LogTab({ user }) {
             <button className={!sent ? "active" : ""} onClick={() => setSent(false)}>✗ No</button>
           </div>
         </div>
-
         <div className="form-row">
           <label>Notes</label>
           <textarea
@@ -156,7 +151,6 @@ function LogTab({ user }) {
             className="log-textarea"
           />
         </div>
-
         <button className="save-btn" onClick={handleSave} disabled={saving || !grade}>
           {saved ? "✓ Saved" : saving ? "Saving..." : "Log Climb"}
         </button>

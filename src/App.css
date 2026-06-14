@@ -761,3 +761,251 @@ h1 .accent { color: #c8f57a; }
   color: rgba(240,237,230,0.6);
   line-height: 1.7;
 }
+
+.home {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.home-greeting {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 36px;
+  letter-spacing: 1px;
+  color: #f0ede6;
+  line-height: 1;
+}
+
+.home-sub {
+  font-size: 13px;
+  color: rgba(240,237,230,0.3);
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+
+.log-cta {
+  background: #c8f57a;
+  color: #0a0a0a;
+  border: none;
+  border-radius: 4px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  padding: 0.6rem 1.25rem;
+  cursor: pointer;
+}
+
+.log-cta:hover { background: #d8ff8a; }
+
+.ai-checkin {
+  background: rgba(200,245,122,0.04);
+  border: 0.5px solid rgba(200,245,122,0.15);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+}
+
+.ai-checkin-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #c8f57a;
+  margin-bottom: 0.5rem;
+}
+
+.ai-checkin-text {
+  font-size: 14px;
+  color: rgba(240,237,230,0.7);
+  line-height: 1.65;
+}
+
+.home-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.home-stat-card {
+  background: rgba(240,237,230,0.04);
+  border: 0.5px solid rgba(240,237,230,0.08);
+  border-radius: 8px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.home-stat-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 32px;
+  color: #c8f57a;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.home-stat-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(240,237,230,0.3);
+}
+
+.home-card {
+  background: rgba(240,237,230,0.04);
+  border: 0.5px solid rgba(240,237,230,0.08);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.home-card-title {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: rgba(240,237,230,0.3);
+  margin-bottom: 1.25rem;
+}
+
+.home-card-sub {
+  font-size: 11px;
+  color: rgba(240,237,230,0.2);
+  letter-spacing: 1px;
+}
+
+.recent-climb-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 0.5px solid rgba(240,237,230,0.06);
+}
+
+.recent-climb-row:last-child { border-bottom: none; }
+
+.recent-grade {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  color: #f0ede6;
+  letter-spacing: 1px;
+  width: 40px;
+}
+
+.recent-meta {
+  font-size: 12px;
+  color: rgba(240,237,230,0.35);
+  flex: 1;
+  text-transform: capitalize;
+}
+
+.recent-sent {
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.recent-sent.sent { color: #c8f57a; }
+.recent-sent.unsent { color: rgba(240,237,230,0.2); }
+
+.delete-btn {
+  background: transparent;
+  border: none;
+  color: rgba(240,237,230,0.15);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  margin-left: auto;
+}
+
+.delete-btn:hover { color: rgba(220,80,80,0.7); }
+
+
+@media (max-width: 768px) {
+  .dash-nav {
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .dash-tabs {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  .dash-tab {
+    font-size: 11px;
+    padding: 0.4rem 0.65rem;
+    white-space: nowrap;
+  }
+
+  .dash-content {
+    padding: 1.5rem 1rem;
+  }
+
+  .home-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .waitlist {
+    flex-direction: column;
+  }
+
+  .waitlist input {
+    border-right: 0.5px solid rgba(240,237,230,0.2);
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+  }
+
+  .waitlist button {
+    border-radius: 0 0 4px 4px;
+    height: 44px;
+  }
+
+  .stats {
+    gap: 1rem;
+  }
+
+  .stat-num {
+    font-size: 20px;
+  }
+
+  h1 {
+    font-size: clamp(48px, 15vw, 120px);
+  }
+
+  .btn-group {
+    flex-wrap: wrap;
+  }
+
+  .home-stat-num {
+    font-size: 26px;
+  }
+
+  .log-select {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .auth-box {
+    margin: 1rem;
+  }
+
+  .coach-modes {
+    flex-wrap: wrap;
+  }
+}
