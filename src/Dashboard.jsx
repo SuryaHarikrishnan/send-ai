@@ -3,6 +3,7 @@ import { supabase } from "./supabase";
 import Analytics from "./Analytics";
 import AICoach from "./AICoach";
 import Home from "./Home";
+import News from "./News";
 
 export default function Dashboard({ user }) {
   const [tab, setTab] = useState("home");
@@ -43,7 +44,7 @@ export default function Dashboard({ user }) {
         {tab === "log" && <LogTab user={user} />}
         {tab === "analytics" && <Analytics user={user} />}
         {tab === "training" && <AICoach user={user} />}
-        {tab === "news" && <div className="coming-soon">News feed coming soon.</div>}
+        {tab === "news" && <News />}
       </div>
     </div>
   );
