@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import ExercisePicker from "./ExercisePicker";
-import { MUSCLE_NAMES, WORKOUT_NAMES, findExercise, setSummary, workoutsError } from "./lifting";
+import DurationPicker from "./DurationPicker";
+import { MUSCLE_NAMES, WORKOUT_NAMES, findExercise, formatDuration, setSummary, workoutsError } from "./lifting";
 
 const todayISO = () => {
   const d = new Date();
@@ -76,6 +77,7 @@ export default function WorkoutLog({ user, onNavigate }) {
   const [title, setTitle] = useState("Push");
   const [date, setDate] = useState(todayISO);
   const [duration, setDuration] = useState("");
+  const [pickingDur, setPickingDur] = useState(false);
   const [exercises, setExercises] = useState([]);
   const [rest, setRest] = useState(null);
   const [history, setHistory] = useState([]);
@@ -190,8 +192,19 @@ export default function WorkoutLog({ user, onNavigate }) {
         <div className="wl-fields">
           <label>Name<input value={title} onChange={e => setTitle(e.target.value)} maxLength={40} /></label>
           <label>Date<input type="date" value={date} max={todayISO()} onChange={e => setDate(e.target.value)} /></label>
-          <label>Minutes<input type="number" inputMode="numeric" min="0" value={duration} onChange={e => setDuration(e.target.value)} placeholder="60" /></label>
+          <label>Duration
+            <button type="button" className={`wl-dur${duration ? "" : " empty"}`} onClick={() => setPickingDur(true)}>
+              {formatDuration(duration) || "60 min"}
+            </button>
+          </label>
         </div>
+        {pickingDur && (
+          <DurationPicker
+            minutes={Number(duration) || 0}
+            onCancel={() => setPickingDur(false)}
+            onDone={min => { setDuration(min ? String(min) : ""); setPickingDur(false); }}
+          />
+        )}
         {last && exercises.length === 0 && (
           <button className="wl-repeat" onClick={repeatLast}>
             Repeat last {last.title} · {last.exercises.length} exercises

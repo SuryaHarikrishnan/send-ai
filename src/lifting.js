@@ -286,3 +286,11 @@ export function workoutsError(err) {
     return { title: "Workouts are blocked by database permissions.", detail: "Run supabase/workouts.sql again in the Supabase SQL Editor (it now grants access), then reload." };
   return { title: "Couldn't load workouts.", detail: err.message || "Unknown error. Try reloading." };
 }
+
+// 75 -> "1 h 15 min", 45 -> "45 min", 0/empty -> ""
+export const formatDuration = (min) => {
+  const n = Number(min) || 0;
+  if (!n) return "";
+  const h = Math.floor(n / 60), m = n % 60;
+  return h ? (m ? `${h} h ${m} min` : `${h} h`) : `${m} min`;
+};
