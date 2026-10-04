@@ -1,4 +1,6 @@
-/* global process, Buffer */
+/* global process */
+import { createHmac, randomBytes } from "node:crypto";
+
 // Food search and barcode lookup against USDA FoodData Central, plus restaurant
 // and brand foods from FatSecret when its keys are set. Keeps the keys on the server.
 // GET /api/foods?q=greek+yogurt or /api/foods?upc=0123456789012
@@ -65,25 +67,27 @@ async function search(params) {
 
 /* ---------- FatSecret (restaurant chains and brands) ---------- */
 
-let fsToken = null; // { value, expires } reused while this server instance stays warm
+const FS_URL = "https://platform.fatsecret.com/rest/server.api";
+const enc = v => encodeURIComponent(v).replace(/[!'()*]/g, c => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
 
-async function fatsecretToken() {
-  const id = process.env.FATSECRET_CLIENT_ID;
-  const secret = process.env.FATSECRET_CLIENT_SECRET;
-  if (!id || !secret) return null;
-  if (fsToken && fsToken.expires > Date.now() + 60000) return fsToken.value;
-  const r = await fetch("https://oauth.fatsecret.com/connect/token", {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${Buffer.from(`${id}:${secret}`).toString("base64")}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: "grant_type=client_credentials&scope=basic",
-  });
-  if (!r.ok) throw new Error(`FatSecret token ${r.status}`);
-  const j = await r.json();
-  fsToken = { value: j.access_token, expires: Date.now() + (Number(j.expires_in) || 3600) * 1000 };
-  return fsToken.value;
+// OAuth 1.0 signed request (HMAC-SHA1, no user token). FatSecret's IP allow-list
+// applies to OAuth 2.0 tokens, and Vercel has no fixed IPs, so we sign instead.
+function signedUrl(params) {
+  const key = process.env.FATSECRET_CONSUMER_KEY;
+  const secret = process.env.FATSECRET_CONSUMER_SECRET;
+  if (!key || !secret) return null;
+  const all = {
+    ...params,
+    oauth_consumer_key: key,
+    oauth_nonce: randomBytes(12).toString("hex"),
+    oauth_signature_method: "HMAC-SHA1",
+    oauth_timestamp: String(Math.floor(Date.now() / 1000)),
+    oauth_version: "1.0",
+  };
+  const query = Object.keys(all).sort().map(k => `${enc(k)}=${enc(all[k])}`).join("&");
+  const base = `GET&${enc(FS_URL)}&${enc(query)}`;
+  const sig = createHmac("sha1", `${enc(secret)}&`).update(base).digest("base64");
+  return `${FS_URL}?${query}&oauth_signature=${enc(sig)}`;
 }
 
 // "Per 1 sandwich - Calories: 440kcal | Fat: 19.00g | Carbs: 41.00g | Protein: 28.00g"
@@ -111,10 +115,9 @@ function fromFatSecret(f) {
 }
 
 async function searchFatSecret(q) {
-  const token = await fatsecretToken();
-  if (!token) return [];
-  const url = `https://platform.fatsecret.com/rest/server.api?method=foods.search&format=json&max_results=20&search_expression=${encodeURIComponent(q)}`;
-  const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  const url = signedUrl({ method: "foods.search", format: "json", max_results: "20", search_expression: q });
+  if (!url) return [];
+  const r = await fetch(url);
   if (!r.ok) throw new Error(`FatSecret ${r.status}`);
   const j = await r.json();
   if (j.error) throw new Error(`FatSecret: ${j.error.message || j.error.code}`);
