@@ -1,4 +1,4 @@
-// Service worker: lets SENDIT install to the home screen and open offline.
+// Service worker: lets SendIt install to the home screen and open offline.
 // Pages load network-first (cached copy when offline); built assets are
 // cache-first since their filenames are content-hashed. API calls and
 // other origins (Supabase, fonts, news) are never cached here.
