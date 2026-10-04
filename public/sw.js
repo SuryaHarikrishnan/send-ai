@@ -2,7 +2,7 @@
 // Pages load network-first (cached copy when offline); built assets are
 // cache-first since their filenames are content-hashed. API calls and
 // other origins (Supabase, fonts, news) are never cached here.
-const CACHE = 'sendai-v1'
+const CACHE = 'sendai-v2'
 const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png']
 
 self.addEventListener('install', (event) => {

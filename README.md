@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="public/icons/icon-512.png" width="112" alt="Send logo" />
+
 # Send
 
 **Every sport. One log. Keep the streak.**

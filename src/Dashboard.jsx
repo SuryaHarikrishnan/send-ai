@@ -99,11 +99,7 @@ export default function Dashboard({ user }) {
 
       <header className="topbar">
         <div className="logo">
-          <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
-            <path d="M8 28 L16 4 L24 28" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M11 20 L21 20" stroke="#ffffff" strokeWidth="2" strokeLinecap="round"/>
-            <circle cx="16" cy="4" r="2.5" fill="#ffffff"/>
-          </svg>
+          <img className="logo-mark" src="/logo.png" width="28" height="28" alt="" />
           SEND<span>-AI</span>
         </div>
         <button className="topbar-sport" onClick={() => setPicking(true)} aria-label={`Sport: ${lifting ? "Lifting" : "Climbing"}. Change sport`}>
