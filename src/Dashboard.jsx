@@ -1,56 +1,176 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import Analytics from "./Analytics";
 import AICoach from "./AICoach";
 import Home from "./Home";
 import LiftHome from "./LiftHome";
+import LiftProgress from "./LiftProgress";
 import WorkoutLog from "./WorkoutLog";
 import News from "./News";
+import "./Nav.css";
+
+const SPORTS = [
+  { id: "lifting", name: "Lifting", line: "Workouts, muscles and PRs" },
+  { id: "climbing", name: "Climbing", line: "Sends, grades and sessions" },
+  { id: "running", name: "Running", line: "Coming with the phone app", soon: true },
+  { id: "food", name: "Food", line: "Barcode logging, coming soon", soon: true },
+];
+
+function readSport() {
+  try { return localStorage.getItem("send.sport") === "climbing" ? "climbing" : "lifting"; } catch { return "lifting"; }
+}
+
+// Instagram-style icons: outline normally, filled when that tab is open.
+const I = {
+  home: on => (
+    <svg viewBox="0 0 24 24"><path d="M3.5 10.2 12 3.2l8.5 7V20a1 1 0 0 1-1 1h-5v-6.2h-5V21h-5a1 1 0 0 1-1-1z" fill={on ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>
+  ),
+  progress: on => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="5" fill={on ? "currentColor" : "none"} />
+      <path d="M7.5 15l3-3.5 2.5 2 3.5-4.5" stroke={on ? "#0a2f6b" : "currentColor"} strokeWidth={on ? 2.4 : 2} />
+    </svg>
+  ),
+  log: on => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <rect x="3" y="3" width="18" height="18" rx="5.5" fill={on ? "currentColor" : "none"} />
+      <path d="M12 8v8M8 12h8" stroke={on ? "#0a2f6b" : "currentColor"} strokeWidth={on ? 2.4 : 2} />
+    </svg>
+  ),
+  lifting: on => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={on ? 2.6 : 2} strokeLinecap="round"><path d="M6.5 6.5v11M3.5 9v6M17.5 6.5v11M20.5 9v6M6.5 12h11" /></svg>
+  ),
+  climbing: on => (
+    <svg viewBox="0 0 24 24"><path d="M2.5 20 9 8.5l3.5 5.5 2.5-3.5L21.5 20z" fill={on ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /><circle cx="17" cy="5.5" r="1.8" fill="currentColor" /></svg>
+  ),
+  running: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="14.5" cy="4.5" r="1.8" /><path d="M8 21l3-6 3 2.5V22M6 11.5l3-3h4l2.5 3.5 3 .5M11 15l1.5-6.5" /></svg>
+  ),
+  food: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21c-4.5 0-7.5-3.8-7.5-8.2 0-3.4 2.3-5.3 4.6-5.3 1.3 0 2.1.5 2.9.5s1.6-.5 2.9-.5c2.3 0 4.6 1.9 4.6 5.3 0 4.4-3 8.2-7.5 8.2zM12 7.5c0-2 1-3.5 3-4" /></svg>
+  ),
+  chevron: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5l7 7-7 7" /></svg>,
+  check: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>,
+};
+
+function Avatar({ user, size = 26 }) {
+  const meta = user.user_metadata || {};
+  const [broken, setBroken] = useState(false);
+  const pic = meta.avatar_url || meta.picture;
+  const name = meta.full_name || meta.name || user.email || "?";
+  if (pic && !broken) return <img className="nav-avatar" src={pic} alt="" width={size} height={size} referrerPolicy="no-referrer" onError={() => setBroken(true)} />;
+  return <span className="nav-avatar nav-initial" style={{ width: size, height: size, fontSize: size * 0.45 }}>{name.trim()[0].toUpperCase()}</span>;
+}
 
 export default function Dashboard({ user }) {
+  const [sport, setSport] = useState(readSport);
   const [tab, setTab] = useState("home");
-  const TABS = [["home", "home"], ["workout", "log workout"], ["climbing", "climbing"], ["log", "log climb"], ["analytics", "analytics"], ["training", "coach"], ["news", "news"]];
+  const [focus, setFocus] = useState(null);
+  const [picking, setPicking] = useState(false);
 
-  async function handleSignOut() {
-    await supabase.auth.signOut();
+  const go = t => { setTab(t === "workout" ? "log" : t); setFocus(null); };
+  useEffect(() => { window.scrollTo(0, 0); }, [tab, sport]);
+  useEffect(() => {
+    if (!picking) return;
+    const onKey = e => e.key === "Escape" && setPicking(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [picking]);
+
+  function chooseSport(id) {
+    setSport(id);
+    try { localStorage.setItem("send.sport", id); } catch { /* storage blocked */ }
+    setPicking(false);
+    go("home");
   }
 
+  const lifting = sport === "lifting";
+  const youTab = ["you", "coach", "news"].includes(tab);
+  const meta = user.user_metadata || {};
+  const TABS = [
+    ["home", "Home", I.home],
+    ["progress", lifting ? "Progress" : "Analytics", I.progress],
+    ["log", lifting ? "Log workout" : "Log climb", I.log],
+  ];
+
   return (
-    <div className="dash-root">
+    <div className="dash-root has-tabbar">
       <div className="grain" />
 
-      <nav className="dash-nav">
+      <header className="topbar">
         <div className="logo">
-          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
+          <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
             <path d="M8 28 L16 4 L24 28" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M11 20 L21 20" stroke="#ffffff" strokeWidth="2" strokeLinecap="round"/>
             <circle cx="16" cy="4" r="2.5" fill="#ffffff"/>
           </svg>
           SEND<span>-AI</span>
         </div>
-        <div className="dash-tabs">
-          {TABS.map(([t, label]) => (
-            <button
-              key={t}
-              className={`dash-tab ${tab === t ? "active" : ""}`}
-              onClick={() => setTab(t)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        <button className="signout-btn" onClick={handleSignOut}>Sign Out</button>
+        <button className="topbar-sport" onClick={() => setPicking(true)} aria-label={`Sport: ${lifting ? "Lifting" : "Climbing"}. Change sport`}>
+          {I[sport](false)}
+          {lifting ? "Lifting" : "Climbing"}
+          <svg className="topbar-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+        </button>
+      </header>
+
+      <main className="dash-content">
+        {lifting && tab === "home" && <LiftHome user={user} onNavigate={go} onOpenExercise={k => { setFocus(k); setTab("progress"); }} />}
+        {lifting && tab === "progress" && <LiftProgress user={user} focus={focus} onFocus={setFocus} onNavigate={go} />}
+        {lifting && tab === "log" && <WorkoutLog user={user} onNavigate={go} />}
+        {!lifting && tab === "home" && <Home user={user} onNavigate={go} />}
+        {!lifting && tab === "progress" && <Analytics user={user} />}
+        {!lifting && tab === "log" && <LogTab user={user} />}
+        {tab === "coach" && <><button className="you-back" onClick={() => go("you")}>‹ You</button><AICoach user={user} /></>}
+        {tab === "news" && <><button className="you-back" onClick={() => go("you")}>‹ You</button><News /></>}
+        {tab === "you" && (
+          <div className="you">
+            <div className="you-head">
+              <Avatar user={user} size={72} />
+              <div>
+                <h1>{meta.full_name || meta.name || "Your profile"}</h1>
+                <p>{user.email}</p>
+              </div>
+            </div>
+            <div className="you-list">
+              <button onClick={() => setPicking(true)}><span>Sport<small>{lifting ? "Lifting" : "Climbing"}</small></span>{I.chevron()}</button>
+              <button onClick={() => go("coach")}><span>AI coach<small>Ask questions about your training</small></span>{I.chevron()}</button>
+              <button onClick={() => go("news")}><span>News<small>Climbing headlines</small></span>{I.chevron()}</button>
+              <a href="/privacy.html"><span>Privacy</span>{I.chevron()}</a>
+            </div>
+            <button className="you-signout" onClick={() => supabase.auth.signOut()}>Sign out</button>
+          </div>
+        )}
+      </main>
+
+      <nav className="tabbar" aria-label="Main">
+        {TABS.map(([id, label, icon]) => (
+          <button key={id} className={tab === id ? "on" : ""} aria-label={label} aria-current={tab === id ? "page" : undefined} onClick={() => go(id)}>
+            {icon(tab === id)}
+          </button>
+        ))}
+        <button className={picking ? "on" : ""} aria-label="Change sport" aria-haspopup="dialog" onClick={() => setPicking(true)}>
+          {I[sport](picking)}
+        </button>
+        <button className={youTab ? "on" : ""} aria-label="You" aria-current={youTab ? "page" : undefined} onClick={() => go("you")}>
+          <span className={`tabbar-av${youTab ? " on" : ""}`}><Avatar user={user} /></span>
+        </button>
       </nav>
 
-      <div className="dash-content">
-        {tab === "home" && <LiftHome user={user} onNavigate={setTab} />}
-        {tab === "workout" && <WorkoutLog user={user} onNavigate={setTab} />}
-        {tab === "climbing" && <Home user={user} onNavigate={setTab} />}
-        {tab === "log" && <LogTab user={user} />}
-        {tab === "analytics" && <Analytics user={user} />}
-        {tab === "training" && <AICoach user={user} />}
-        {tab === "news" && <News />}
-      </div>
+      {picking && (
+        <div className="sheet-wrap" onClick={() => setPicking(false)}>
+          <div className="sheet" role="dialog" aria-modal="true" aria-label="Choose a sport" onClick={e => e.stopPropagation()}>
+            <span className="sheet-grab" />
+            <h2>Your sports</h2>
+            {SPORTS.map(sp => (
+              <button key={sp.id} className={`sheet-row${sport === sp.id ? " on" : ""}`} disabled={sp.soon} onClick={() => chooseSport(sp.id)} autoFocus={sport === sp.id}>
+                <span className="sheet-ic">{I[sp.id](sport === sp.id)}</span>
+                <span className="sheet-txt"><b>{sp.name}</b><small>{sp.line}</small></span>
+                {sp.soon ? <span className="sheet-soon">Soon</span> : sport === sp.id && <span className="sheet-check">{I.check()}</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
