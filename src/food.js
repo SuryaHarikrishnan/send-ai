@@ -10,6 +10,8 @@ export const MEALS = [
   ["snack", "Snacks"],
 ];
 export const MEAL_NAMES = Object.fromEntries(MEALS);
+// Share of the day's budget suggested for each meal.
+export const MEAL_SPLIT = { breakfast: 0.2, lunch: 0.25, dinner: 0.35, snack: 0.2 };
 export const mealSingular = m => (m === "snack" ? "Snack" : MEAL_NAMES[m]);
 
 // The meal you are most likely logging right now.
@@ -45,6 +47,16 @@ export function dayLabel(d) {
   if (days === 1) return "Yesterday";
   if (days < 7 && days > 0) return new Date(d).toLocaleDateString(undefined, { weekday: "long" });
   return new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+// Days in a row with something logged, ending today (or yesterday if today is still empty).
+export function logStreak(dates) {
+  const days = new Set(dates.map(dayKey));
+  const d = startOfDay(new Date());
+  if (!days.has(d.toDateString())) d.setDate(d.getDate() - 1);
+  let n = 0;
+  while (days.has(d.toDateString())) { n++; d.setDate(d.getDate() - 1); }
+  return n;
 }
 
 /* ---------- goals (kept on this device, like the weekly lifting goal) ---------- */
@@ -155,7 +167,7 @@ export function logRow(food, unitId, amount, meal, when) {
   };
 }
 
-const foodKey = l => (l.barcode ? `#${l.barcode}` : `${l.name}|${l.brand || ""}`.toLowerCase());
+const foodKey = l => `${l.name}|${l.brand || ""}`.toLowerCase();
 
 // Foods logged before, newest first, each with the amount used last time.
 export function recentFoods(logs, limit = 20) {

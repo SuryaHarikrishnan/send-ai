@@ -176,26 +176,44 @@ export function CustomSheet({ initial, meal: meal0, saving, error, onSave, onCan
   );
 }
 
-// Daily calorie and macro targets.
+const SHAPES = {
+  kcal: <path d="M12 3c.8 3 4.5 5 4.5 10a4.5 4.5 0 0 1-9 0c0-2.2 1-3.7 2.1-4.7.2 1.4.8 2.4 1.9 2.9-.4-2.7.1-5.4.5-8.2z" />,
+  protein: <path d="M12 5l7.5 13h-15z" />,
+  carbs: <path d="M12 4.5l7.6 5.5-2.9 9h-9.4l-2.9-9z" />,
+  fat: <path d="M8 4.5h8l4 7.5-4 7.5H8l-4-7.5z" />,
+};
+
+// Daily calorie and macro targets, laid out like a settings list.
 export function GoalsSheet({ goals, onSave, onCancel }) {
   const [g, setG] = useState(() => Object.fromEntries(Object.entries(goals).map(([k, v]) => [k, String(v)])));
   const set = k => e => setG(x => ({ ...x, [k]: e.target.value }));
   const macroKcal = Math.round((Number(g.protein) || 0) * 4 + (Number(g.carbs) || 0) * 4 + (Number(g.fat) || 0) * 9);
   const valid = ["kcal", "protein", "carbs", "fat"].every(k => Number(g[k]) > 0);
+  const row = (k, name, unit, tone) => (
+    <label className="fg-row" key={k}>
+      <span className={`fg-ic ft-bg-${tone}`}><svg viewBox="0 0 24 24">{SHAPES[k]}</svg></span>
+      <span className="fg-txt"><b>{name}</b><small>{Number(g[k]) > 0 ? `${Number(g[k]).toLocaleString()}${unit} goal` : "No goal"}</small></span>
+      <input type="number" inputMode="numeric" min="0" value={g[k]} onChange={set(k)} aria-label={`${name} goal`} />
+      <span className="fg-unit">{unit.trim()}</span>
+    </label>
+  );
 
   return (
     <Sheet label="Daily goals" onCancel={onCancel}>
-      <div className="fd-sh-title">
-        <h2>Daily goals</h2>
-        <button className="fd-x" onClick={onCancel} aria-label="Close"><Close /></button>
+      <div className="fd-sh-bar">
+        <button className="fd-x round" onClick={onCancel} aria-label="Close"><Close /></button>
+        <h2>Daily Goals</h2>
+        <span />
       </div>
-      <div className="fd-form">
-        <label className="fd-wide">Calories<input type="number" inputMode="numeric" min="0" value={g.kcal} onChange={set("kcal")} /></label>
-        <label>Protein (g)<input type="number" inputMode="numeric" min="0" value={g.protein} onChange={set("protein")} /></label>
-        <label>Carbs (g)<input type="number" inputMode="numeric" min="0" value={g.carbs} onChange={set("carbs")} /></label>
-        <label>Fat (g)<input type="number" inputMode="numeric" min="0" value={g.fat} onChange={set("fat")} /></label>
+      <p className="fg-h">Budget</p>
+      <div className="fg-list">{row("kcal", "Calories", " cals", "k")}</div>
+      <p className="fg-h">My Nutrients</p>
+      <div className="fg-list">
+        {row("protein", "Protein", "g", "p")}
+        {row("carbs", "Carbohydrates", "g", "c")}
+        {row("fat", "Fat", "g", "f")}
       </div>
-      <p className="fd-sh-note">These macros add up to {macroKcal.toLocaleString()} calories.</p>
+      <p className="fd-sh-note">Your macros add up to {macroKcal.toLocaleString()} calories. Each meal suggests a share of these: breakfast 20%, lunch 25%, dinner 35%, snacks 20%.</p>
       <button
         className="fd-primary" disabled={!valid}
         onClick={() => onSave(Object.fromEntries(Object.entries(g).map(([k, v]) => [k, Math.round(Number(v))])))}
