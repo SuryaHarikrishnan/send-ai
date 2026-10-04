@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "./supabase";
 import TrendChart, { Sparkline } from "./TrendChart";
-import { DAY_MS, MUSCLE_NAMES, exerciseStats, totalVolume } from "./lifting";
+import { DAY_MS, MUSCLE_NAMES, exerciseStats, totalVolume, workoutsError } from "./lifting";
 import "./Lift.css";
 
 const RANGES = [["3M", 91], ["6M", 182], ["1Y", 365], ["All", Infinity]];
@@ -29,7 +29,7 @@ const Trophy = () => (
 export default function LiftProgress({ user, focus, onFocus, onNavigate }) {
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState(null);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -39,7 +39,7 @@ export default function LiftProgress({ user, focus, onFocus, onNavigate }) {
       .eq("user_id", user.id)
       .order("performed_at", { ascending: true })
       .then(({ data, error }) => {
-        if (error) setFailed(true);
+        if (error) setFailed(workoutsError(error));
         setWorkouts(data || []);
         setLoading(false);
       });
@@ -75,8 +75,8 @@ export default function LiftProgress({ user, focus, onFocus, onNavigate }) {
 
       {failed && (
         <div className="lift-card lift-setup">
-          <strong>Workouts aren't switched on yet.</strong>
-          <p>Run <code>supabase/workouts.sql</code> once in the Supabase SQL Editor, then reload.</p>
+          <strong>{failed.title}</strong>
+          <p>{failed.detail}</p>
         </div>
       )}
 

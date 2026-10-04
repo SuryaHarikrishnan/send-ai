@@ -31,5 +31,11 @@ create policy "Own workouts: edit" on public.workouts
 create policy "Own workouts: delete" on public.workouts
   for delete to authenticated using (auth.uid() = user_id);
 
+-- Let signed-in users reach the table (RLS above still limits them to their own rows).
+grant select, insert, update, delete on public.workouts to authenticated;
+
+-- Make the API notice the new table right away.
+notify pgrst, 'reload schema';
+
 -- Check: should show workouts with rowsecurity = true.
 select tablename, rowsecurity from pg_tables where schemaname = 'public' and tablename = 'workouts';
