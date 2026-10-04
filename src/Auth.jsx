@@ -39,11 +39,7 @@ export default function Auth() {
     <div className="start">
       <nav className="start-nav">
         <div className="logo">
-          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-            <path d="M8 28 L16 4 L24 28" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M11 20 L21 20" stroke="#ffffff" strokeWidth="2" strokeLinecap="round"/>
-            <circle cx="16" cy="4" r="2.5" fill="#ffffff"/>
-          </svg>
+          <img className="logo-mark" src="/logo.png" width="30" height="30" alt="" />
           SEND<span>-AI</span>
         </div>
         <button className="start-signin" onClick={signInWithGoogle} disabled={loading}>Sign in</button>

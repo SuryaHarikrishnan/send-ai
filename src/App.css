@@ -362,6 +362,8 @@ h1 .accent { color: #ffffff; }
 
 .start-nav .logo { white-space: nowrap; }
 
+.logo-mark { display: block; flex-shrink: 0; }
+
 .start-signin {
   white-space: nowrap;
   background: transparent;
