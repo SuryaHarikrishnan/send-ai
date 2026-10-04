@@ -1,0 +1,2 @@
+# Count the Supabase SQL in GitHub's language stats (SQL is hidden by default)
+*.sql linguist-detectable=true
