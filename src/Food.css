@@ -344,3 +344,11 @@
 
 .fl-credit { text-align: center; font-size: 12px; color: var(--mut); }
 .fl-credit a, .fd-src a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+.fl-more {
+  align-self: center; display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 20px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08); color: #fff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.fl-more small { color: var(--mut); font-weight: 600; }
+.fl-more:active { transform: scale(0.97); }

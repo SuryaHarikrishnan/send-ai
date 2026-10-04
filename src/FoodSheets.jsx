@@ -6,10 +6,8 @@ export const FoodIcon = () => (
 );
 const Close = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>;
 
+// Every food gets an emoji, never a product photo, so lists look even.
 export function Thumb({ food, size = 46 }) {
-  const [broken, setBroken] = useState(false);
-  if (food.image && !broken)
-    return <img className="fd-thumb" src={food.image} alt="" width={size} height={size} loading="lazy" onError={() => setBroken(true)} style={{ width: size, height: size }} />;
   return <span className="fd-thumb fd-thumb-emoji" style={{ width: size, height: size, fontSize: size * 0.62 }} aria-hidden="true">{foodEmoji(food)}</span>;
 }
 

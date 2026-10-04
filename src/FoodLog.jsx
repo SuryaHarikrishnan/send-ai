@@ -50,6 +50,8 @@ function FoodCard({ food, unit, amount, when, onOpen, onQuick, added }) {
   );
 }
 
+const STEP = 10;
+
 export default function FoodLog({ user, day, meal: meal0, onDone }) {
   const [meal, setMeal] = useState(meal0 || mealForNow());
   const [history, setHistory] = useState([]);
@@ -67,6 +69,7 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
   const [added, setAdded] = useState([]);
   const [toast, setToast] = useState("");
   const [quickDone, setQuickDone] = useState([]);
+  const [more, setMore] = useState({ key: "" });
   const toastTimer = useRef(0);
 
   useEffect(() => {
@@ -178,6 +181,21 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
   const showCommon = tab !== "mine";
   const showRemote = tab === "all" && q.length >= 3;
 
+  // Each list starts short and grows by STEP per "Show more" tap. A new search, tab or group starts short again.
+  const moreKey = `${tab}|${q}|${group}`;
+  const taps = more.key === moreKey ? more : {};
+  const limit = (list, first) => first + (taps[list] || 0) * STEP;
+  const showMore = list => setMore({ ...taps, key: moreKey, [list]: (taps[list] || 0) + 1 });
+  const moreButton = (list, total, first) =>
+    total > limit(list, first) && (
+      <button className="fl-more" onClick={() => showMore(list)}>
+        Show more <small>({total - limit(list, first)})</small>
+      </button>
+    );
+  const recentFirst = tab === "mine" ? 15 : q ? 3 : 5;
+  const remoteFirst = 6;
+  const commonFirst = tab === "common" ? 12 : q ? 3 : 6;
+
   return (
     <div className="lift fl">
       <div className="fl-top">
@@ -218,7 +236,8 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
       {showRecent && recentHits.length > 0 && (
         <>
           {(q || tab === "all") && <h2 className="fl-sec">{q ? "My foods" : "Recent"}</h2>}
-          {recentCards(recentHits.slice(0, q ? 8 : 20))}
+          {recentCards(recentHits.slice(0, limit("recent", recentFirst)))}
+          {moreButton("recent", recentHits.length, recentFirst)}
         </>
       )}
       {tab === "mine" && recentHits.length === 0 && !histError && (
@@ -231,7 +250,8 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
           {remoteShown.loading && [0, 1, 2].map(i => <div key={i} className="fl-item fl-skel"><i /><span><b /><small /></span></div>)}
           {!remoteShown.loading && remoteShown.error && <p className="fl-hint">{remoteShown.error}</p>}
           {!remoteShown.loading && !remoteShown.error && remoteShown.list.length === 0 && <p className="fl-hint">No foods in the database match "{q}".</p>}
-          {!remoteShown.loading && remoteShown.list.map(f => card(f))}
+          {!remoteShown.loading && remoteShown.list.slice(0, limit("remote", remoteFirst)).map(f => card(f))}
+          {!remoteShown.loading && moreButton("remote", remoteShown.list.length, remoteFirst)}
           {!remoteShown.loading && remoteShown.list.some(f => f.source === "fatsecret") && (
             <p className="fl-credit"><a href="https://www.fatsecret.com" target="_blank" rel="noreferrer">Powered by fatsecret</a></p>
           )}
@@ -248,7 +268,8 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
               ))}
             </div>
           )}
-          {commonHits.map(f => card(f))}
+          {commonHits.slice(0, limit("common", commonFirst)).map(f => card(f))}
+          {moreButton("common", commonHits.length, commonFirst)}
           {tab === "common" && q && commonHits.length === 0 && <p className="fl-hint">No common foods match "{q}".</p>}
         </>
       )}
