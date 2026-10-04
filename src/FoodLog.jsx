@@ -178,7 +178,8 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
   };
   const recentCards = list => list.map(r => card(r.food, { k: r.key, unit: r.last.unit, amount: Number(r.last.amount), when: r.last.eaten_at }));
   const showRecent = tab !== "common";
-  const showCommon = tab !== "mine";
+  // While searching on All, the database results replace the common foods list.
+  const showCommon = tab === "common" || (tab === "all" && !q);
   const showRemote = tab === "all" && q.length >= 3;
 
   // Each list starts short and grows by STEP per "Show more" tap. A new search, tab or group starts short again.
