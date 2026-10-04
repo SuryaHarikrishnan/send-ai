@@ -182,6 +182,13 @@
 .wl-fields label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: var(--mut); min-width: 0; }
 .lift input { font: inherit; font-size: 16px; color: #fff; background: rgba(0, 20, 60, 0.35); border: 1px solid var(--card-line); border-radius: 12px; padding: 10px 12px; width: 100%; min-width: 0; color-scheme: dark; }
 .lift input::placeholder { color: rgba(255, 255, 255, 0.4); }
+/* iOS Safari draws date inputs natively: it ignores width/min-width (so the
+   field spills into its neighbour) and makes them taller than text inputs.
+   Dropping the native appearance lets them size like every other field. */
+.lift input[type="date"] { -webkit-appearance: none; appearance: none; display: block; height: 44px; line-height: 22px; text-align: left; }
+.lift input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; }
+.lift input[type="date"]::-webkit-calendar-picker-indicator { margin: 0; }
+.wl-fields input { height: 44px; }
 .wl-repeat { align-self: flex-start; background: var(--faint); border: 1px dashed rgba(255, 255, 255, 0.4); border-radius: 12px; padding: 10px 14px; font-size: 14px !important; font-weight: 600; }
 .wl-ex { display: flex; flex-direction: column; gap: 12px; }
 .wl-sets { display: flex; flex-direction: column; gap: 8px; }
