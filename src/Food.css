@@ -341,3 +341,6 @@
 .fl-fab svg { width: 26px; height: 26px; color: var(--ft-c); }
 .fl-fab:active { transform: scale(0.96); }
 .fl .fl-toast { bottom: calc(148px + env(safe-area-inset-bottom)); }
+
+.fl-credit { text-align: center; font-size: 12px; color: var(--mut); }
+.fl-credit a, .fd-src a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }

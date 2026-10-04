@@ -133,6 +133,7 @@ export function AmountSheet({ food, unit: unit0, amount: amount0, meal: meal0, e
         )
       )}
       {food.source === "off" && <p className="fd-src">Nutrition from Open Food Facts{food.barcode ? ` · ${food.barcode}` : ""}</p>}
+      {food.source === "fatsecret" && <p className="fd-src"><a href="https://www.fatsecret.com" target="_blank" rel="noreferrer">Powered by fatsecret</a></p>}
       {food.source === "usda" && <p className="fd-src">Nutrition from USDA FoodData Central{food.barcode ? ` · ${food.barcode}` : ""}</p>}
       {food.source === "common" && <p className="fd-src">Typical values for this food</p>}
     </Sheet>
