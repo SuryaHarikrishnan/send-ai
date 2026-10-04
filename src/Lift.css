@@ -361,3 +361,21 @@
 .lp-more { align-self: center; margin: 4px 0 8px; background: var(--faint); border: 0; border-radius: 99px; padding: 8px 16px; font-size: 14px !important; font-weight: 600; }
 .lp-head .lift-title { margin: 0; }
 .wl-ex-head > div { flex: 1; min-width: 0; }
+
+/* workout length picker (iPhone timer-style wheels) */
+.lift .wl-dur { font: inherit; font-size: 16px; text-align: left; color: #fff; background: rgba(0, 20, 60, 0.35); border: 1px solid var(--card-line); border-radius: 12px; padding: 0 12px; height: 44px; width: 100%; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lift .wl-dur.empty { color: rgba(255, 255, 255, 0.4); }
+.dp-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 2px 8px; }
+.dp-head b { font-size: 16px; }
+.dp-head button { justify-self: start; background: none; border: 0; padding: 8px 4px; font-size: 16px !important; color: var(--sky, #9fd3ff) !important; font-weight: 500; }
+.dp-head .dp-done { justify-self: end; font-weight: 700; }
+.dp-wheels { position: relative; display: flex; justify-content: center; gap: 28px; margin: 6px 0 10px; }
+.dp-band { position: absolute; left: 0; right: 0; border-radius: 10px; background: rgba(255, 255, 255, 0.14); pointer-events: none; }
+.dp-col { position: relative; display: flex; align-items: center; }
+.dp-wheel { height: 100%; width: 56px; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; padding: 80px 0; overscroll-behavior: contain; outline: none;
+  -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent); }
+.dp-wheel::-webkit-scrollbar { display: none; }
+.dp-wheel:focus-visible { outline: 2px solid #fff; border-radius: 8px; }
+.dp-item { height: 40px; line-height: 40px; text-align: right; font-size: 22px; font-variant-numeric: tabular-nums; scroll-snap-align: center; cursor: pointer; transition: opacity 0.1s; }
+.dp-item.on { font-weight: 600; }
+.dp-unit { width: 52px; padding-left: 8px; font-size: 17px; font-weight: 600; }
