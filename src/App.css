@@ -355,7 +355,10 @@ h1 .accent { color: #c8f57a; }
   padding: 1.25rem 2.5rem;
 }
 
+.start-nav .logo { white-space: nowrap; }
+
 .start-signin {
+  white-space: nowrap;
   background: transparent;
   color: #c8f57a;
   border: 1.5px solid rgba(200,245,122,0.6);
@@ -517,7 +520,8 @@ h1 .accent { color: #c8f57a; }
 .chip-bottom { bottom: 0.75rem; left: 0; transform: rotate(-4deg); color: #f0ede6; }
 
 @media (max-width: 860px) {
-  .start-nav { padding: 1rem; }
+  .start-root .route-canvas { display: none; }
+  .start-nav { padding: max(1rem, env(safe-area-inset-top)) 1rem 1rem; }
   .start-main {
     grid-template-columns: 1fr;
     gap: 1.5rem;
