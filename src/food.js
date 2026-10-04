@@ -322,21 +322,66 @@ export function fromOFF(p) {
   };
 }
 
-export async function lookupBarcode(code, signal) {
+async function lookupOFF(code, signal) {
   const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=${OFF_FIELDS}`, { signal });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Open Food Facts didn't answer (${res.status}).`);
   const j = await res.json();
   if (!j.product || j.status === 0) return null;
-  const food = fromOFF({ code, ...j.product });
-  return food;
+  return fromOFF({ code, ...j.product });
+}
+
+// Look a barcode up in Open Food Facts and the USDA database at the same time.
+// A match with nutrition facts wins; Open Food Facts first since it has photos.
+export async function lookupBarcode(code, signal) {
+  const [off, usda] = await Promise.allSettled([
+    lookupOFF(code, signal),
+    fetchUSDA(`upc=${encodeURIComponent(code)}`, signal).then(list => list[0] || null),
+  ]);
+  const a = off.status === "fulfilled" ? off.value : null;
+  const b = usda.status === "fulfilled" ? usda.value : null;
+  if (a?.per100) return a;
+  if (b) return b;
+  if (a) return a;
+  if (off.status === "rejected" && usda.status === "rejected") throw off.reason;
+  return null;
+}
+
+/* ---------- USDA FoodData Central (through /api/foods, which holds the key) ---------- */
+
+function fromUSDA(f) {
+  const units = [];
+  const u = f.liquid ? "ml" : "g";
+  if (f.servingG > 0) {
+    const size = `${r1(f.servingG)} ${u}`;
+    units.push({ id: "serving", label: "serving", plural: "servings", g: f.servingG, hint: f.servingText ? `${f.servingText} (${size})` : size });
+  }
+  units.push(f.liquid ? ML : G, f.liquid ? FLOZ : OZ);
+  return {
+    name: f.name,
+    brand: f.brand,
+    barcode: f.code || "",
+    source: "usda",
+    image: "",
+    per100: { kcal: r1(f.per100.kcal), protein: r1(f.per100.protein), carbs: r1(f.per100.carbs), fat: r1(f.per100.fat) },
+    perServing: null,
+    units,
+    defaultUnit: units[0].id,
+    defaultAmount: units[0].id === "serving" ? 1 : 100,
+  };
+}
+
+async function fetchUSDA(params, signal) {
+  const res = await fetch(`/api/foods?${params}`, { signal });
+  if (!res.ok) throw new Error(`Food database didn't answer (${res.status}).`);
+  return ((await res.json()).foods || []).map(fromUSDA);
 }
 
 const usable = list => (list || []).map(fromOFF).filter(f => f && f.per100);
 
 // Search Open Food Facts by name or brand. Tries the fast search service
 // first and falls back to the classic search if it fails or finds nothing.
-export async function searchFoods(q, signal) {
+async function searchOFF(q, signal) {
   const enc = encodeURIComponent(q);
   try {
     const res = await fetch(`https://search.openfoodfacts.org/search?q=${enc}&langs=en&page_size=24&fields=${OFF_FIELDS}`, { signal });
@@ -351,6 +396,29 @@ export async function searchFoods(q, signal) {
   if (res.status === 429) throw new Error("Too many searches in a row. Wait a few seconds and try again.");
   if (!res.ok) throw new Error(`Open Food Facts didn't answer (${res.status}).`);
   return usable((await res.json()).products);
+}
+
+// Search the USDA database and Open Food Facts together, alternating results
+// and dropping repeats of the same barcode or name.
+export async function searchFoods(q, signal) {
+  const [usda, off] = await Promise.allSettled([fetchUSDA(`q=${encodeURIComponent(q)}`, signal), searchOFF(q, signal)]);
+  if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+  const a = usda.status === "fulfilled" ? usda.value : [];
+  const b = off.status === "fulfilled" ? off.value : [];
+  if (!a.length && !b.length && usda.status === "rejected" && off.status === "rejected") throw off.reason;
+  const out = [];
+  const seen = new Set();
+  const push = f => {
+    const keys = [f.barcode && `#${f.barcode.replace(/^0+/, "")}`, `${f.name}|${f.brand}`.toLowerCase()].filter(Boolean);
+    if (keys.some(k => seen.has(k))) return;
+    keys.forEach(k => seen.add(k));
+    out.push(f);
+  };
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    if (a[i]) push(a[i]);
+    if (b[i]) push(b[i]);
+  }
+  return out.slice(0, 40);
 }
 
 // A food you type in yourself, with calories and macros per serving.

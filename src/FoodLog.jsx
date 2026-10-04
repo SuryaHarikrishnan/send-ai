@@ -141,7 +141,7 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
     try {
       const food = await lookupBarcode(code);
       if (!food) {
-        setScanStatus({ kind: "notfound", code, title: "Not in Open Food Facts yet.", detail: `Nobody has added barcode ${code}. Copy the numbers from the label and it'll be one tap next time.` });
+        setScanStatus({ kind: "notfound", code, title: "Barcode not found.", detail: `Barcode ${code} isn't in Open Food Facts or the USDA database yet. Copy the numbers from the label and it'll be one tap next time.` });
         return;
       }
       if (!food.per100) {
@@ -227,10 +227,10 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
 
       {showRemote && (
         <>
-          <h2 className="fl-sec">Open Food Facts</h2>
+          <h2 className="fl-sec">Food database</h2>
           {remoteShown.loading && [0, 1, 2].map(i => <div key={i} className="fl-item fl-skel"><i /><span><b /><small /></span></div>)}
           {!remoteShown.loading && remoteShown.error && <p className="fl-hint">{remoteShown.error}</p>}
-          {!remoteShown.loading && !remoteShown.error && remoteShown.list.length === 0 && <p className="fl-hint">No packaged foods match "{q}".</p>}
+          {!remoteShown.loading && !remoteShown.error && remoteShown.list.length === 0 && <p className="fl-hint">No foods in the database match "{q}".</p>}
           {!remoteShown.loading && remoteShown.list.map(f => card(f))}
         </>
       )}

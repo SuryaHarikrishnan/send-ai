@@ -133,6 +133,7 @@ export function AmountSheet({ food, unit: unit0, amount: amount0, meal: meal0, e
         )
       )}
       {food.source === "off" && <p className="fd-src">Nutrition from Open Food Facts{food.barcode ? ` · ${food.barcode}` : ""}</p>}
+      {food.source === "usda" && <p className="fd-src">Nutrition from USDA FoodData Central{food.barcode ? ` · ${food.barcode}` : ""}</p>}
       {food.source === "common" && <p className="fd-src">Typical values for this food</p>}
     </Sheet>
   );
@@ -153,7 +154,7 @@ export function CustomSheet({ initial, meal: meal0, saving, error, onSave, onCan
         <h2>Create a food</h2>
         <button className="fd-x" onClick={onCancel} aria-label="Close"><Close /></button>
       </div>
-      {f.barcode && <p className="fd-sh-note">Barcode {f.barcode} isn't in Open Food Facts yet. Copy the numbers from the label and it'll be in your recent foods next time.</p>}
+      {f.barcode && <p className="fd-sh-note">Barcode {f.barcode} isn't in our food databases yet. Copy the numbers from the label and it'll be in your recent foods next time.</p>}
       <div className="fd-form">
         <label className="fd-wide">Name<input value={f.name} onChange={set("name")} placeholder="Chicken burrito bowl" maxLength={80} autoFocus={!f.name} /></label>
         <label>Brand<input value={f.brand} onChange={set("brand")} placeholder="Optional" maxLength={60} /></label>
