@@ -349,22 +349,29 @@ export async function lookupBarcode(code, signal) {
 
 /* ---------- USDA FoodData Central (through /api/foods, which holds the key) ---------- */
 
+// A food from /api/foods: USDA (per 100 g) or FatSecret (per 100 g or per serving).
 function fromUSDA(f) {
   const units = [];
   const u = f.liquid ? "ml" : "g";
-  if (f.servingG > 0) {
-    const size = `${r1(f.servingG)} ${u}`;
-    units.push({ id: "serving", label: "serving", plural: "servings", g: f.servingG, hint: f.servingText ? `${f.servingText} (${size})` : size });
+  if (f.perServing) {
+    const one = /^1\s+(.+)$/.exec(f.serving || "");
+    units.push(one ? { id: "serving", label: one[1], g: null } : { id: "serving", label: f.serving ? `serving (${f.serving})` : "serving", plural: f.serving ? undefined : "servings", g: null });
+  } else {
+    if (f.servingG > 0) {
+      const size = `${r1(f.servingG)} ${u}`;
+      units.push({ id: "serving", label: "serving", plural: "servings", g: f.servingG, hint: f.servingText ? `${f.servingText} (${size})` : size });
+    }
+    units.push(f.liquid ? ML : G, f.liquid ? FLOZ : OZ);
   }
-  units.push(f.liquid ? ML : G, f.liquid ? FLOZ : OZ);
+  const round = n => n && { kcal: r1(n.kcal), protein: r1(n.protein), carbs: r1(n.carbs), fat: r1(n.fat) };
   return {
     name: f.name,
     brand: f.brand,
     barcode: f.code || "",
-    source: "usda",
+    source: f.src === "fatsecret" ? "fatsecret" : "usda",
     image: "",
-    per100: { kcal: r1(f.per100.kcal), protein: r1(f.per100.protein), carbs: r1(f.per100.carbs), fat: r1(f.per100.fat) },
-    perServing: null,
+    per100: round(f.per100),
+    perServing: round(f.perServing),
     units,
     defaultUnit: units[0].id,
     defaultAmount: units[0].id === "serving" ? 1 : 100,
@@ -374,10 +381,11 @@ function fromUSDA(f) {
 async function fetchUSDA(params, signal) {
   const res = await fetch(`/api/foods?${params}`, { signal });
   if (!res.ok) throw new Error(`Food database didn't answer (${res.status}).`);
-  return ((await res.json()).foods || []).map(fromUSDA);
+  return ((await res.json()).foods || []).map(fromUSDA).filter(hasNutrition);
 }
 
 const usable = list => (list || []).map(fromOFF).filter(f => f && f.per100);
+const hasNutrition = f => f.per100 || f.perServing;
 
 // Search Open Food Facts by name or brand. Tries the fast search service
 // first and falls back to the classic search if it fails or finds nothing.
@@ -443,7 +451,7 @@ const EMOJI = [
   [/banana/, "🍌"], [/apple/, "🍎"], [/orange juice/, "🧃"], [/orange|clementine|mandarin/, "🍊"], [/strawberr/, "🍓"], [/blueberr|berr/, "🫐"],
   [/grape/, "🍇"], [/mango/, "🥭"], [/watermelon|melon/, "🍉"], [/avocado|guac/, "🥑"], [/broccoli/, "🥦"], [/spinach|salad|greens|lettuce|kale/, "🥬"],
   [/carrot/, "🥕"], [/tomato/, "🍅"], [/cucumber|pickle/, "🥒"], [/sweet potato|potato|fries/, "🥔"], [/corn|popcorn/, "🍿"],
-  [/egg/, "🥚"], [/bacon/, "🥓"], [/chicken|turkey|poultry/, "🍗"], [/beef|steak|burger|patty|sirloin/, "🥩"], [/salmon|tuna|fish|cod|tilapia/, "🐟"],
+  [/egg/, "🥚"], [/bacon/, "🥓"], [/chicken|turkey|poultry|nugget|strips|tender|wing/, "🍗"], [/beef|steak|burger|patty|sirloin/, "🥩"], [/salmon|tuna|fish|cod|tilapia/, "🐟"],
   [/shrimp|prawn/, "🍤"], [/tofu/, "🧈"], [/whey|protein powder|shake/, "🥤"], [/protein bar|bar\b|granola bar/, "🍫"],
   [/rice/, "🍚"], [/pasta|spaghetti|noodle|macaroni/, "🍝"], [/quinoa|grain/, "🌾"], [/oat|granola|cereal|crunch|flakes|cheerios/, "🥣"],
   [/bagel/, "🥯"], [/tortilla|wrap|burrito|taco/, "🌯"], [/bread|toast|bun|roll/, "🍞"], [/milk/, "🥛"], [/yogurt|yoghurt|skyr/, "🥛"],

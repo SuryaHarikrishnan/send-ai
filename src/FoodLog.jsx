@@ -232,6 +232,9 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
           {!remoteShown.loading && remoteShown.error && <p className="fl-hint">{remoteShown.error}</p>}
           {!remoteShown.loading && !remoteShown.error && remoteShown.list.length === 0 && <p className="fl-hint">No foods in the database match "{q}".</p>}
           {!remoteShown.loading && remoteShown.list.map(f => card(f))}
+          {!remoteShown.loading && remoteShown.list.some(f => f.source === "fatsecret") && (
+            <p className="fl-credit"><a href="https://www.fatsecret.com" target="_blank" rel="noreferrer">Powered by fatsecret</a></p>
+          )}
         </>
       )}
 
