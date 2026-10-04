@@ -98,7 +98,7 @@ export default function LiftHome({ user, onNavigate, onOpenExercise }) {
           <p className="lift-date">{new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</p>
           <h1 className="lift-title">{greeting()}</h1>
         </div>
-        <button className="lift-start" onClick={() => onNavigate("workout")}>
+        <button className="lift-start" onClick={() => onNavigate("log")}>
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" /></svg>
           Log workout
         </button>
@@ -193,7 +193,7 @@ export default function LiftHome({ user, onNavigate, onOpenExercise }) {
       {workouts.length === 0 && !setupNeeded && (
         <div className="lift-card lift-empty">
           <p>No workouts yet. Log your first one and the body map will light up with the muscles you trained.</p>
-          <button className="lift-start" onClick={() => onNavigate("workout")}>Log workout</button>
+          <button className="lift-start" onClick={() => onNavigate("log")}>Log workout</button>
         </div>
       )}
 

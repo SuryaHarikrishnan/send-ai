@@ -83,7 +83,7 @@ export default function LiftProgress({ user, focus, onFocus, onNavigate }) {
       {!failed && workouts.length === 0 ? (
         <div className="lift-card lift-empty">
           <p>Your progress shows up here once you've logged a workout: a chart for every lift, your best sets and every PR.</p>
-          <button className="lift-start" onClick={() => onNavigate("workout")}>Log workout</button>
+          <button className="lift-start" onClick={() => onNavigate("log")}>Log workout</button>
         </div>
       ) : (
         <>
