@@ -13,7 +13,9 @@ function GoogleIcon() {
   );
 }
 
-const SAMPLE_SETS = { chest: 8, deltoids: 11, triceps: 7, "upper-back": 18, biceps: 12, trapezius: 6, quadriceps: 8, gluteal: 9, hamstring: 7, calves: 5, "lower-back": 5, abs: 8, forearm: 14 };
+const LIFT_SETS = { chest: 7, deltoids: 7, triceps: 6, abs: 1 };
+const CLIMB_GRADES = [["V2", 2], ["V3", 3], ["V4", 3], ["V5", 1]];
+const MACROS = [["Protein", 142, 80], ["Carbs", 196, 62], ["Fat", 58, 45]];
 
 export default function Auth() {
   const [error, setError] = useState("");
@@ -73,16 +75,46 @@ export default function Auth() {
           <p className="start-fine">Free to use · no credit card · works on any phone or laptop · <a href="/privacy.html">Privacy</a></p>
         </section>
 
-        <aside className="start-preview" aria-hidden="true">
-          <div className="preview-card">
-            <div className="preview-label">THIS WEEK</div>
-            <div className="preview-stat">5<span>sessions</span></div>
-            <div className="preview-sports"><span>3 lifting</span><span>2 climbing</span></div>
-            <div className="preview-body"><BodyMap sets={SAMPLE_SETS} mode="week" small /></div>
-            <div className="preview-goal">Most worked: <strong>back</strong> and <strong>forearms</strong></div>
+        <aside className="deck" aria-label="Sports you can track">
+          <div className="deck-card deck-lift">
+            <div className="deck-top"><span className="deck-sport">Lifting</span><span className="deck-when">Today</span></div>
+            <div className="deck-big">Push day</div>
+            <div className="deck-body"><BodyMap sets={LIFT_SETS} mode="workout" small /></div>
+            <div className="deck-line">Bench press 4 × 8 · 165 lb <span className="deck-pr">PR</span></div>
           </div>
-          <div className="preview-chip chip-top">6 week streak</div>
-          <div className="preview-chip chip-bottom">New PR ✓</div>
+
+          <div className="deck-card deck-climb">
+            <div className="deck-top"><span className="deck-sport">Climbing</span><span className="deck-when">Sat</span></div>
+            <div className="deck-big">9 <small>sends</small></div>
+            <div className="deck-grades">
+              {CLIMB_GRADES.map(([g, n]) => (
+                <div key={g}><i style={{ height: `${n * 10}px` }} /><span>{g}</span></div>
+              ))}
+            </div>
+            <div className="deck-line">Top send <b>V5</b></div>
+          </div>
+
+          <div className="deck-card deck-run">
+            <div className="deck-top"><span className="deck-sport">Running</span><span className="deck-soon">Soon</span></div>
+            <div className="deck-big">5.2 <small>km</small></div>
+            <svg className="deck-route" viewBox="0 0 200 70" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M6 58 C30 58 28 18 58 20 S90 54 116 44 S140 8 166 14 S192 40 194 30" />
+              <circle cx="6" cy="58" r="4" /><circle cx="194" cy="30" r="4" />
+            </svg>
+            <div className="deck-line">26:41 · 5:08 per km</div>
+          </div>
+
+          <div className="deck-card deck-food">
+            <div className="deck-top"><span className="deck-sport">Food</span><span className="deck-soon">Soon</span></div>
+            <div className="deck-big">1,840 <small>kcal</small></div>
+            <div className="deck-macros">
+              {MACROS.map(([name, g, pct]) => (
+                <div key={name}><span>{name}</span><i><b style={{ width: `${pct}%` }} /></i><span>{g} g</span></div>
+              ))}
+            </div>
+          </div>
+
+          <div className="deck-chip">6 week streak</div>
         </aside>
       </main>
     </div>
