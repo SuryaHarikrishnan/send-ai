@@ -27,67 +27,19 @@ export default function AICoach({ user }) {
     setThinking(true);
     setResponse("");
 
-    const summary = {
-      totalClimbs: climbs.length,
-      sends: climbs.filter(c => c.sent).length,
-      grades: climbs.map(c => c.grade),
-      holdTypes: climbs.map(c => c.hold_type),
-      angles: climbs.map(c => c.wall_angle),
-      styles: climbs.map(c => c.style),
-      recentClimbs: climbs.slice(-10),
-    };
-
-    const prompt = mode === "diagnosis"
-  ? `You are a concise expert climbing coach. Analyze this climber's data and give a plateau diagnosis.
-
-Climber data: ${JSON.stringify(summary)}
-
-Respond in exactly this format, no markdown symbols, no hashtags, no asterisks:
-
-WHY YOU'RE PLATEAUING
-2-3 sentences max. Be direct and specific to their data.
-
-TOP 3 WEAKNESSES
-1. [weakness] - one sentence
-2. [weakness] - one sentence  
-3. [weakness] - one sentence
-
-NEXT 4 WEEKS
-Focus on: [specific thing]
-Drill: [specific exercise]
-Volume: [specific recommendation]
-
-Keep it short, sharp, and actionable. No fluff.`
-  : `You are a concise expert climbing coach. Create a training plan for this climber.
-
-Climber data: ${JSON.stringify(summary)}
-Goal grade: ${goalGrade || "one grade above current top send"}
-
-Respond in exactly this format, no markdown symbols, no hashtags, no asterisks:
-
-WEEK 1 - [focus area]
-[2-3 specific exercises with sets/reps]
-
-WEEK 2 - [focus area]
-[2-3 specific exercises with sets/reps]
-
-WEEK 3 - [focus area]
-[2-3 specific exercises with sets/reps]
-
-WEEK 4 - [focus area]
-[2-3 specific exercises with sets/reps]
-
-Keep each week concise. No fluff. Climbing terminology only.`;
     try {
-        const res = await fetch("/api/coach", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt }),
-        });
-        const data = await res.json();
-        const text = data.text || "Something went wrong.";
-        setResponse(text);
-    } catch (e) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/coach", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token ?? ""}`,
+        },
+        body: JSON.stringify({ mode, goalGrade }),
+      });
+      const data = await res.json();
+      setResponse(data.text || data.error || "Something went wrong.");
+    } catch {
       setResponse("Error reaching AI. Try again.");
     }
     setThinking(false);
