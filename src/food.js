@@ -475,3 +475,53 @@ const findEmoji = text => EMOJI.find(([re]) => re.test(text))?.[1];
 export function foodEmoji(food) {
   return findEmoji(food.name.toLowerCase()) || findEmoji(`${food.name} ${food.brand || ""}`.toLowerCase()) || "🍽️";
 }
+
+/* ---------- meal photos (AI estimate through /api/food-photo) ---------- */
+
+export const PHOTO_LIMIT = 3;
+
+// Shrink a camera photo to at most 1024 px on its long side, as base64 JPEG.
+export async function shrinkPhoto(file, max = 1024) {
+  const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
+  const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bmp.width * scale);
+  canvas.height = Math.round(bmp.height * scale);
+  canvas.getContext("2d").drawImage(bmp, 0, 0, canvas.width, canvas.height);
+  bmp.close?.();
+  const blob = await new Promise(ok => canvas.toBlob(ok, "image/jpeg", 0.8));
+  const buf = new Uint8Array(await blob.arrayBuffer());
+  let bin = "";
+  for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+export async function scanPhoto(image, token) {
+  const res = await fetch("/api/food-photo", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ image }),
+  });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(j.error || `Photo logging didn't answer (${res.status}).`), { remaining: j.remaining });
+  return j;
+}
+
+// One item the AI found, as a food that logs in "portions" and can be re-weighed in grams later.
+export function photoFood(item) {
+  const per = { kcal: item.kcal, protein: item.protein, carbs: item.carbs, fat: item.fat };
+  const g = item.grams > 0 ? item.grams : null;
+  const portion = { id: "serving", label: "portion", plural: "portions", g, hint: item.portion + (g ? ` (${Math.round(g)} g)` : "") };
+  return {
+    name: item.name,
+    brand: "",
+    barcode: "",
+    source: "photo",
+    image: "",
+    per100: g ? { kcal: r1((per.kcal / g) * 100), protein: r1((per.protein / g) * 100), carbs: r1((per.carbs / g) * 100), fat: r1((per.fat / g) * 100) } : null,
+    perServing: per,
+    units: g ? [portion, G, OZ] : [portion],
+    defaultUnit: "serving",
+    defaultAmount: 1,
+  };
+}

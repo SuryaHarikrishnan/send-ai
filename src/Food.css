@@ -331,9 +331,12 @@
 .fl-item.fl-skel { padding: 18px 14px; }
 .fl-chips { margin: 0 -16px; padding: 0 16px; }
 .fl-fab-space { height: 64px; }
-.fl-fab {
+.fl-fabs {
   position: fixed; right: max(16px, calc((100vw - 560px) / 2)); bottom: calc(80px + env(safe-area-inset-bottom)); z-index: 50;
-  display: inline-flex; align-items: center; gap: 10px; height: 56px; padding: 0 22px 0 18px; border-radius: 99px;
+  display: flex; gap: 10px;
+}
+.fl-fab {
+  display: inline-flex; align-items: center; gap: 10px; height: 56px; padding: 0 20px 0 16px; border-radius: 99px;
   background: rgba(5, 33, 79, 0.88); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.22); box-shadow: 0 14px 34px -10px rgba(0, 10, 40, 0.8);
   font-weight: 700; font-size: 15px !important;
@@ -352,3 +355,28 @@
 }
 .fl-more small { color: var(--mut); font-weight: 600; }
 .fl-more:active { transform: scale(0.97); }
+
+/* meal photo sheet */
+.fph-pic { position: relative; height: 180px; border-radius: 18px; overflow: hidden; background: rgba(0, 20, 60, 0.4); flex: none; }
+.fph-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fph-pic.busy img { filter: saturate(0.6) brightness(0.8); }
+.fph-scan { position: absolute; left: 0; right: 0; height: 40%; background: linear-gradient(to bottom, transparent, rgba(140, 200, 255, 0.45), transparent); animation: fph-scan 1.6s ease-in-out infinite; }
+@keyframes fph-scan { from { top: -40%; } to { top: 100%; } }
+.fph-msg { text-align: center; font-size: 15px; line-height: 1.45; color: var(--mut); }
+.fph-list { display: flex; flex-direction: column; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; padding: 0 12px; }
+.fph-item { border-top: 1px solid rgba(255, 255, 255, 0.12); padding: 10px 0; display: flex; flex-direction: column; gap: 8px; }
+.fph-item:first-child { border-top: 0; }
+.fph-item.off .fph-txt, .fph-item.off .fph-cal, .fph-item.off .fd-thumb { opacity: 0.45; }
+.fph-row { display: grid; grid-template-columns: 26px auto 1fr auto; gap: 10px; align-items: center; background: none; border: 0; padding: 0; text-align: left; }
+.fph-check { width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.4); display: grid; place-items: center; }
+.fph-check.on { background: #fff; border-color: #fff; color: #0a2f6b; }
+.fph-check svg { width: 15px; height: 15px; }
+.fph-txt { display: flex; flex-direction: column; min-width: 0; }
+.fph-txt b { font-size: 16px; font-weight: 700; line-height: 1.25; }
+.fph-txt small { font-size: 13px; color: var(--mut); }
+.fph-cal { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.fph-cal small { font-size: 13px; color: var(--mut); font-weight: 600; }
+.fph-sizes { display: flex; align-items: center; gap: 6px; padding-left: 36px; }
+.fph-sizes button { min-width: 40px; height: 30px; border-radius: 99px; border: 1px solid rgba(255, 255, 255, 0.2); background: transparent; font-size: 13px !important; font-weight: 700 !important; }
+.fph-sizes button.on { background: #fff; color: #0a2f6b !important; border-color: #fff; }
+.fph-sizes span { margin-left: auto; font-size: 12px; color: var(--mut); font-weight: 600; }
