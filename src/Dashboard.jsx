@@ -49,18 +49,12 @@ const I = {
   food: () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21c-4.5 0-7.5-3.8-7.5-8.2 0-3.4 2.3-5.3 4.6-5.3 1.3 0 2.1.5 2.9.5s1.6-.5 2.9-.5c2.3 0 4.6 1.9 4.6 5.3 0 4.4-3 8.2-7.5 8.2zM12 7.5c0-2 1-3.5 3-4" /></svg>
   ),
+  person: on => (
+    <svg viewBox="0 0 24 24" fill={on ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 20.5c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" /></svg>
+  ),
   chevron: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5l7 7-7 7" /></svg>,
   check: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>,
 };
-
-function Avatar({ user, size = 26 }) {
-  const meta = user.user_metadata || {};
-  const [broken, setBroken] = useState(false);
-  const pic = meta.avatar_url || meta.picture;
-  const name = meta.full_name || meta.name || user.email || "?";
-  if (pic && !broken) return <img className="nav-avatar" src={pic} alt="" width={size} height={size} referrerPolicy="no-referrer" onError={() => setBroken(true)} />;
-  return <span className="nav-avatar nav-initial" style={{ width: size, height: size, fontSize: size * 0.45 }}>{name.trim()[0].toUpperCase()}</span>;
-}
 
 export default function Dashboard({ user }) {
   const [sport, setSport] = useState(readSport);
@@ -87,11 +81,11 @@ export default function Dashboard({ user }) {
   const lifting = sport === "lifting";
   const youTab = ["you", "coach", "news"].includes(tab);
   const meta = user.user_metadata || {};
-  const TABS = [
-    ["home", "Home", I.home],
-    ["progress", lifting ? "Progress" : "Analytics", I.progress],
-    ["log", lifting ? "Log workout" : "Log climb", I.log],
-  ];
+  const tabBtn = (id, label, icon) => (
+    <button key={id} className={tab === id ? "on" : ""} aria-label={label} aria-current={tab === id ? "page" : undefined} onClick={() => go(id)}>
+      {icon(tab === id)}
+    </button>
+  );
 
   return (
     <div className="dash-root has-tabbar">
@@ -121,7 +115,7 @@ export default function Dashboard({ user }) {
         {tab === "you" && (
           <div className="you">
             <div className="you-head">
-              <Avatar user={user} size={72} />
+              <span className="you-avatar">{I.person(true)}</span>
               <div>
                 <h1>{meta.full_name || meta.name || "Your profile"}</h1>
                 <p>{user.email}</p>
@@ -139,16 +133,14 @@ export default function Dashboard({ user }) {
       </main>
 
       <nav className="tabbar" aria-label="Main">
-        {TABS.map(([id, label, icon]) => (
-          <button key={id} className={tab === id ? "on" : ""} aria-label={label} aria-current={tab === id ? "page" : undefined} onClick={() => go(id)}>
-            {icon(tab === id)}
-          </button>
-        ))}
-        <button className={picking ? "on" : ""} aria-label="Change sport" aria-haspopup="dialog" onClick={() => setPicking(true)}>
+        {tabBtn("home", "Home", I.home)}
+        {tabBtn("progress", lifting ? "Progress" : "Analytics", I.progress)}
+        <button className={`tabbar-sport${picking ? " on" : ""}`} aria-label={`Sport: ${lifting ? "Lifting" : "Climbing"}. Change sport`} aria-haspopup="dialog" onClick={() => setPicking(true)}>
           {I[sport](picking)}
         </button>
+        {tabBtn("log", lifting ? "Log workout" : "Log climb", I.log)}
         <button className={youTab ? "on" : ""} aria-label="You" aria-current={youTab ? "page" : undefined} onClick={() => go("you")}>
-          <span className={`tabbar-av${youTab ? " on" : ""}`}><Avatar user={user} /></span>
+          {I.person(youTab)}
         </button>
       </nav>
 
