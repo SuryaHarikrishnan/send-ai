@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import BodyMap from "./BodyMap";
-import { MUSCLE_NAMES, muscleSets, prFlags, setSummary, totalSets, totalVolume, weekStart, weekStreak } from "./lifting";
+import { MUSCLE_NAMES, muscleSets, prFlags, setSummary, totalSets, totalVolume, weekStart, weekStreak, workoutsError } from "./lifting";
 
 const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
 const DAY = 86400000;
@@ -36,7 +36,7 @@ const Dumbbell = () => (
 export default function LiftHome({ user, onNavigate, onOpenExercise }) {
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [setupNeeded, setSetupNeeded] = useState(false);
+  const [loadError, setLoadError] = useState(null);
   const [goal, setGoal] = useState(readGoal);
   const [selectedId, setSelectedId] = useState(null);
   const [muscle, setMuscle] = useState(null);
@@ -51,7 +51,7 @@ export default function LiftHome({ user, onNavigate, onOpenExercise }) {
       .gte("performed_at", since)
       .order("performed_at", { ascending: false })
       .then(({ data, error }) => {
-        if (error) setSetupNeeded(true);
+        if (error) setLoadError(workoutsError(error));
         setWorkouts(data || []);
         setLoading(false);
       });
@@ -104,10 +104,10 @@ export default function LiftHome({ user, onNavigate, onOpenExercise }) {
         </button>
       </header>
 
-      {setupNeeded && (
+      {loadError && (
         <div className="lift-card lift-setup">
-          <strong>Workouts aren't switched on yet.</strong>
-          <p>The database table for workouts hasn't been created. Run <code>supabase/workouts.sql</code> once in the Supabase SQL Editor, then reload.</p>
+          <strong>{loadError.title}</strong>
+          <p>{loadError.detail}</p>
         </div>
       )}
 
@@ -190,7 +190,7 @@ export default function LiftHome({ user, onNavigate, onOpenExercise }) {
         <h2 className="lift-h2">Workouts</h2>
       </div>
 
-      {workouts.length === 0 && !setupNeeded && (
+      {workouts.length === 0 && !loadError && (
         <div className="lift-card lift-empty">
           <p>No workouts yet. Log your first one and the body map will light up with the muscles you trained.</p>
           <button className="lift-start" onClick={() => onNavigate("log")}>Log workout</button>

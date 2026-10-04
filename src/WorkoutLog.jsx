@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import ExercisePicker from "./ExercisePicker";
-import { MUSCLE_NAMES, WORKOUT_NAMES, findExercise, setSummary } from "./lifting";
+import { MUSCLE_NAMES, WORKOUT_NAMES, findExercise, setSummary, workoutsError } from "./lifting";
 
 const todayISO = () => {
   const d = new Date();
@@ -165,9 +165,8 @@ export default function WorkoutLog({ user, onNavigate }) {
     });
     setSaving(false);
     if (err) {
-      setError(err.code === "42P01" || err.code === "PGRST205"
-        ? "Workouts aren't switched on yet. Run supabase/workouts.sql in the Supabase SQL Editor first."
-        : `Couldn't save the workout: ${err.message}`);
+      const e = workoutsError(err);
+      setError(e.title === "Couldn't load workouts." ? `Couldn't save the workout: ${err.message}` : `${e.title} ${e.detail}`);
       return;
     }
     onNavigate("home");

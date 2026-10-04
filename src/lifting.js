@@ -276,3 +276,13 @@ export function exerciseStats(workouts) {
   }
   return out;
 }
+
+// Turn a Supabase error on the workouts table into something a person can act on.
+export function workoutsError(err) {
+  if (!err) return null;
+  if (err.code === "42P01" || err.code === "PGRST205")
+    return { title: "Workouts aren't switched on yet.", detail: "The workouts table doesn't exist. Run supabase/workouts.sql once in the Supabase SQL Editor, then reload." };
+  if (err.code === "42501")
+    return { title: "Workouts are blocked by database permissions.", detail: "Run supabase/workouts.sql again in the Supabase SQL Editor (it now grants access), then reload." };
+  return { title: "Couldn't load workouts.", detail: err.message || "Unknown error. Try reloading." };
+}
