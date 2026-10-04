@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MEALS, amountText, customFood, foodEmoji, mealSingular, nutrition } from "./food";
+import { MEALS, PHOTO_LIMIT, amountText, customFood, foodEmoji, mealSingular, nutrition, photoFood } from "./food";
 
 export const FoodIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21c-4.5 0-7.5-3.8-7.5-8.2 0-3.4 2.3-5.3 4.6-5.3 1.3 0 2.1.5 2.9.5s1.6-.5 2.9-.5c2.3 0 4.6 1.9 4.6 5.3 0 4.4-3 8.2-7.5 8.2zM12 7.5c0-2 1-3.5 3-4" /></svg>
@@ -134,6 +134,7 @@ export function AmountSheet({ food, unit: unit0, amount: amount0, meal: meal0, e
       {food.source === "fatsecret" && <p className="fd-src"><a href="https://www.fatsecret.com" target="_blank" rel="noreferrer">Powered by fatsecret</a></p>}
       {food.source === "usda" && <p className="fd-src">Nutrition from USDA FoodData Central{food.barcode ? ` · ${food.barcode}` : ""}</p>}
       {food.source === "common" && <p className="fd-src">Typical values for this food</p>}
+      {food.source === "photo" && <p className="fd-src">AI estimate from a meal photo</p>}
     </Sheet>
   );
 }
@@ -220,6 +221,95 @@ export function GoalsSheet({ goals, onSave, onCancel }) {
       >
         Save goals
       </button>
+    </Sheet>
+  );
+}
+
+const SIZES = [[0.5, "½"], [1, "1×"], [1.5, "1½"], [2, "2×"]];
+
+// What the AI saw in a meal photo. Untick what's wrong, resize portions, then add them all.
+export function PhotoSheet({ photo, meal: meal0, saving, error, onSave, onRetake, onCancel }) {
+  const [meal, setMeal] = useState(meal0);
+  const [picks, setPicks] = useState({}); // index -> { off, size }
+  const foods = (photo.items || []).map(photoFood);
+  const chosen = foods.map((f, i) => ({ food: f, size: picks[i]?.size ?? 1, on: !picks[i]?.off })).filter(x => x.on);
+  const total = chosen.reduce((t, x) => {
+    const n = nutrition(x.food, "serving", x.size);
+    return { kcal: t.kcal + n.kcal, protein: t.protein + n.protein, carbs: t.carbs + n.carbs, fat: t.fat + n.fat };
+  }, { kcal: 0, protein: 0, carbs: 0, fat: 0 });
+  const set = (i, v) => setPicks(p => ({ ...p, [i]: { ...p[i], ...v } }));
+  const left = photo.remaining ?? null;
+
+  return (
+    <Sheet label="Meal photo" onCancel={onCancel}>
+      <div className="fd-sh-title">
+        <h2>Meal photo</h2>
+        <button className="fd-x" onClick={onCancel} aria-label="Close"><Close /></button>
+      </div>
+      <div className={`fph-pic${photo.status === "loading" ? " busy" : ""}`}>
+        <img src={photo.url} alt="Your meal" />
+        {photo.status === "loading" && <span className="fph-scan" />}
+      </div>
+
+      {photo.status === "loading" && <p className="fph-msg">Looking at your food…</p>}
+
+      {photo.status === "error" && (
+        <>
+          <p className="fph-msg">{photo.error}</p>
+          {photo.remaining !== 0 && <button className="fd-primary" onClick={onRetake}>Try another photo</button>}
+        </>
+      )}
+
+      {photo.status === "done" && foods.length === 0 && (
+        <>
+          <p className="fph-msg">Couldn't spot any food in that photo. It didn't count toward your daily photos.</p>
+          <button className="fd-primary" onClick={onRetake}>Try another photo</button>
+        </>
+      )}
+
+      {photo.status === "done" && foods.length > 0 && (
+        <>
+          <div className="fd-sh-cal">
+            <b>{Math.round(total.kcal).toLocaleString()}</b><span>calories</span>
+            <em>{chosen.length} of {foods.length} {foods.length === 1 ? "item" : "items"}</em>
+          </div>
+          <Macros n={total} />
+          <div className="fph-list">
+            {foods.map((f, i) => {
+              const on = !picks[i]?.off;
+              const size = picks[i]?.size ?? 1;
+              const n = nutrition(f, "serving", size);
+              return (
+                <div key={i} className={`fph-item${on ? "" : " off"}`}>
+                  <button className="fph-row" onClick={() => set(i, { off: on })} aria-pressed={on} aria-label={`${on ? "Remove" : "Include"} ${f.name}`}>
+                    <span className={`fph-check${on ? " on" : ""}`}>{on && <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}</span>
+                    <Thumb food={f} size={40} />
+                    <span className="fph-txt">
+                      <b>{f.name}</b>
+                      <small>{f.units[0].hint}</small>
+                    </span>
+                    <span className="fph-cal">{n.kcal}<small> cal</small></span>
+                  </button>
+                  {on && (
+                    <div className="fph-sizes" role="group" aria-label={`Portion of ${f.name}`}>
+                      {SIZES.map(([v, label]) => (
+                        <button key={v} className={size === v ? "on" : ""} aria-pressed={size === v} onClick={() => set(i, { size: v })}>{label}</button>
+                      ))}
+                      <span>{Math.round(n.protein)}P · {Math.round(n.carbs)}C · {Math.round(n.fat)}F</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <MealChips meal={meal} onChange={setMeal} />
+          {error && <p className="wl-error">{error}</p>}
+          <button className="fd-primary" disabled={!chosen.length || saving} onClick={() => onSave(chosen.map(x => ({ food: x.food, amount: x.size })), meal)}>
+            {saving ? "Saving…" : `Add ${chosen.length} ${chosen.length === 1 ? "item" : "items"} to ${mealSingular(meal)}`}
+          </button>
+          <p className="fd-src">AI estimate, so check portions before adding.{left != null ? ` ${left} of ${PHOTO_LIMIT} photos left today.` : ""}</p>
+        </>
+      )}
     </Sheet>
   );
 }

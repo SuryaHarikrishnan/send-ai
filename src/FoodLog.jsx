@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import BarcodeScanner from "./BarcodeScanner";
-import { AmountSheet, CustomSheet, Thumb } from "./FoodSheets";
-import { COMMON_FOODS, COMMON_GROUPS, DAY_MS, MEALS, amountText, dayLabel, eatenAt, MEAL_NAMES, foodsError, logRow, lookupBarcode, mealForNow, mealSingular, nutrition, recentFoods, searchFoods } from "./food";
+import { AmountSheet, CustomSheet, PhotoSheet, Thumb } from "./FoodSheets";
+import { COMMON_FOODS, COMMON_GROUPS, DAY_MS, MEALS, amountText, dayLabel, eatenAt, MEAL_NAMES, foodsError, logRow, lookupBarcode, mealForNow, mealSingular, nutrition, recentFoods, scanPhoto, searchFoods, shrinkPhoto } from "./food";
 
 const ScanIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M8 9v6M11 9v6M14 9v6M17 9v6" /></svg>
 );
 const SearchIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4 4" /></svg>;
 const PlusIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M12 6v12M6 12h12" /></svg>;
+const CameraIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v9A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5z" /><circle cx="12" cy="12.8" r="3.6" /></svg>
+);
 const CheckIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>;
 
 const matches = (food, words) => {
@@ -70,6 +73,8 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
   const [toast, setToast] = useState("");
   const [quickDone, setQuickDone] = useState([]);
   const [more, setMore] = useState({ key: "" });
+  const [photo, setPhoto] = useState(null); // { url, status: loading|done|error, items, error, remaining }
+  const photoInput = useRef(null);
   const toastTimer = useRef(0);
 
   useEffect(() => {
@@ -162,6 +167,43 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
     closeScanner();
     setSheetError("");
     setCustom({ barcode: code, name: food?.name || "", brand: food?.brand || "" });
+  }
+
+  function pickPhoto() {
+    if (photoInput.current) { photoInput.current.value = ""; photoInput.current.click(); }
+  }
+  async function onPhoto(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (photo?.url) URL.revokeObjectURL(photo.url);
+    const url = URL.createObjectURL(file);
+    setSheetError("");
+    setPhoto({ url, status: "loading" });
+    try {
+      const [image, { data }] = await Promise.all([shrinkPhoto(file), supabase.auth.getSession()]);
+      const out = await scanPhoto(image, data.session?.access_token || "");
+      setPhoto(p => (p?.url === url ? { url, status: "done", items: out.items, remaining: out.remaining } : p));
+    } catch (err) {
+      setPhoto(p => (p?.url === url ? { url, status: "error", error: err.message || "Couldn't read that photo.", remaining: err.remaining } : p));
+    }
+  }
+  function closePhoto() {
+    if (photo?.url) URL.revokeObjectURL(photo.url);
+    setPhoto(null);
+  }
+  async function addPhotoItems(list, m) {
+    setSaving(true);
+    setSheetError("");
+    const when = eatenAt(day, m);
+    const rows = list.map(({ food, amount }) => ({ user_id: user.id, ...logRow(food, "serving", amount, m, when) }));
+    const { data, error } = await supabase.from("food_logs").insert(rows).select();
+    setSaving(false);
+    if (error) { setSheetError(`Couldn't add them: ${error.message}`); return; }
+    setHistory(h => [...data, ...h]);
+    setAdded(a => [...a, ...data.map(d => d.id)]);
+    setMeal(m);
+    closePhoto();
+    flash(`Added ${data.length} ${data.length === 1 ? "food" : "foods"} to ${MEAL_NAMES[m]}`);
   }
 
   const keyOf = f => `${f.source}:${f.barcode || f.name}|${f.brand || ""}`;
@@ -281,9 +323,15 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
       </button>
       <div className="fl-fab-space" />
 
-      <button className="fl-fab" onClick={() => { setScanStatus(null); setScanning(true); }}>
-        <ScanIcon /><span>Scan barcode</span>
-      </button>
+      <div className="fl-fabs">
+        <button className="fl-fab" onClick={pickPhoto}>
+          <CameraIcon /><span>Photo</span>
+        </button>
+        <button className="fl-fab" onClick={() => { setScanStatus(null); setScanning(true); }}>
+          <ScanIcon /><span>Scan barcode</span>
+        </button>
+      </div>
+      <input ref={photoInput} type="file" accept="image/*" capture="environment" hidden onChange={onPhoto} />
 
       {toast && <div className="fl-toast" role="status">{toast}</div>}
 
@@ -300,6 +348,12 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
           initial={custom} meal={meal} saving={saving} error={sheetError}
           onCancel={() => setCustom(null)}
           onSave={async (food, m) => { if (await addLog(food, "serving", 1, m)) { setCustom(null); setQuery(""); } }}
+        />
+      )}
+      {photo && (
+        <PhotoSheet
+          key={photo.url} photo={photo} meal={meal} saving={saving} error={sheetError}
+          onSave={addPhotoItems} onRetake={pickPhoto} onCancel={closePhoto}
         />
       )}
       {scanning && (
