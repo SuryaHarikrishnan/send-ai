@@ -13,7 +13,7 @@ function GoogleIcon() {
   );
 }
 
-const SAMPLE_SETS = { chest: 10, deltoids: 13, triceps: 8, "upper-back": 17, biceps: 9, trapezius: 5, quadriceps: 8, gluteal: 10, hamstring: 8, calves: 4, "lower-back": 5, abs: 3, forearm: 4 };
+const SAMPLE_SETS = { chest: 8, deltoids: 11, triceps: 7, "upper-back": 18, biceps: 12, trapezius: 6, quadriceps: 8, gluteal: 9, hamstring: 7, calves: 5, "lower-back": 5, abs: 8, forearm: 14 };
 
 export default function Auth() {
   const [error, setError] = useState("");
@@ -50,18 +50,18 @@ export default function Auth() {
       <main className="start-main">
         <section className="start-copy">
           <h1 className="start-headline">
-            Log your lifts.<br />
-            See every muscle.<br />
+            Every sport.<br />
+            One log.<br />
             <span className="start-accent">Keep the streak.</span>
           </h1>
           <p className="start-pitch">
-            Log a workout in a few taps and watch the muscles you trained light up
-            on your body map. Your weekly streak keeps you coming back. Climbing
-            logs work too. Everything runs right in your browser.
+            Lifting, climbing and whatever you train next, logged in a few taps.
+            See every muscle you worked across all your sports on one body map,
+            and keep your weekly streak going. Free, and it runs right in your browser.
           </p>
 
           <div className="start-perk">
-            Sign in with Google and log your first workout in under a minute.
+            Sign in with Google and log your first session in under a minute.
           </div>
 
           {error && <div className="auth-error start-error">{error}</div>}
@@ -76,9 +76,10 @@ export default function Auth() {
         <aside className="start-preview" aria-hidden="true">
           <div className="preview-card">
             <div className="preview-label">THIS WEEK</div>
-            <div className="preview-stat">4<span>workouts</span></div>
+            <div className="preview-stat">5<span>sessions</span></div>
+            <div className="preview-sports"><span>3 lifting</span><span>2 climbing</span></div>
             <div className="preview-body"><BodyMap sets={SAMPLE_SETS} mode="week" small /></div>
-            <div className="preview-goal">Upper back <strong>17 sets</strong> · chest 10</div>
+            <div className="preview-goal">Most worked: <strong>back</strong> and <strong>forearms</strong></div>
           </div>
           <div className="preview-chip chip-top">6 week streak</div>
           <div className="preview-chip chip-bottom">New PR ✓</div>

@@ -71,6 +71,8 @@
 /* body map */
 .bm { --muscle: rgba(255, 255, 255, 0.16); --l1: rgba(255, 255, 255, 0.42); --l2: rgba(255, 255, 255, 0.7); --l3: #ffffff; }
 .preview-body { margin: 14px 0 12px; }
+.preview-sports { display: flex; gap: 6px; margin-top: 10px; }
+.preview-sports span { font-size: 11px; font-weight: 600; background: rgba(255, 255, 255, 0.14); border-radius: 99px; padding: 3px 9px; }
 .preview-body .bm-svg { max-width: 110px; margin: 0 auto; }
 .lift-body { display: flex; flex-direction: column; gap: 12px; }
 .lift-toggle { display: inline-flex; background: rgba(0, 20, 60, 0.35); border-radius: 99px; padding: 3px; flex: none; }
