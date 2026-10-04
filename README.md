@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="public/icons/icon-512.png" width="112" alt="Send logo" />
+<img src="public/icons/icon-512.png" width="112" alt="SendIt logo" />
 
-# Send
+# SendIt
 
 **Every sport. One log. Keep the streak.**
 
@@ -11,13 +11,13 @@ Log a session in a few taps, then see your progress, PRs and every muscle you wo
 
 [**justsend.fit**](https://justsend.fit) · [Privacy](https://justsend.fit/privacy.html)
 
-<img src="docs/screenshots/landing.jpg" alt="Send landing page" width="820">
+<img src="docs/screenshots/landing.jpg" alt="SendIt landing page" width="820">
 
 </div>
 
 ## Why
 
-Most fitness apps cover one sport and charge a premium for the charts. Send puts all of your training in one place, keeps logging fast, and focuses on the analytics that tell you whether you are getting stronger.
+Most fitness apps cover one sport and charge a premium for the charts. SendIt puts all of your training in one place, keeps logging fast, and focuses on the analytics that tell you whether you are getting stronger.
 
 ## Screenshots
 
@@ -62,6 +62,18 @@ Most fitness apps cover one sport and charge a premium for the charts. Send puts
 | Hosting | Vercel, deploying `main` to [justsend.fit](https://justsend.fit) |
 | CI | GitHub Actions build check on every pull request |
 
+## How it works
+
+<a href="docs/architecture.png"><img src="docs/architecture.png" alt="Architecture diagram of SendIt" width="100%"></a>
+
+<sub>Click the diagram to open it full size. Generated with [GitDiagram](https://gitdiagram.com/suryaharikrishnan/send-ai).</sub>
+
+- **App and identity.** `main.jsx` starts the app and registers the offline cache. `App.jsx` checks for a Supabase session: signed-out visitors get the Google sign-in page (`Auth.jsx`), signed-in users get the sport dashboard (`Dashboard.jsx`), which owns the bottom tab bar and the sport switcher.
+- **Lifting.** The dashboard routes to the lifting home (`LiftHome.jsx`, with the muscle map from `BodyMap.jsx` and `bodyPaths.js`), the workout logger (`WorkoutLog.jsx`, with the exercise and duration pickers) and lift progress (`LiftProgress.jsx`, with `TrendChart.jsx`). The shared exercise library and all the math (PRs, estimated maxes, weekly volume) live in `lifting.js`.
+- **Climbing.** Climb logging, climbing analytics (`Analytics.jsx`) and the climbing home (`Home.jsx`) read and write the `climbs` table.
+- **Data.** Every screen talks to Supabase through one client in `supabase.js`. Row-level security in Postgres makes sure each person only ever sees their own rows.
+- **Optional features.** The AI coach calls `api/coach.js`, which checks who is asking and then asks Gemini. The news feed and videos come from `api/news.js` and `api/youtube.js`. These run as Vercel functions, so API keys never reach the browser.
+
 ## Project layout
 
 ```
@@ -69,7 +81,7 @@ api/          Vercel serverless functions (coach, news, youtube)
 public/       PWA manifest, service worker, icons, privacy page
 src/          React app (lifting, climbing, progress, navigation)
 supabase/     SQL to run in the Supabase SQL Editor
-docs/         README screenshots
+docs/         README screenshots and architecture diagram
 ```
 
 ## Run it locally
