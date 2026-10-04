@@ -56,7 +56,7 @@ function RouteCanvas() {
         ctx.beginPath();
         ctx.moveTo(holds[0].x, holds[0].y);
         holds.forEach(h => ctx.lineTo(h.x, h.y));
-        ctx.strokeStyle = `rgba(200,245,122,${0.04 * opacity})`;
+        ctx.strokeStyle = `rgba(170,215,255,${0.04 * opacity})`;
         ctx.lineWidth = 1;
         ctx.stroke();
 
@@ -65,7 +65,7 @@ function RouteCanvas() {
           ctx.beginPath();
           ctx.moveTo(holds[i].x, holds[i].y);
           ctx.lineTo(holds[i + 1].x, holds[i + 1].y);
-          ctx.strokeStyle = `rgba(200,245,122,${0.5 * opacity})`;
+          ctx.strokeStyle = `rgba(170,215,255,${0.5 * opacity})`;
           ctx.lineWidth = 1.5;
           ctx.stroke();
         }
@@ -77,7 +77,7 @@ function RouteCanvas() {
           ctx.beginPath();
           ctx.moveTo(from.x, from.y);
           ctx.lineTo(from.x + (to.x - from.x) * progress, from.y + (to.y - from.y) * progress);
-          ctx.strokeStyle = `rgba(200,245,122,${0.5 * opacity})`;
+          ctx.strokeStyle = `rgba(170,215,255,${0.5 * opacity})`;
           ctx.lineWidth = 1.5;
           ctx.stroke();
         }
@@ -87,15 +87,15 @@ function RouteCanvas() {
           ctx.beginPath();
           ctx.arc(h.x, h.y, h.r, 0, Math.PI * 2);
           if (h.lit) {
-            ctx.fillStyle = `rgba(200,245,122,${0.55 * opacity})`;
+            ctx.fillStyle = `rgba(170,215,255,${0.55 * opacity})`;
             ctx.fill();
           } else if (i === segmentIndex) {
             // leading hold — pulse as line approaches
             const pulse = progress > 0.85 ? (progress - 0.85) / 0.15 : 0;
-            ctx.fillStyle = `rgba(200,245,122,${pulse * opacity})`;
+            ctx.fillStyle = `rgba(170,215,255,${pulse * opacity})`;
             ctx.fill();
           } else {
-            ctx.strokeStyle = `rgba(240,237,230,${0.12 * opacity})`;
+            ctx.strokeStyle = `rgba(255,255,255,${0.12 * opacity})`;
             ctx.lineWidth = 1;
             ctx.stroke();
           }
@@ -154,7 +154,7 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (checking) return <div style={{ background: "#0a0a0a", minHeight: "100vh" }} />;
+  if (checking) return <div style={{ background: "#062a63", minHeight: "100vh" }} />;
   if (user) return <Dashboard user={user} />;
 
   return (

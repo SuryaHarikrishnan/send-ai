@@ -3,10 +3,13 @@ import { supabase } from "./supabase";
 import Analytics from "./Analytics";
 import AICoach from "./AICoach";
 import Home from "./Home";
+import LiftHome from "./LiftHome";
+import WorkoutLog from "./WorkoutLog";
 import News from "./News";
 
 export default function Dashboard({ user }) {
   const [tab, setTab] = useState("home");
+  const TABS = [["home", "home"], ["workout", "log workout"], ["climbing", "climbing"], ["log", "log climb"], ["analytics", "analytics"], ["training", "coach"], ["news", "news"]];
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -19,20 +22,20 @@ export default function Dashboard({ user }) {
       <nav className="dash-nav">
         <div className="logo">
           <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-            <path d="M8 28 L16 4 L24 28" stroke="#c8f57a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M11 20 L21 20" stroke="#c8f57a" strokeWidth="2" strokeLinecap="round"/>
-            <circle cx="16" cy="4" r="2.5" fill="#c8f57a"/>
+            <path d="M8 28 L16 4 L24 28" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M11 20 L21 20" stroke="#ffffff" strokeWidth="2" strokeLinecap="round"/>
+            <circle cx="16" cy="4" r="2.5" fill="#ffffff"/>
           </svg>
           SEND<span>-AI</span>
         </div>
         <div className="dash-tabs">
-          {["home", "log", "analytics", "training", "news"].map(t => (
+          {TABS.map(([t, label]) => (
             <button
               key={t}
               className={`dash-tab ${tab === t ? "active" : ""}`}
               onClick={() => setTab(t)}
             >
-              {t}
+              {label}
             </button>
           ))}
         </div>
@@ -40,7 +43,9 @@ export default function Dashboard({ user }) {
       </nav>
 
       <div className="dash-content">
-        {tab === "home" && <Home user={user} onNavigate={setTab} />}
+        {tab === "home" && <LiftHome user={user} onNavigate={setTab} />}
+        {tab === "workout" && <WorkoutLog user={user} onNavigate={setTab} />}
+        {tab === "climbing" && <Home user={user} onNavigate={setTab} />}
         {tab === "log" && <LogTab user={user} />}
         {tab === "analytics" && <Analytics user={user} />}
         {tab === "training" && <AICoach user={user} />}
@@ -127,7 +132,7 @@ function LogTab({ user }) {
           </select>
         </div>
         <div className="form-row">
-          <label>Wall angle <span style={{color:"rgba(240,237,230,0.3)", fontSize:"10px", letterSpacing:"1px"}}>SELECT ALL THAT APPLY</span></label>
+          <label>Wall angle <span style={{color:"rgba(255,255,255,0.55)", fontSize:"10px", letterSpacing:"1px"}}>SELECT ALL THAT APPLY</span></label>
           <div className="btn-group">
             {["slab", "vertical", "overhang", "cave"].map(a => (
               <button key={a} className={angle.includes(a) ? "active" : ""} onClick={() => toggleAngle(a)}>{a}</button>
@@ -135,7 +140,7 @@ function LogTab({ user }) {
           </div>
         </div>
         <div className="form-row">
-          <label>Hold type <span style={{color:"rgba(240,237,230,0.3)", fontSize:"10px", letterSpacing:"1px"}}>SELECT ALL THAT APPLY</span></label>
+          <label>Hold type <span style={{color:"rgba(255,255,255,0.55)", fontSize:"10px", letterSpacing:"1px"}}>SELECT ALL THAT APPLY</span></label>
           <div className="btn-group">
             {["crimp", "sloper", "pinch", "jug", "pocket", "mixed"].map(h => (
               <button key={h} className={holdType.includes(h) ? "active" : ""} onClick={() => toggleHold(h)}>{h}</button>

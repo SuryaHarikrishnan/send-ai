@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "./supabase";
+import BodyMap from "./BodyMap";
 
 function GoogleIcon() {
   return (
@@ -12,15 +13,7 @@ function GoogleIcon() {
   );
 }
 
-const WEEK = [
-  { day: "M", sends: 2 },
-  { day: "T", sends: 0 },
-  { day: "W", sends: 4 },
-  { day: "T", sends: 1 },
-  { day: "F", sends: 0 },
-  { day: "S", sends: 5 },
-  { day: "S", sends: 3 },
-];
+const SAMPLE_SETS = { chest: 10, deltoids: 13, triceps: 8, "upper-back": 17, biceps: 9, trapezius: 5, quadriceps: 8, gluteal: 10, hamstring: 8, calves: 4, "lower-back": 5, abs: 3, forearm: 4 };
 
 export default function Auth() {
   const [error, setError] = useState("");
@@ -45,9 +38,9 @@ export default function Auth() {
       <nav className="start-nav">
         <div className="logo">
           <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-            <path d="M8 28 L16 4 L24 28" stroke="#c8f57a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M11 20 L21 20" stroke="#c8f57a" strokeWidth="2" strokeLinecap="round"/>
-            <circle cx="16" cy="4" r="2.5" fill="#c8f57a"/>
+            <path d="M8 28 L16 4 L24 28" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M11 20 L21 20" stroke="#ffffff" strokeWidth="2" strokeLinecap="round"/>
+            <circle cx="16" cy="4" r="2.5" fill="#ffffff"/>
           </svg>
           SEND<span>-AI</span>
         </div>
@@ -57,18 +50,18 @@ export default function Auth() {
       <main className="start-main">
         <section className="start-copy">
           <h1 className="start-headline">
-            LOG CLIMBS.<br />
-            TRACK PROGRESS.<br />
-            <span className="start-accent">SEND HARDER.</span>
+            Log your lifts.<br />
+            See every muscle.<br />
+            <span className="start-accent">Keep the streak.</span>
           </h1>
           <p className="start-pitch">
-            Track your sessions, see which holds and angles are holding you back,
-            and get a training plan from an AI coach that knows your climbing.
-            Works right in your browser.
+            Log a workout in a few taps and watch the muscles you trained light up
+            on your body map. Your weekly streak keeps you coming back. Climbing
+            logs work too. Everything runs right in your browser.
           </p>
 
           <div className="start-perk">
-            🧗 Sign in with Google and get your first AI training plan after your first session.
+            Sign in with Google and log your first workout in under a minute.
           </div>
 
           {error && <div className="auth-error start-error">{error}</div>}
@@ -83,18 +76,11 @@ export default function Auth() {
         <aside className="start-preview" aria-hidden="true">
           <div className="preview-card">
             <div className="preview-label">THIS WEEK</div>
-            <div className="preview-stat">15<span>sends</span></div>
-            <div className="preview-chart">
-              {WEEK.map((d, i) => (
-                <div key={i} className="preview-col">
-                  <div className="preview-bar" style={{ height: `${10 + d.sends * 16}px` }} />
-                  <div className="preview-day">{d.day}</div>
-                </div>
-              ))}
-            </div>
-            <div className="preview-goal">Top send <strong>V5</strong> · next goal V6</div>
+            <div className="preview-stat">4<span>workouts</span></div>
+            <div className="preview-body"><BodyMap sets={SAMPLE_SETS} mode="week" small /></div>
+            <div className="preview-goal">Upper back <strong>17 sets</strong> · chest 10</div>
           </div>
-          <div className="preview-chip chip-top">+3 sends</div>
+          <div className="preview-chip chip-top">6 week streak</div>
           <div className="preview-chip chip-bottom">New PR ✓</div>
         </aside>
       </main>

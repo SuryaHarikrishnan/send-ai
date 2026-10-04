@@ -104,7 +104,7 @@ Give them a personalized check-in. Reference their actual data.`;
       {aiLoading && (
         <div className="ai-checkin">
           <div className="ai-checkin-label">AI Coach</div>
-          <div className="ai-checkin-text" style={{ color: "rgba(240,237,230,0.2)" }}>Analyzing your sessions...</div>
+          <div className="ai-checkin-text" style={{ color: "rgba(255,255,255,0.32)" }}>Analyzing your sessions...</div>
         </div>
       )}
 
@@ -134,7 +134,7 @@ Give them a personalized check-in. Reference their actual data.`;
             <polyline
               points={chartData.map((d, i) => `${(i / (chartData.length - 1)) * chartW},${chartH - (d.val / maxVal) * chartH}`).join(" ")}
               fill="none"
-              stroke="rgba(200,245,122,0.2)"
+              stroke="rgba(140,200,255,0.2)"
               strokeWidth="1.5"
             />
             {chartData.map((d, i) => (
@@ -143,7 +143,7 @@ Give them a personalized check-in. Reference their actual data.`;
                 cx={(i / (chartData.length - 1)) * chartW}
                 cy={chartH - (d.val / maxVal) * chartH}
                 r="4"
-                fill={d.sent ? "#c8f57a" : "rgba(200,245,122,0.3)"}
+                fill={d.sent ? "#ffffff" : "rgba(140,200,255,0.3)"}
               />
             ))}
           </svg>
