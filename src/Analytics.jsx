@@ -126,7 +126,7 @@ export default function Analytics({ user }) {
     { label: "Send on a slab", done: sent.some(c => (Array.isArray(c.wall_angle) ? c.wall_angle : [c.wall_angle]).includes("slab")), icon: "🏔️" },
   ];
 
-  function Bar({ label, value, max, color = "#c8f57a", suffix = "" }) {
+  function Bar({ label, value, max, color = "#ffffff", suffix = "" }) {
     const pct = Math.round((value / max) * 100);
     return (
       <div className="bar-row">
@@ -165,7 +165,7 @@ export default function Analytics({ user }) {
           <span className="stat-card-label">Streak</span>
         </div>
         <div className="stat-card">
-          <span className="stat-card-num" style={{ color: daysSince === 0 ? "#c8f57a" : daysSince <= 2 ? "rgba(200,245,122,0.6)" : "rgba(200,245,122,0.35)" }}>{daysSince ?? "—"}</span>
+          <span className="stat-card-num" style={{ color: daysSince === 0 ? "#ffffff" : daysSince <= 2 ? "rgba(140,200,255,0.6)" : "rgba(140,200,255,0.35)" }}>{daysSince ?? "—"}</span>
           <span className="stat-card-label">Days Since Climb</span>
         </div>
       </div>
@@ -182,11 +182,11 @@ export default function Analytics({ user }) {
                   <div style={{
                     width: "50%",
                     height: `${(count / maxWeekVal) * 125}px`,
-                    background: i === weekData.length - 1 ? "#c8f57a" : "rgba(200,245,122,0.3)",
+                    background: i === weekData.length - 1 ? "#ffffff" : "rgba(140,200,255,0.3)",
                     borderRadius: "2px 2px 0 0",
                     minHeight: "4px",
                   }} />
-                  <span style={{ fontSize: "9px", color: "rgba(240,237,230,0.25)" }}>{count}</span>
+                  <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.5)" }}>{count}</span>
                 </div>
               ))}
             </div>
@@ -202,7 +202,7 @@ export default function Analytics({ user }) {
           <div className="analytics-card-title">Send Rate by Grade</div>
           {sendRateByGrade.map(({ grade, rate }) => (
             <Bar key={grade} label={grade} value={rate} max={100} suffix="%"
-              color={rate >= 70 ? "#c8f57a" : rate >= 40 ? "rgba(200,245,122,0.5)" : "rgba(200,245,122,0.2)"} />
+              color={rate >= 70 ? "#ffffff" : rate >= 40 ? "rgba(140,200,255,0.5)" : "rgba(140,200,255,0.2)"} />
           ))}
         </div>
 
@@ -240,11 +240,11 @@ export default function Analytics({ user }) {
         {/* Personal bests */}
         <div className="analytics-card">
           <div className="analytics-card-title">Personal Bests</div>
-          {pbList.length === 0 && <div style={{ color: "rgba(240,237,230,0.2)", fontSize: "13px" }}>No sends yet.</div>}
+          {pbList.length === 0 && <div style={{ color: "rgba(255,255,255,0.32)", fontSize: "13px" }}>No sends yet.</div>}
           {pbList.map(([grade, date]) => (
             <div key={grade} className="bar-row">
-              <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "20px", color: "#c8f57a", width: "50px" }}>{grade}</span>
-              <span style={{ fontSize: "12px", color: "rgba(240,237,230,0.3)" }}>
+              <span style={{ fontFamily: "'Bricolage Grotesque', sans-serif", fontWeight: 700, fontSize: "18px", color: "#ffffff", width: "50px" }}>{grade}</span>
+              <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.55)" }}>
                 First sent {new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
               </span>
             </div>

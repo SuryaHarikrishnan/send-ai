@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "./supabase";
+import BodyMap from "./BodyMap";
 
 function GoogleIcon() {
   return (
@@ -12,15 +13,9 @@ function GoogleIcon() {
   );
 }
 
-const WEEK = [
-  { day: "M", sends: 2 },
-  { day: "T", sends: 0 },
-  { day: "W", sends: 4 },
-  { day: "T", sends: 1 },
-  { day: "F", sends: 0 },
-  { day: "S", sends: 5 },
-  { day: "S", sends: 3 },
-];
+const LIFT_SETS = { chest: 7, deltoids: 7, triceps: 6, abs: 1 };
+const CLIMB_GRADES = [["V2", 2], ["V3", 3], ["V4", 3], ["V5", 1]];
+const MACROS = [["Protein", 142, 80], ["Carbs", 196, 62], ["Fat", 58, 45]];
 
 export default function Auth() {
   const [error, setError] = useState("");
@@ -45,9 +40,9 @@ export default function Auth() {
       <nav className="start-nav">
         <div className="logo">
           <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-            <path d="M8 28 L16 4 L24 28" stroke="#c8f57a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M11 20 L21 20" stroke="#c8f57a" strokeWidth="2" strokeLinecap="round"/>
-            <circle cx="16" cy="4" r="2.5" fill="#c8f57a"/>
+            <path d="M8 28 L16 4 L24 28" stroke="#ffffff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M11 20 L21 20" stroke="#ffffff" strokeWidth="2" strokeLinecap="round"/>
+            <circle cx="16" cy="4" r="2.5" fill="#ffffff"/>
           </svg>
           SEND<span>-AI</span>
         </div>
@@ -57,18 +52,18 @@ export default function Auth() {
       <main className="start-main">
         <section className="start-copy">
           <h1 className="start-headline">
-            LOG CLIMBS.<br />
-            TRACK PROGRESS.<br />
-            <span className="start-accent">SEND HARDER.</span>
+            Every sport.<br />
+            One log.<br />
+            <span className="start-accent">Keep the streak.</span>
           </h1>
           <p className="start-pitch">
-            Track your sessions, see which holds and angles are holding you back,
-            and get a training plan from an AI coach that knows your climbing.
-            Works right in your browser.
+            Lifting, climbing and whatever you train next, logged in a few taps.
+            See every muscle you worked across all your sports on one body map,
+            and keep your weekly streak going. Free, and it runs right in your browser.
           </p>
 
           <div className="start-perk">
-            🧗 Sign in with Google and get your first AI training plan after your first session.
+            Sign in with Google and log your first session in under a minute.
           </div>
 
           {error && <div className="auth-error start-error">{error}</div>}
@@ -80,22 +75,46 @@ export default function Auth() {
           <p className="start-fine">Free to use · no credit card · works on any phone or laptop · <a href="/privacy.html">Privacy</a></p>
         </section>
 
-        <aside className="start-preview" aria-hidden="true">
-          <div className="preview-card">
-            <div className="preview-label">THIS WEEK</div>
-            <div className="preview-stat">15<span>sends</span></div>
-            <div className="preview-chart">
-              {WEEK.map((d, i) => (
-                <div key={i} className="preview-col">
-                  <div className="preview-bar" style={{ height: `${10 + d.sends * 16}px` }} />
-                  <div className="preview-day">{d.day}</div>
-                </div>
+        <aside className="deck" aria-label="Sports you can track">
+          <div className="deck-card deck-lift">
+            <div className="deck-top"><span className="deck-sport">Lifting</span><span className="deck-when">Today</span></div>
+            <div className="deck-big">Push day</div>
+            <div className="deck-body"><BodyMap sets={LIFT_SETS} mode="workout" small /></div>
+            <div className="deck-line">Bench press 4 × 8 · 165 lb <span className="deck-pr">PR</span></div>
+          </div>
+
+          <div className="deck-card deck-climb">
+            <div className="deck-top"><span className="deck-sport">Climbing</span><span className="deck-when">Sat</span></div>
+            <div className="deck-big">9 <small>sends</small></div>
+            <div className="deck-grades">
+              {CLIMB_GRADES.map(([g, n]) => (
+                <div key={g}><i style={{ height: `${n * 10}px` }} /><span>{g}</span></div>
               ))}
             </div>
-            <div className="preview-goal">Top send <strong>V5</strong> · next goal V6</div>
+            <div className="deck-line">Top send <b>V5</b></div>
           </div>
-          <div className="preview-chip chip-top">+3 sends</div>
-          <div className="preview-chip chip-bottom">New PR ✓</div>
+
+          <div className="deck-card deck-run">
+            <div className="deck-top"><span className="deck-sport">Running</span><span className="deck-soon">Soon</span></div>
+            <div className="deck-big">5.2 <small>km</small></div>
+            <svg className="deck-route" viewBox="0 0 200 70" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M6 58 C30 58 28 18 58 20 S90 54 116 44 S140 8 166 14 S192 40 194 30" />
+              <circle cx="6" cy="58" r="4" /><circle cx="194" cy="30" r="4" />
+            </svg>
+            <div className="deck-line">26:41 · 5:08 per km</div>
+          </div>
+
+          <div className="deck-card deck-food">
+            <div className="deck-top"><span className="deck-sport">Food</span><span className="deck-soon">Soon</span></div>
+            <div className="deck-big">1,840 <small>kcal</small></div>
+            <div className="deck-macros">
+              {MACROS.map(([name, g, pct]) => (
+                <div key={name}><span>{name}</span><i><b style={{ width: `${pct}%` }} /></i><span>{g} g</span></div>
+              ))}
+            </div>
+          </div>
+
+          <div className="deck-chip">6 week streak</div>
         </aside>
       </main>
     </div>
