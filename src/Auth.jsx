@@ -77,7 +77,7 @@ export default function Auth() {
             {loading ? "Redirecting..." : "Continue with Google"}
           </button>
 
-          <p className="start-fine">Free to use · no credit card · works on any phone or laptop</p>
+          <p className="start-fine">Free to use · no credit card · works on any phone or laptop · <a href="/privacy.html">Privacy</a></p>
         </section>
 
         <aside className="start-preview" aria-hidden="true">
