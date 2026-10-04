@@ -40,7 +40,7 @@ export default function Auth() {
       <nav className="start-nav">
         <div className="logo">
           <img className="logo-mark" src="/logo.png" width="30" height="30" alt="" />
-          SEND<span>-AI</span>
+          <span className="wordmark">SENDIT</span>
         </div>
         <button className="start-signin" onClick={signInWithGoogle} disabled={loading}>Sign in</button>
       </nav>

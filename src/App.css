@@ -364,6 +364,27 @@ h1 .accent { color: #ffffff; }
 
 .logo-mark { display: block; flex-shrink: 0; }
 
+/* "SENDIT" wordmark: leaning italic with two motion lines, to match the sprinter. */
+.wordmark {
+  display: inline-block;
+  position: relative;
+  padding-left: 0.6em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  transform: skewX(-12deg);
+}
+.wordmark::before,
+.wordmark::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  height: 0.09em;
+  border-radius: 1px;
+  background: #7cc4ff;
+}
+.wordmark::before { top: 0.32em; width: 0.42em; }
+.wordmark::after { top: 0.58em; width: 0.26em; }
+
 .start-signin {
   white-space: nowrap;
   background: transparent;
