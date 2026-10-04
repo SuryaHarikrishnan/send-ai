@@ -5,7 +5,7 @@
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://joygtqcjjaaalgxmdqjo.supabase.co";
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "sb_publishable_SNYogg2ckBJLfnD4tlqZVg_fVkoRvOg";
 const DAILY_LIMIT = 3;
-// Tried in order; a model the key can't use (404) falls through to the next.
+// Tried in order; a model the key can't use or has run out of free quota for falls through to the next.
 const MODELS = [process.env.GEMINI_PHOTO_MODEL, "gemini-3.8-flash", "gemini-3.5-flash-lite"].filter(Boolean);
 
 function supabaseFetch(path, token, options = {}) {
@@ -53,7 +53,8 @@ async function askGemini(image) {
       }),
     });
     const data = await r.json().catch(() => ({}));
-    if (r.status === 404) { last = new Error(`${model} not available`); continue; }
+    // 404: the key can't use this model. 429: its free-tier quota is used up. Either way, try the next one.
+    if (r.status === 404 || r.status === 429) { last = new Error(`${model} ${r.status}`); continue; }
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!r.ok || !text) throw new Error(`Gemini ${r.status}: ${JSON.stringify(data).slice(0, 300)}`);
     return JSON.parse(text).items || [];
