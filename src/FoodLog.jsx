@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import BarcodeScanner from "./BarcodeScanner";
 import { AmountSheet, CustomSheet, Thumb } from "./FoodSheets";
-import { COMMON_FOODS, COMMON_GROUPS, DAY_MS, MEALS, amountText, dayLabel, eatenAt, foodsError, logRow, lookupBarcode, mealForNow, mealSingular, nutrition, recentFoods, searchFoods } from "./food";
+import { COMMON_FOODS, COMMON_GROUPS, DAY_MS, MEALS, amountText, dayLabel, eatenAt, MEAL_NAMES, foodsError, logRow, lookupBarcode, mealForNow, mealSingular, nutrition, recentFoods, searchFoods } from "./food";
 
 const ScanIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M8 9v6M11 9v6M14 9v6M17 9v6" /></svg>
@@ -16,29 +16,39 @@ const matches = (food, words) => {
   return words.every(w => hay.includes(w));
 };
 
-function FoodRow({ food, detail, onOpen, onQuick, added }) {
+const CalIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3" /><path d="M8 3v4M16 3v4M3.5 10h17" /></svg>
+);
+
+const shortDay = d => {
+  const label = dayLabel(d);
+  return label.length > 9 ? label : label.slice(0, 3) === "Yes" || label === "Today" ? label : label.slice(0, 3);
+};
+
+// One food as a card: picture or emoji, name, brand, calories per amount, quick add.
+function FoodCard({ food, unit, amount, when, onOpen, onQuick, added }) {
+  const u = unit || food.defaultUnit;
+  const a = amount ?? food.defaultAmount;
+  const n = nutrition(food, u, a);
   return (
-    <div className="fl-row">
-      <button className="fl-row-main" onClick={onOpen}>
-        <Thumb food={food} size={42} />
-        <span className="fl-row-txt">
+    <div className="fl-item">
+      <button className="fl-item-main" onClick={onOpen}>
+        <Thumb food={food} size={50} />
+        <span className="fl-item-txt">
           <b>{food.name}</b>
-          <small>{detail}</small>
+          {food.brand && <span className="fl-brand">{food.brand}</span>}
+          <small>
+            <span className="fl-nw">{n.kcal.toLocaleString()} cals per {amountText(food, u, a)}</span>
+            {when && <span className="fl-when"> · <CalIcon />{shortDay(when)}</span>}
+          </small>
         </span>
       </button>
-      {onQuick && (
-        <button className={`fl-quick${added ? " added" : ""}`} onClick={onQuick} aria-label={`Add ${food.name}`}>
-          {added ? <CheckIcon /> : <PlusIcon />}
-        </button>
-      )}
+      <button className={`fl-plus${added ? " added" : ""}`} onClick={onQuick} aria-label={`Add ${food.name}`}>
+        {added ? <CheckIcon /> : <PlusIcon />}
+      </button>
     </div>
   );
 }
-
-const defaultDetail = f => {
-  const n = nutrition(f, f.defaultUnit, f.defaultAmount);
-  return [f.brand, `${amountText(f, f.defaultUnit, f.defaultAmount)} · ${n.kcal.toLocaleString()} cal`].filter(Boolean).join(" · ");
-};
 
 export default function FoodLog({ user, day, meal: meal0, onDone }) {
   const [meal, setMeal] = useState(meal0 || mealForNow());
@@ -46,6 +56,7 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
   const [histError, setHistError] = useState(null);
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState("Fruit");
+  const [tab, setTab] = useState("all");
   const [remote, setRemote] = useState({ q: "", list: [], loading: false, error: "" });
   const [picked, setPicked] = useState(null);
   const [custom, setCustom] = useState(null);
@@ -113,7 +124,7 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
     setHistory(h => [data, ...h]);
     setAdded(a => [...a, data.id]);
     setMeal(m);
-    flash(`Added ${food.name} to ${mealSingular(m)}`);
+    flash(`Added ${food.name} to ${MEAL_NAMES[m]}`);
     return true;
   }
 
@@ -150,30 +161,51 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
     setCustom({ barcode: code, name: food?.name || "", brand: food?.brand || "" });
   }
 
-  const dayText = dayLabel(day);
+  const keyOf = f => `${f.source}:${f.barcode || f.name}|${f.brand || ""}`;
+  const card = (f, extra = {}) => {
+    const k = extra.k || keyOf(f);
+    return (
+      <FoodCard
+        key={k} food={f} unit={extra.unit} amount={extra.amount} when={extra.when}
+        onOpen={() => { setSheetError(""); setPicked({ food: f, unit: extra.unit, amount: extra.amount }); }}
+        onQuick={() => quickAdd(f, extra.unit || f.defaultUnit, extra.amount ?? f.defaultAmount, k)}
+        added={quickDone.includes(k)}
+      />
+    );
+  };
+  const recentCards = list => list.map(r => card(r.food, { k: r.key, unit: r.last.unit, amount: Number(r.last.amount), when: r.last.eaten_at }));
+  const showRecent = tab !== "common";
+  const showCommon = tab !== "mine";
+  const showRemote = tab === "all" && q.length >= 3;
 
   return (
     <div className="lift fl">
-      <header className="lift-head">
-        <div>
-          <p className="lift-date">{dayText === "Today" ? "Today" : dayText}</p>
-          <h1 className="lift-title">Add food</h1>
-        </div>
-        <button className="lift-start" onClick={() => onDone(day)}>{added.length ? `Done · ${added.length}` : "Done"}</button>
-      </header>
-
-      <div className="fd-meals fl-meals" role="group" aria-label="Meal">
-        {MEALS.map(([id]) => (
-          <button key={id} className={meal === id ? "on" : ""} aria-pressed={meal === id} onClick={() => setMeal(id)}>{mealSingular(id)}</button>
-        ))}
-      </div>
-
-      <div className="fl-search">
+      <div className="fl-top">
+        <span className={`fl-count${added.length ? " on" : ""}`} aria-label={`${added.length} added`}>{added.length}</span>
         <label className="fl-input">
           <SearchIcon />
-          <input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search foods or brands" autoComplete="off" enterKeyHint="search" aria-label="Search foods" />
+          <input
+            type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search"
+            autoComplete="off" autoCorrect="off" enterKeyHint="search" aria-label="Search foods" autoFocus
+          />
         </label>
-        <button className="fl-scan" onClick={() => { setScanStatus(null); setScanning(true); }}><ScanIcon />Scan</button>
+        <button className="fl-done" onClick={() => onDone(day)} aria-label="Done"><CheckIcon /></button>
+      </div>
+
+      <label className="fl-to">
+        Adding to
+        <b>{mealSingular(meal)}</b>
+        <select value={meal} onChange={e => setMeal(e.target.value)} aria-label="Meal">
+          {MEALS.map(([id]) => <option key={id} value={id}>{mealSingular(id)}</option>)}
+        </select>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+        <span>· {dayLabel(day)}</span>
+      </label>
+
+      <div className="fl-tabs" role="tablist" aria-label="Food lists">
+        {[["all", "All"], ["mine", "My Foods"], ["common", "Common"]].map(([id, label]) => (
+          <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? "on" : ""} onClick={() => setTab(id)}>{label}</button>
+        ))}
       </div>
 
       {histError && (
@@ -183,44 +215,29 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
         </div>
       )}
 
-      {recentHits.length > 0 && (
-        <section className="lift-card fl-card">
-          <h2 className="fl-h">{q ? "Your foods" : "Recent"}</h2>
-          {recentHits.slice(0, q ? 6 : 12).map(r => {
-            const l = r.last;
-            const n = nutrition(r.food, l.unit, l.amount);
-            return (
-              <FoodRow
-                key={r.key} food={r.food}
-                detail={[r.food.brand, `${amountText(r.food, l.unit, l.amount)} · ${n.kcal.toLocaleString()} cal`].filter(Boolean).join(" · ")}
-                onOpen={() => { setSheetError(""); setPicked({ food: r.food, unit: l.unit, amount: Number(l.amount) }); }}
-                onQuick={() => quickAdd(r.food, l.unit, Number(l.amount), r.key)}
-                added={quickDone.includes(r.key)}
-              />
-            );
-          })}
-        </section>
+      {showRecent && recentHits.length > 0 && (
+        <>
+          {(q || tab === "all") && <h2 className="fl-sec">{q ? "My foods" : "Recent"}</h2>}
+          {recentCards(recentHits.slice(0, q ? 8 : 20))}
+        </>
+      )}
+      {tab === "mine" && recentHits.length === 0 && !histError && (
+        <p className="fl-hint">{q ? `Nothing you've logged matches "${q}".` : "Foods you log show up here, so the next time is one tap."}</p>
       )}
 
-      {!q && recent.length === 0 && !histError && (
-        <p className="fl-hint">Scan a barcode or search for a food. Anything you log shows up here for one-tap re-logging.</p>
+      {showRemote && (
+        <>
+          <h2 className="fl-sec">Open Food Facts</h2>
+          {remoteShown.loading && [0, 1, 2].map(i => <div key={i} className="fl-item fl-skel"><i /><span><b /><small /></span></div>)}
+          {!remoteShown.loading && remoteShown.error && <p className="fl-hint">{remoteShown.error}</p>}
+          {!remoteShown.loading && !remoteShown.error && remoteShown.list.length === 0 && <p className="fl-hint">No packaged foods match "{q}".</p>}
+          {!remoteShown.loading && remoteShown.list.map(f => card(f))}
+        </>
       )}
 
-      {q.length >= 3 && (
-        <section className="lift-card fl-card">
-          <h2 className="fl-h">Open Food Facts</h2>
-          {remoteShown.loading && [0, 1, 2].map(i => <div key={i} className="fl-skel"><i /><span><b /><small /></span></div>)}
-          {!remoteShown.loading && remoteShown.error && <p className="fl-none">{remoteShown.error}</p>}
-          {!remoteShown.loading && !remoteShown.error && remoteShown.list.length === 0 && <p className="fl-none">No packaged foods match "{q}".</p>}
-          {!remoteShown.loading && remoteShown.list.map((f, i) => (
-            <FoodRow key={`${f.barcode}-${i}`} food={f} detail={defaultDetail(f)} onOpen={() => { setSheetError(""); setPicked({ food: f }); }} />
-          ))}
-        </section>
-      )}
-
-      {(commonHits.length > 0 || !q) && (
-        <section className="lift-card fl-card">
-          <h2 className="fl-h">Common foods</h2>
+      {showCommon && (
+        <>
+          {(tab === "all" || q) && commonHits.length > 0 && <h2 className="fl-sec">Common foods</h2>}
           {!q && (
             <div className="ep-chips fl-chips" role="group" aria-label="Food group">
               {COMMON_GROUPS.map(g => (
@@ -228,15 +245,19 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
               ))}
             </div>
           )}
-          {commonHits.map(f => (
-            <FoodRow key={f.name} food={f} detail={defaultDetail(f)} onOpen={() => { setSheetError(""); setPicked({ food: f }); }} />
-          ))}
-        </section>
+          {commonHits.map(f => card(f))}
+          {tab === "common" && q && commonHits.length === 0 && <p className="fl-hint">No common foods match "{q}".</p>}
+        </>
       )}
 
       <button className="fl-create" onClick={() => { setSheetError(""); setCustom({ name: q.length >= 2 ? q[0].toUpperCase() + q.slice(1) : "" }); }}>
         <PlusIcon />
         <span><b>{q ? `Create "${q}"` : "Create a food"}</b><small>Type in calories and macros from the label</small></span>
+      </button>
+      <div className="fl-fab-space" />
+
+      <button className="fl-fab" onClick={() => { setScanStatus(null); setScanning(true); }}>
+        <ScanIcon /><span>Scan barcode</span>
       </button>
 
       {toast && <div className="fl-toast" role="status">{toast}</div>}

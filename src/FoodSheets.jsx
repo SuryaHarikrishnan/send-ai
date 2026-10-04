@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MEALS, amountText, customFood, mealSingular, nutrition } from "./food";
+import { MEALS, amountText, customFood, foodEmoji, mealSingular, nutrition } from "./food";
 
 export const FoodIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21c-4.5 0-7.5-3.8-7.5-8.2 0-3.4 2.3-5.3 4.6-5.3 1.3 0 2.1.5 2.9.5s1.6-.5 2.9-.5c2.3 0 4.6 1.9 4.6 5.3 0 4.4-3 8.2-7.5 8.2zM12 7.5c0-2 1-3.5 3-4" /></svg>
@@ -10,7 +10,7 @@ export function Thumb({ food, size = 46 }) {
   const [broken, setBroken] = useState(false);
   if (food.image && !broken)
     return <img className="fd-thumb" src={food.image} alt="" width={size} height={size} loading="lazy" onError={() => setBroken(true)} style={{ width: size, height: size }} />;
-  return <span className="fd-thumb fd-thumb-ic" style={{ width: size, height: size }}><FoodIcon /></span>;
+  return <span className="fd-thumb fd-thumb-emoji" style={{ width: size, height: size, fontSize: size * 0.62 }} aria-hidden="true">{foodEmoji(food)}</span>;
 }
 
 function useEscape(fn) {

@@ -297,3 +297,47 @@
   .bs-frame.live b, .fl-skel i, .fl-skel b, .fl-skel small, .fl-toast { animation: none; }
   .fg-fill, .fm-bar i { transition: none; }
 }
+
+/* add food, laid out like the reference: search bar, tabs, food cards, floating scan */
+.fl-top { display: grid; grid-template-columns: 52px 1fr 52px; gap: 10px; align-items: center; }
+.fl-count { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--card); border: 1px solid var(--card-line); font-size: 20px; font-weight: 700; color: var(--mut); font-variant-numeric: tabular-nums; }
+.fl-count.on { color: #fff; border-color: rgba(255, 255, 255, 0.4); }
+.fl-top .fl-input svg { left: 16px; width: 22px; height: 22px; opacity: 0.75; }
+.lift .fl-top .fl-input input { height: 52px; border-radius: 99px; padding-left: 48px; font-size: 18px; background: var(--card); border-color: var(--card-line); }
+.fl-done { width: 52px; height: 52px; border-radius: 50%; border: 0; background: #fff; color: var(--navy) !important; display: grid; place-items: center; box-shadow: 0 8px 20px -8px rgba(0, 10, 40, 0.6); }
+.fl-done svg { width: 26px; height: 26px; }
+.fl-to { position: relative; align-self: center; display: inline-flex; align-items: center; gap: 4px; font-size: 14px; font-weight: 600; color: var(--mut); margin-top: -4px; }
+.fl-to b { color: #fff; font-weight: 700; margin-left: 2px; }
+.fl-to select { position: absolute; inset: 0; width: 100%; opacity: 0; font-size: 16px; cursor: pointer; }
+.fl-to select option { color: #0a2f6b; }
+.fl-to svg { width: 14px; height: 14px; color: #fff; pointer-events: none; }
+.fl-tabs { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--card); border: 1px solid var(--card-line); border-radius: 99px; padding: 4px; }
+.fl-tabs button { border: 0; background: none; border-radius: 99px; padding: 10px 6px; font-size: 15px !important; font-weight: 600; color: rgba(255, 255, 255, 0.85) !important; }
+.fl-tabs button.on { background: rgba(255, 255, 255, 0.18); color: #fff !important; font-weight: 800; }
+.fl-sec { font-size: 13px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--mut); padding: 4px 4px 0; margin-bottom: -6px; }
+.fl-item { display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--card-line); border-radius: 24px; padding: 14px 14px 14px 12px; }
+.fl-item-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; background: none; border: 0; padding: 0; text-align: left; }
+.fl-item-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fl-item-txt b { font-size: 17px; font-weight: 600; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.fl-brand { font-size: 15px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fl-item-txt small { font-size: 14px; color: var(--mut); }
+.fl-when, .fl-nw { white-space: nowrap; }
+.fl-when svg { width: 15px; height: 15px; vertical-align: -2px; margin: 0 4px 0 2px; opacity: 0.8; }
+.fl-plus { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(0, 20, 60, 0.5); color: var(--ft-c) !important; display: grid; place-items: center; }
+.fl-plus svg { width: 24px; height: 24px; }
+.fl-plus.added { background: #fff; color: var(--navy) !important; }
+.fl-plus:active { transform: scale(0.92); }
+.fd-thumb-emoji { display: grid; place-items: center; background: none; line-height: 1; }
+.fl-item.fl-skel { padding: 18px 14px; }
+.fl-chips { margin: 0 -16px; padding: 0 16px; }
+.fl-fab-space { height: 64px; }
+.fl-fab {
+  position: fixed; right: max(16px, calc((100vw - 560px) / 2)); bottom: calc(80px + env(safe-area-inset-bottom)); z-index: 50;
+  display: inline-flex; align-items: center; gap: 10px; height: 56px; padding: 0 22px 0 18px; border-radius: 99px;
+  background: rgba(5, 33, 79, 0.88); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.22); box-shadow: 0 14px 34px -10px rgba(0, 10, 40, 0.8);
+  font-weight: 700; font-size: 15px !important;
+}
+.fl-fab svg { width: 26px; height: 26px; color: var(--ft-c); }
+.fl-fab:active { transform: scale(0.96); }
+.fl .fl-toast { bottom: calc(148px + env(safe-area-inset-bottom)); }

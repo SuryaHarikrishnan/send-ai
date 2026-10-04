@@ -368,3 +368,25 @@ export function customFood({ name, brand, barcode, serving, kcal, protein, carbs
     defaultAmount: 1,
   };
 }
+
+/* ---------- emoji icons for foods without a photo ---------- */
+
+const EMOJI = [
+  [/banana/, "🍌"], [/apple/, "🍎"], [/orange juice/, "🧃"], [/orange|clementine|mandarin/, "🍊"], [/strawberr/, "🍓"], [/blueberr|berr/, "🫐"],
+  [/grape/, "🍇"], [/mango/, "🥭"], [/watermelon|melon/, "🍉"], [/avocado|guac/, "🥑"], [/broccoli/, "🥦"], [/spinach|salad|greens|lettuce|kale/, "🥬"],
+  [/carrot/, "🥕"], [/tomato/, "🍅"], [/cucumber|pickle/, "🥒"], [/sweet potato|potato|fries/, "🥔"], [/corn|popcorn/, "🍿"],
+  [/egg/, "🥚"], [/bacon/, "🥓"], [/chicken|turkey|poultry/, "🍗"], [/beef|steak|burger|patty|sirloin/, "🥩"], [/salmon|tuna|fish|cod|tilapia/, "🐟"],
+  [/shrimp|prawn/, "🍤"], [/tofu/, "🧈"], [/whey|protein powder|shake/, "🥤"], [/protein bar|bar\b|granola bar/, "🍫"],
+  [/rice/, "🍚"], [/pasta|spaghetti|noodle|macaroni/, "🍝"], [/quinoa|grain/, "🌾"], [/oat|granola|cereal|crunch|flakes|cheerios/, "🥣"],
+  [/bagel/, "🥯"], [/tortilla|wrap|burrito|taco/, "🌯"], [/bread|toast|bun|roll/, "🍞"], [/milk/, "🥛"], [/yogurt|yoghurt|skyr/, "🥛"],
+  [/cottage|cheese|cheddar|mozzarella/, "🧀"], [/butter/, "🧈"], [/peanut|almond|walnut|cashew|nut/, "🥜"], [/olive oil|oil/, "🫒"],
+  [/hummus|chickpea|bean|lentil/, "🫘"], [/chocolate|cocoa/, "🍫"], [/chip|crisp/, "🥔"], [/pizza/, "🍕"], [/honey/, "🍯"],
+  [/coffee|latte|espresso|cappuccino/, "☕"], [/cola|soda|pepsi|sprite/, "🥤"], [/beer/, "🍺"], [/wine/, "🍷"], [/juice/, "🧃"],
+  [/water/, "💧"], [/tea/, "🍵"], [/cookie|biscuit/, "🍪"], [/cake|muffin|donut|doughnut/, "🧁"], [/ice cream/, "🍨"], [/sandwich|sub/, "🥪"],
+  [/soup|stew/, "🍲"], [/sushi/, "🍣"], [/bowl/, "🥗"],
+];
+export function foodEmoji(food) {
+  const name = `${food.name} ${food.brand || ""}`.toLowerCase();
+  for (const [re, e] of EMOJI) if (re.test(name)) return e;
+  return "🍽️";
+}
