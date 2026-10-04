@@ -7,17 +7,23 @@ import LiftHome from "./LiftHome";
 import LiftProgress from "./LiftProgress";
 import WorkoutLog from "./WorkoutLog";
 import News from "./News";
+import FoodHome from "./FoodHome";
+import FoodLog from "./FoodLog";
+import FoodProgress from "./FoodProgress";
+import "./Food.css";
 import "./Nav.css";
 
 const SPORTS = [
   { id: "lifting", name: "Lifting", line: "Workouts, muscles and PRs" },
   { id: "climbing", name: "Climbing", line: "Sends, grades and sessions" },
   { id: "running", name: "Running", line: "Coming with the phone app", soon: true },
-  { id: "food", name: "Food", line: "Barcode logging, coming soon", soon: true },
+  { id: "food", name: "Food", line: "Calories, macros and barcode scanning" },
 ];
 
+const SPORT_NAMES = { lifting: "Lifting", climbing: "Climbing", food: "Food" };
+
 function readSport() {
-  try { return localStorage.getItem("send.sport") === "climbing" ? "climbing" : "lifting"; } catch { return "lifting"; }
+  try { const s = localStorage.getItem("send.sport"); return SPORT_NAMES[s] ? s : "lifting"; } catch { return "lifting"; }
 }
 
 // Instagram-style icons: outline normally, filled when that tab is open.
@@ -46,8 +52,8 @@ const I = {
   running: () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="14.5" cy="4.5" r="1.8" /><path d="M8 21l3-6 3 2.5V22M6 11.5l3-3h4l2.5 3.5 3 .5M11 15l1.5-6.5" /></svg>
   ),
-  food: () => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21c-4.5 0-7.5-3.8-7.5-8.2 0-3.4 2.3-5.3 4.6-5.3 1.3 0 2.1.5 2.9.5s1.6-.5 2.9-.5c2.3 0 4.6 1.9 4.6 5.3 0 4.4-3 8.2-7.5 8.2zM12 7.5c0-2 1-3.5 3-4" /></svg>
+  food: on => (
+    <svg viewBox="0 0 24 24" fill={on ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21c-4.5 0-7.5-3.8-7.5-8.2 0-3.4 2.3-5.3 4.6-5.3 1.3 0 2.1.5 2.9.5s1.6-.5 2.9-.5c2.3 0 4.6 1.9 4.6 5.3 0 4.4-3 8.2-7.5 8.2zM12 7.5c0-2 1-3.5 3-4" /></svg>
   ),
   chevron: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5l7 7-7 7" /></svg>,
   check: () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>,
@@ -67,8 +73,10 @@ export default function Dashboard({ user }) {
   const [tab, setTab] = useState("home");
   const [focus, setFocus] = useState(null);
   const [picking, setPicking] = useState(false);
+  const [foodDay, setFoodDay] = useState(() => new Date());
+  const [foodMeal, setFoodMeal] = useState(null);
 
-  const go = t => { setTab(t === "workout" ? "log" : t); setFocus(null); };
+  const go = t => { setTab(t === "workout" ? "log" : t); setFocus(null); if (t === "log") setFoodMeal(null); };
   useEffect(() => { window.scrollTo(0, 0); }, [tab, sport]);
   useEffect(() => {
     if (!picking) return;
@@ -85,12 +93,14 @@ export default function Dashboard({ user }) {
   }
 
   const lifting = sport === "lifting";
+  const food = sport === "food";
+  const climbing = sport === "climbing";
   const youTab = ["you", "coach", "news"].includes(tab);
   const meta = user.user_metadata || {};
   const TABS = [
     ["home", "Home", I.home],
-    ["progress", lifting ? "Progress" : "Analytics", I.progress],
-    ["log", lifting ? "Log workout" : "Log climb", I.log],
+    ["progress", lifting ? "Progress" : food ? "Dashboard" : "Analytics", I.progress],
+    ["log", lifting ? "Log workout" : food ? "Add food" : "Log climb", I.log],
   ];
 
   return (
@@ -102,9 +112,9 @@ export default function Dashboard({ user }) {
           <img className="logo-mark" src="/logo.png" width="28" height="28" alt="" />
           <span className="wordmark">SENDIT</span>
         </div>
-        <button className="topbar-sport" onClick={() => setPicking(true)} aria-label={`Sport: ${lifting ? "Lifting" : "Climbing"}. Change sport`}>
+        <button className="topbar-sport" onClick={() => setPicking(true)} aria-label={`Sport: ${SPORT_NAMES[sport]}. Change sport`}>
           {I[sport](false)}
-          {lifting ? "Lifting" : "Climbing"}
+          {SPORT_NAMES[sport]}
           <svg className="topbar-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
         </button>
       </header>
@@ -113,9 +123,12 @@ export default function Dashboard({ user }) {
         {lifting && tab === "home" && <LiftHome user={user} onNavigate={go} onOpenExercise={k => { setFocus(k); setTab("progress"); }} />}
         {lifting && tab === "progress" && <LiftProgress user={user} focus={focus} onFocus={setFocus} onNavigate={go} />}
         {lifting && tab === "log" && <WorkoutLog user={user} onNavigate={go} />}
-        {!lifting && tab === "home" && <Home user={user} onNavigate={go} />}
-        {!lifting && tab === "progress" && <Analytics user={user} />}
-        {!lifting && tab === "log" && <LogTab user={user} />}
+        {food && tab === "home" && <FoodHome user={user} day={foodDay} onDay={setFoodDay} onAdd={m => { setTab("log"); setFoodMeal(m); }} />}
+        {food && tab === "progress" && <FoodProgress user={user} />}
+        {food && tab === "log" && <FoodLog key={`${foodDay.toDateString()}-${foodMeal}`} user={user} day={foodDay} meal={foodMeal} onDone={() => go("home")} />}
+        {climbing && tab === "home" && <Home user={user} onNavigate={go} />}
+        {climbing && tab === "progress" && <Analytics user={user} />}
+        {climbing && tab === "log" && <LogTab user={user} />}
         {tab === "coach" && <><button className="you-back" onClick={() => go("you")}>‹ You</button><AICoach user={user} /></>}
         {tab === "news" && <><button className="you-back" onClick={() => go("you")}>‹ You</button><News /></>}
         {tab === "you" && (
@@ -128,7 +141,7 @@ export default function Dashboard({ user }) {
               </div>
             </div>
             <div className="you-list">
-              <button onClick={() => setPicking(true)}><span>Sport<small>{lifting ? "Lifting" : "Climbing"}</small></span>{I.chevron()}</button>
+              <button onClick={() => setPicking(true)}><span>Sport<small>{SPORT_NAMES[sport]}</small></span>{I.chevron()}</button>
               <button onClick={() => go("coach")}><span>AI coach<small>Ask questions about your training</small></span>{I.chevron()}</button>
               <button onClick={() => go("news")}><span>News<small>Climbing headlines</small></span>{I.chevron()}</button>
               <a href="/privacy.html"><span>Privacy</span>{I.chevron()}</a>
