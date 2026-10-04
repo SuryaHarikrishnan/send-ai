@@ -42,7 +42,6 @@ export default function Auth() {
           <img className="logo-mark" src="/logo.png" width="30" height="30" alt="" />
           <span className="wordmark">SENDIT</span>
         </div>
-        <button className="start-signin" onClick={signInWithGoogle} disabled={loading}>Sign in</button>
       </nav>
 
       <main className="start-main">
