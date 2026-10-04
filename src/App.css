@@ -385,20 +385,7 @@ h1 .accent { color: #ffffff; }
 .wordmark::before { top: 0.32em; width: 0.42em; }
 .wordmark::after { top: 0.58em; width: 0.26em; }
 
-.start-signin {
-  white-space: nowrap;
-  background: transparent;
-  color: #ffffff;
-  border: 1.5px solid rgba(140,200,255,0.6);
-  border-radius: 8px;
-  padding: 0.5rem 1.25rem;
-  font-family: 'Figtree', sans-serif;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-}
 
-.start-signin:hover { background: rgba(140,200,255,0.1); }
 
 .start-main {
   flex: 1;
@@ -464,7 +451,7 @@ h1 .accent { color: #ffffff; }
 }
 
 .start-google:hover { background: #ffffff; }
-.start-google:disabled, .start-signin:disabled { opacity: 0.5; cursor: not-allowed; }
+.start-google:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .start-error { text-align: left; margin-bottom: 0.75rem; }
 
