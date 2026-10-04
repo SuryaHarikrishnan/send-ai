@@ -445,24 +445,33 @@ export function customFood({ name, brand, barcode, serving, kcal, protein, carbs
   };
 }
 
-/* ---------- emoji icons for foods without a photo ---------- */
+/* ---------- emoji icons for every food ---------- */
 
+// Dishes come before ingredients, so "chicken sandwich" is a sandwich, not chicken.
 const EMOJI = [
+  [/protein bar|granola bar|\bbar\b/, "🍫"],
+  [/sauce|dressing|ketchup|mayo|dip\b|salsa|syrup/, "🥫"], [/fries|tots|hash brown/, "🍟"], [/pizza/, "🍕"], [/burger|whopper|big mac/, "🍔"],
+  [/hot dog|hotdog|sausage|bratwurst/, "🌭"], [/taco/, "🌮"], [/burrito|wrap|quesadilla/, "🌯"], [/sandwich|sub\b|hoagie|panini|biscuit sandwich/, "🥪"],
+  [/salad/, "🥗"], [/sushi|roll\b.*(tuna|salmon|crab)/, "🍣"], [/ramen|pho\b|noodle soup/, "🍜"], [/soup|stew|chili\b/, "🍲"], [/curry/, "🍛"],
+  [/dumpling|potsticker|gyoza/, "🥟"], [/pancake/, "🥞"], [/waffle/, "🧇"], [/croissant/, "🥐"], [/pretzel/, "🥨"], [/bagel/, "🥯"],
+  [/milkshake|shake|smoothie|frosty/, "🥤"], [/lemonade|lemon/, "🍋"], [/ice cream|sundae|gelato|frozen yogurt/, "🍨"],
+  [/cookie|brownie/, "🍪"], [/cake|muffin|cupcake/, "🧁"], [/donut|doughnut/, "🍩"], [/pie\b/, "🥧"], [/candy|gummy|gummies/, "🍬"],
   [/banana/, "🍌"], [/apple/, "🍎"], [/orange juice/, "🧃"], [/orange|clementine|mandarin/, "🍊"], [/strawberr/, "🍓"], [/blueberr|berr/, "🫐"],
-  [/grape/, "🍇"], [/mango/, "🥭"], [/watermelon|melon/, "🍉"], [/avocado|guac/, "🥑"], [/broccoli/, "🥦"], [/spinach|salad|greens|lettuce|kale/, "🥬"],
-  [/carrot/, "🥕"], [/tomato/, "🍅"], [/cucumber|pickle/, "🥒"], [/sweet potato|potato|fries/, "🥔"], [/corn|popcorn/, "🍿"],
-  [/egg/, "🥚"], [/bacon/, "🥓"], [/chicken|turkey|poultry|nugget|strips|tender|wing/, "🍗"], [/beef|steak|burger|patty|sirloin/, "🥩"], [/salmon|tuna|fish|cod|tilapia/, "🐟"],
-  [/shrimp|prawn/, "🍤"], [/tofu/, "🧈"], [/whey|protein powder|shake/, "🥤"], [/protein bar|bar\b|granola bar/, "🍫"],
-  [/rice/, "🍚"], [/pasta|spaghetti|noodle|macaroni/, "🍝"], [/quinoa|grain/, "🌾"], [/oat|granola|cereal|crunch|flakes|cheerios/, "🥣"],
-  [/bagel/, "🥯"], [/tortilla|wrap|burrito|taco/, "🌯"], [/bread|toast|bun|roll/, "🍞"], [/milk/, "🥛"], [/yogurt|yoghurt|skyr/, "🥛"],
-  [/cottage|cheese|cheddar|mozzarella/, "🧀"], [/butter/, "🧈"], [/peanut|almond|walnut|cashew|nut/, "🥜"], [/olive oil|oil/, "🫒"],
-  [/hummus|chickpea|bean|lentil/, "🫘"], [/chocolate|cocoa/, "🍫"], [/chip|crisp/, "🥔"], [/pizza/, "🍕"], [/honey/, "🍯"],
-  [/coffee|latte|espresso|cappuccino/, "☕"], [/cola|soda|pepsi|sprite/, "🥤"], [/beer/, "🍺"], [/wine/, "🍷"], [/juice/, "🧃"],
-  [/water/, "💧"], [/tea/, "🍵"], [/cookie|biscuit/, "🍪"], [/cake|muffin|donut|doughnut/, "🧁"], [/ice cream/, "🍨"], [/sandwich|sub/, "🥪"],
-  [/soup|stew/, "🍲"], [/sushi/, "🍣"], [/bowl/, "🥗"],
+  [/grape/, "🍇"], [/mango/, "🥭"], [/pineapple/, "🍍"], [/peach/, "🍑"], [/cherr/, "🍒"], [/pear\b/, "🍐"], [/kiwi/, "🥝"], [/coconut/, "🥥"],
+  [/watermelon|melon/, "🍉"], [/avocado|guac/, "🥑"], [/broccoli/, "🥦"], [/spinach|greens|lettuce|kale/, "🥬"],
+  [/carrot/, "🥕"], [/tomato/, "🍅"], [/cucumber|pickle/, "🥒"], [/pepper\b|peppers/, "🫑"], [/onion/, "🧅"], [/garlic/, "🧄"], [/mushroom/, "🍄"],
+  [/sweet potato|potato/, "🥔"], [/popcorn/, "🍿"], [/corn/, "🌽"],
+  [/egg/, "🥚"], [/bacon/, "🥓"], [/chicken|turkey|poultry|nugget|strips|tender|wing/, "🍗"], [/beef|steak|patty|sirloin|brisket|pork|ham\b/, "🥩"],
+  [/shrimp|prawn/, "🍤"], [/crab|lobster/, "🦀"], [/salmon|tuna|fish|cod|tilapia/, "🐟"], [/tofu/, "🧈"], [/whey|protein powder/, "🥤"],
+  [/rice/, "🍚"], [/pasta|spaghetti|noodle|macaroni|mac and cheese/, "🍝"], [/quinoa|grain/, "🌾"],
+  [/oat|granola|cereal|crunch|flakes|cheerios/, "🥣"], [/tortilla/, "🫓"], [/bread|toast|bun|roll|biscuit/, "🍞"],
+  [/milk/, "🥛"], [/yogurt|yoghurt|skyr/, "🥛"], [/cottage|cheese|cheddar|mozzarella/, "🧀"], [/butter/, "🧈"],
+  [/peanut|almond|walnut|cashew|nut/, "🥜"], [/olive oil|oil/, "🫒"], [/hummus|chickpea|bean|lentil/, "🫘"], [/chocolate|cocoa/, "🍫"],
+  [/chip|crisp/, "🥔"], [/honey/, "🍯"], [/coffee|latte|espresso|cappuccino|mocha|frappuccino/, "☕"], [/cola|soda|pepsi|sprite|coke\b|dr pepper/, "🥤"],
+  [/beer/, "🍺"], [/wine/, "🍷"], [/juice/, "🧃"], [/water/, "💧"], [/tea\b/, "🍵"], [/bowl/, "🥗"],
 ];
+const findEmoji = text => EMOJI.find(([re]) => re.test(text))?.[1];
+// The food's own name decides first; the brand only helps when the name says nothing.
 export function foodEmoji(food) {
-  const name = `${food.name} ${food.brand || ""}`.toLowerCase();
-  for (const [re, e] of EMOJI) if (re.test(name)) return e;
-  return "🍽️";
+  return findEmoji(food.name.toLowerCase()) || findEmoji(`${food.name} ${food.brand || ""}`.toLowerCase()) || "🍽️";
 }
