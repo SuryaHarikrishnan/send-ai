@@ -4,12 +4,14 @@ import Analytics from "./Analytics";
 import AICoach from "./AICoach";
 import Home from "./Home";
 import LiftHome from "./LiftHome";
+import LiftProgress from "./LiftProgress";
 import WorkoutLog from "./WorkoutLog";
 import News from "./News";
 
 export default function Dashboard({ user }) {
   const [tab, setTab] = useState("home");
-  const TABS = [["home", "home"], ["workout", "log workout"], ["climbing", "climbing"], ["log", "log climb"], ["analytics", "analytics"], ["training", "coach"], ["news", "news"]];
+  const [focus, setFocus] = useState(null);
+  const TABS = [["home", "home"], ["workout", "log workout"], ["progress", "progress"], ["climbing", "climbing"], ["log", "log climb"], ["analytics", "analytics"], ["training", "coach"], ["news", "news"]];
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -33,7 +35,7 @@ export default function Dashboard({ user }) {
             <button
               key={t}
               className={`dash-tab ${tab === t ? "active" : ""}`}
-              onClick={() => setTab(t)}
+              onClick={() => { setTab(t); setFocus(null); }}
             >
               {label}
             </button>
@@ -43,7 +45,8 @@ export default function Dashboard({ user }) {
       </nav>
 
       <div className="dash-content">
-        {tab === "home" && <LiftHome user={user} onNavigate={setTab} />}
+        {tab === "home" && <LiftHome user={user} onNavigate={setTab} onOpenExercise={k => { setFocus(k); setTab("progress"); }} />}
+        {tab === "progress" && <LiftProgress user={user} focus={focus} onFocus={setFocus} onNavigate={setTab} />}
         {tab === "workout" && <WorkoutLog user={user} onNavigate={setTab} />}
         {tab === "climbing" && <Home user={user} onNavigate={setTab} />}
         {tab === "log" && <LogTab user={user} />}
