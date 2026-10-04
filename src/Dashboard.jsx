@@ -100,7 +100,7 @@ export default function Dashboard({ user }) {
       <header className="topbar">
         <div className="logo">
           <img className="logo-mark" src="/logo.png" width="28" height="28" alt="" />
-          SEND<span>-AI</span>
+          <span className="wordmark">SENDIT</span>
         </div>
         <button className="topbar-sport" onClick={() => setPicking(true)} aria-label={`Sport: ${lifting ? "Lifting" : "Climbing"}. Change sport`}>
           {I[sport](false)}
