@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="public/icons/icon-512.png" width="112" alt="Send logo" />
+<img src="public/icons/icon-512.png" width="112" alt="SendIt logo" />
 
-# Send
+# SendIt
 
 **Every sport. One log. Keep the streak.**
 
@@ -11,13 +11,13 @@ Log a session in a few taps, then see your progress, PRs and every muscle you wo
 
 [**justsend.fit**](https://justsend.fit) · [Privacy](https://justsend.fit/privacy.html)
 
-<img src="docs/screenshots/landing.jpg" alt="Send landing page" width="820">
+<img src="docs/screenshots/landing.jpg" alt="SendIt landing page" width="820">
 
 </div>
 
 ## Why
 
-Most fitness apps cover one sport and charge a premium for the charts. Send puts all of your training in one place, keeps logging fast, and focuses on the analytics that tell you whether you are getting stronger.
+Most fitness apps cover one sport and charge a premium for the charts. SendIt puts all of your training in one place, keeps logging fast, and focuses on the analytics that tell you whether you are getting stronger.
 
 ## Screenshots
 
