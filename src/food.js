@@ -449,6 +449,7 @@ export function customFood({ name, brand, barcode, serving, kcal, protein, carbs
 
 // Dishes come before ingredients, so "chicken sandwich" is a sandwich, not chicken.
 const EMOJI = [
+  [/protein bar|granola bar|\bbar\b/, "🍫"],
   [/sauce|dressing|ketchup|mayo|dip\b|salsa|syrup/, "🥫"], [/fries|tots|hash brown/, "🍟"], [/pizza/, "🍕"], [/burger|whopper|big mac/, "🍔"],
   [/hot dog|hotdog|sausage|bratwurst/, "🌭"], [/taco/, "🌮"], [/burrito|wrap|quesadilla/, "🌯"], [/sandwich|sub\b|hoagie|panini|biscuit sandwich/, "🥪"],
   [/salad/, "🥗"], [/sushi|roll\b.*(tuna|salmon|crab)/, "🍣"], [/ramen|pho\b|noodle soup/, "🍜"], [/soup|stew|chili\b/, "🍲"], [/curry/, "🍛"],
@@ -462,7 +463,7 @@ const EMOJI = [
   [/sweet potato|potato/, "🥔"], [/popcorn/, "🍿"], [/corn/, "🌽"],
   [/egg/, "🥚"], [/bacon/, "🥓"], [/chicken|turkey|poultry|nugget|strips|tender|wing/, "🍗"], [/beef|steak|patty|sirloin|brisket|pork|ham\b/, "🥩"],
   [/shrimp|prawn/, "🍤"], [/crab|lobster/, "🦀"], [/salmon|tuna|fish|cod|tilapia/, "🐟"], [/tofu/, "🧈"], [/whey|protein powder/, "🥤"],
-  [/protein bar|bar\b|granola bar/, "🍫"], [/rice/, "🍚"], [/pasta|spaghetti|noodle|macaroni|mac and cheese/, "🍝"], [/quinoa|grain/, "🌾"],
+  [/rice/, "🍚"], [/pasta|spaghetti|noodle|macaroni|mac and cheese/, "🍝"], [/quinoa|grain/, "🌾"],
   [/oat|granola|cereal|crunch|flakes|cheerios/, "🥣"], [/tortilla/, "🫓"], [/bread|toast|bun|roll|biscuit/, "🍞"],
   [/milk/, "🥛"], [/yogurt|yoghurt|skyr/, "🥛"], [/cottage|cheese|cheddar|mozzarella/, "🧀"], [/butter/, "🧈"],
   [/peanut|almond|walnut|cashew|nut/, "🥜"], [/olive oil|oil/, "🫒"], [/hummus|chickpea|bean|lentil/, "🫘"], [/chocolate|cocoa/, "🍫"],
