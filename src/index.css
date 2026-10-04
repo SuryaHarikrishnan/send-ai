@@ -7,3 +7,12 @@ body {
 #root {
   width: 100%;
 }
+/* No zooming: "manipulation" keeps scrolling but turns off pinch and
+   double-tap zoom. */
+html, body { touch-action: manipulation; }
+
+/* iPhone Safari zooms in when you tap a field whose text is under 16px,
+   so on touch screens every field is at least 16px. */
+@media (hover: none) and (pointer: coarse) {
+  input, select, textarea { font-size: 16px !important; }
+}
