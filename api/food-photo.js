@@ -55,11 +55,22 @@ async function askGemini(image) {
     const data = await r.json().catch(() => ({}));
     // 404: the key can't use this model. 429: its free-tier quota is used up. Either way, try the next one.
     if (r.status === 404 || r.status === 429) { last = new Error(`${model} ${r.status}`); continue; }
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!r.ok || !text) throw new Error(`Gemini ${r.status}: ${JSON.stringify(data).slice(0, 300)}`);
-    return JSON.parse(text).items || [];
+    if (!r.ok) throw new Error(`${model} ${r.status}: ${data.error?.message || "no details"}`);
+    const cand = data.candidates?.[0];
+    // Thinking models can return several parts; the answer is the text that isn't a thought.
+    const text = (cand?.content?.parts || []).filter(p => p.text && !p.thought).map(p => p.text).join("");
+    if (!text) throw new Error(`${model} gave no answer (${cand?.finishReason || data.promptFeedback?.blockReason || "unknown"})`);
+    return { model, items: parseItems(text) };
   }
   throw last;
+}
+
+// Accept {"items": [...]}, a bare [...] or JSON wrapped in ``` fences.
+function parseItems(text) {
+  const raw = text.replace(/^\s*```(?:json)?\s*|\s*```\s*$/g, "");
+  const j = JSON.parse(raw);
+  const list = Array.isArray(j) ? j : j.items || j.foods || [];
+  return list.filter(i => i && i.name);
 }
 
 const clean = n => Math.max(0, Math.round((Number(n) || 0) * 10) / 10);
@@ -83,13 +94,15 @@ export default async function handler(req, res) {
       token,
       { method: "HEAD", headers: { Prefer: "count=exact" } }
     );
-    if (!countRes.ok) throw new Error(`food_photo_requests count failed: ${countRes.status}`);
+    if (!countRes.ok) throw new Error(`photo counter table missing or blocked (${countRes.status}), run supabase/photo.sql`);
     const used = Number((countRes.headers.get("content-range") || "").split("/")[1] || 0);
     if (used >= DAILY_LIMIT) {
       return res.status(429).json({ error: `You've used your ${DAILY_LIMIT} photos for today. Search or scan a barcode instead, or try again tomorrow.`, remaining: 0 });
     }
 
-    const items = (await askGemini(image)).slice(0, 8).map(i => ({
+    if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY isn't set in Vercel");
+    const answer = await askGemini(image);
+    const items = answer.items.slice(0, 8).map(i => ({
       name: String(i.name || "Food").slice(0, 80),
       portion: String(i.portion || "1 serving").slice(0, 40),
       grams: clean(i.grams),
@@ -104,9 +117,10 @@ export default async function handler(req, res) {
       const logRes = await supabaseFetch("/rest/v1/food_photo_requests", token, { method: "POST", body: JSON.stringify({ user_id: user.id }) });
       if (!logRes.ok) throw new Error(`food_photo_requests insert failed: ${logRes.status}`);
     }
-    return res.status(200).json({ items, remaining: DAILY_LIMIT - used - (items.length ? 1 : 0) });
+    return res.status(200).json({ items, model: answer.model, remaining: DAILY_LIMIT - used - (items.length ? 1 : 0) });
   } catch (e) {
     console.error(e);
-    return res.status(500).json({ error: "Couldn't read that photo right now. Try again in a minute." });
+    // The reason is shown in small print so a person can pass it on; it never includes the key.
+    return res.status(500).json({ error: "Couldn't read that photo right now. Try again in a minute.", reason: String(e.message || e).slice(0, 200) });
   }
 }
