@@ -169,8 +169,8 @@ export default function Dashboard({ user }) {
         ))}
         <button className={picking ? "on" : ""} aria-label="Change sport" aria-haspopup="dialog" onClick={() => setPicking(true)}>
           <span className="tabbar-sport">
-            <svg className="tabbar-caret" viewBox="0 0 12 8" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 6.5l4-4 4 4" /></svg>
             {I[sport](picking)}
+            <svg className="tabbar-caret" viewBox="0 0 12 8" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 6.5l4-4 4 4" /></svg>
           </span>
         </button>
         <button className={youTab ? "on" : ""} aria-label="You" aria-current={youTab ? "page" : undefined} onClick={() => go("you")}>
