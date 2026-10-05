@@ -13,6 +13,22 @@ export const DEVICES = {
   "Small laptop": { viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1, isMobile: false, hasTouch: false },
 };
 
+// What each device's browser reports, so PostHog shows the right browser and
+// OS. PostHog drops everything from "HeadlessChrome", replays included.
+const IOS = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1";
+const ANDROID = m => `Mozilla/5.0 (Linux; Android 15; ${m}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36`;
+export const USER_AGENTS = {
+  "iPhone SE": IOS,
+  "iPhone 15": IOS,
+  "iPhone 15 Pro Max": IOS,
+  "Pixel 7": ANDROID("Pixel 7"),
+  "Galaxy A14": ANDROID("SM-A145F"),
+  "Galaxy Fold (folded)": ANDROID("SM-F946B"),
+  "iPad": "Mozilla/5.0 (iPad; CPU OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1",
+  "Laptop": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+  "Small laptop": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+};
+
 const P = (name, o) => ({ name, device: "iPhone 15", timezone: "America/New_York", returning: false, faults: {}, ...o });
 
 export const PERSONAS = [

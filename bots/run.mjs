@@ -15,7 +15,7 @@ import { appendFile, cp, mkdir, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { DEVICES, PERSONAS } from "./personas.mjs";
+import { DEVICES, PERSONAS, USER_AGENTS } from "./personas.mjs";
 import { journeys } from "./journeys.mjs";
 import { installMocks, seedData } from "./mock.mjs";
 
@@ -189,6 +189,12 @@ class Bot {
       locale: p.locale || "en-US",
       serviceWorkers: "block",
       baseURL: this.baseURL,
+      ...(DEMO ? { userAgent: USER_AGENTS[p.device] } : {}),
+    });
+    // PostHog also treats navigator.webdriver and a HeadlessChrome brand as a bot.
+    if (DEMO) await this.context.addInitScript(() => {
+      Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false });
+      Object.defineProperty(Navigator.prototype, "userAgentData", { get: () => undefined });
     });
     const rows = p.returning ? seedData(this.user.id) : { workouts: [], food_logs: [], climbs: [] };
     const { db, stats } = await installMocks(this.context, {
