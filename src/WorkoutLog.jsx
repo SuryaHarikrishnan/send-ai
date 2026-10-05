@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import ExercisePicker from "./ExercisePicker";
 import DurationPicker from "./DurationPicker";
+import { track } from "./analytics";
 import { MUSCLE_NAMES, WORKOUT_NAMES, findExercise, formatDuration, setSummary, workoutsError } from "./lifting";
 
 const todayISO = () => {
@@ -171,6 +172,7 @@ export default function WorkoutLog({ user, onNavigate }) {
       setError(e.title === "Couldn't load workouts." ? `Couldn't save the workout: ${err.message}` : `${e.title} ${e.detail}`);
       return;
     }
+    track("workout_logged", { title: title.trim() || "Workout", exercises: cleaned.length, sets: cleaned.reduce((a, e) => a + e.sets.length, 0), backdated: !isToday });
     onNavigate("home");
   }
 

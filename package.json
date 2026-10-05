@@ -13,6 +13,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.107.0",
     "barcode-detector": "^3.2.2",
+    "posthog-js": "^1.435.8",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "zxing-wasm": "^3.1.3"

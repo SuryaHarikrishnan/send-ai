@@ -10,8 +10,10 @@ import News from "./News";
 import FoodHome from "./FoodHome";
 import FoodLog from "./FoodLog";
 import FoodProgress from "./FoodProgress";
+import OwnerStats from "./OwnerStats";
 import "./Food.css";
 import "./Nav.css";
+import { forget, track } from "./analytics";
 
 const SPORTS = [
   { id: "lifting", name: "Lifting", line: "Workouts, muscles and PRs" },
@@ -75,9 +77,14 @@ export default function Dashboard({ user }) {
   const [picking, setPicking] = useState(false);
   const [foodDay, setFoodDay] = useState(() => new Date());
   const [foodMeal, setFoodMeal] = useState(null);
+  const [owner, setOwner] = useState(false);
 
   const go = t => { setTab(t === "workout" ? "log" : t); setFocus(null); if (t === "log") setFoodMeal(null); };
   useEffect(() => { window.scrollTo(0, 0); }, [tab, sport]);
+  // Only owners (public.app_owners) get a Stats row; the stats themselves are checked again on the server.
+  useEffect(() => {
+    supabase.rpc("is_owner").then(({ data }) => setOwner(data === true), () => {});
+  }, [user.id]);
   useEffect(() => {
     if (!picking) return;
     const onKey = e => e.key === "Escape" && setPicking(false);
@@ -86,6 +93,7 @@ export default function Dashboard({ user }) {
   }, [picking]);
 
   function chooseSport(id) {
+    if (id !== sport) track("sport_switched", { from: sport, to: id });
     setSport(id);
     try { localStorage.setItem("send.sport", id); } catch { /* storage blocked */ }
     setPicking(false);
@@ -95,7 +103,7 @@ export default function Dashboard({ user }) {
   const lifting = sport === "lifting";
   const food = sport === "food";
   const climbing = sport === "climbing";
-  const youTab = ["you", "coach", "news"].includes(tab);
+  const youTab = ["you", "coach", "news", "stats"].includes(tab);
   const meta = user.user_metadata || {};
   const TABS = [
     ["home", "Home", I.home],
@@ -131,6 +139,7 @@ export default function Dashboard({ user }) {
         {climbing && tab === "log" && <LogTab user={user} />}
         {tab === "coach" && <><button className="you-back" onClick={() => go("you")}>‹ You</button><AICoach user={user} /></>}
         {tab === "news" && <><button className="you-back" onClick={() => go("you")}>‹ You</button><News /></>}
+        {tab === "stats" && owner && <><button className="you-back" onClick={() => go("you")}>‹ You</button><OwnerStats /></>}
         {tab === "you" && (
           <div className="you">
             <div className="you-head">
@@ -141,12 +150,13 @@ export default function Dashboard({ user }) {
               </div>
             </div>
             <div className="you-list">
+              {owner && <button onClick={() => go("stats")}><span>App stats<small>Users, activity and visitors</small></span>{I.chevron()}</button>}
               <button onClick={() => setPicking(true)}><span>Sport<small>{SPORT_NAMES[sport]}</small></span>{I.chevron()}</button>
               <button onClick={() => go("coach")}><span>AI coach<small>Ask questions about your training</small></span>{I.chevron()}</button>
               <button onClick={() => go("news")}><span>News<small>Climbing headlines</small></span>{I.chevron()}</button>
               <a href="/privacy.html"><span>Privacy</span>{I.chevron()}</a>
             </div>
-            <button className="you-signout" onClick={() => supabase.auth.signOut()}>Sign out</button>
+            <button className="you-signout" onClick={() => { track("signed_out"); forget(); supabase.auth.signOut(); }}>Sign out</button>
           </div>
         )}
       </main>
@@ -229,6 +239,7 @@ function LogTab({ user }) {
       console.error("Insert error:", error);
       alert(error.message);
     } else {
+      track("climb_logged", { grade, style, sent, attempts });
       setSaved(true);
       setGrade("");
       setAngle([]);
