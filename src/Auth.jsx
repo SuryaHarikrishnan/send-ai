@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "./supabase";
 import BodyMap from "./BodyMap";
+import { rememberAgreement } from "./consent";
 
 function GoogleIcon() {
   return (
@@ -20,9 +21,13 @@ const MACROS = [["Protein", 142, 80], ["Carbs", 196, 62], ["Fat", 58, 45]];
 export default function Auth() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+  const [nudge, setNudge] = useState(false);
 
   async function signInWithGoogle() {
     setError("");
+    if (!agreed) { setNudge(true); return; }
+    rememberAgreement();
     setLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -62,12 +67,17 @@ export default function Auth() {
           </div>
 
           {error && <div className="auth-error start-error">{error}</div>}
-          <button className="start-google" onClick={signInWithGoogle} disabled={loading}>
+          <label className={`start-agree${nudge && !agreed ? " nudge" : ""}`}>
+            <input type="checkbox" checked={agreed} onChange={e => { setAgreed(e.target.checked); setNudge(false); }} />
+            <span>I agree to the <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a></span>
+          </label>
+          {nudge && !agreed && <div className="start-agree-hint">Tick the box to agree to the Privacy Policy first.</div>}
+          <button className={`start-google${agreed ? "" : " off"}`} onClick={signInWithGoogle} disabled={loading}>
             <GoogleIcon />
             {loading ? "Redirecting..." : "Continue with Google"}
           </button>
 
-          <p className="start-fine">Free to use · no credit card · works on any phone or laptop · <a href="/privacy.html">Privacy</a></p>
+          <p className="start-fine">Free to use · no credit card · works on any phone or laptop</p>
         </section>
 
         <aside className="deck" aria-label="Sports you can track">

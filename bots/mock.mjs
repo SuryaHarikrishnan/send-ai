@@ -6,6 +6,11 @@ const SUPABASE = "https://joygtqcjjaaalgxmdqjo.supabase.co";
 const STORAGE_KEY = "sb-joygtqcjjaaalgxmdqjo-auth-token";
 const DAY = 86400000;
 
+import { readFileSync } from "node:fs";
+
+// Bots have already agreed to the current privacy policy unless a journey says otherwise.
+const PRIVACY_VERSION = /PRIVACY_VERSION = "([^"]+)"/.exec(readFileSync(new URL("../src/consent.js", import.meta.url), "utf8"))[1];
+
 const b64 = o => Buffer.from(JSON.stringify(o)).toString("base64url");
 
 export function fakeSession(user) {
@@ -164,6 +169,7 @@ function project(row, select) {
  */
 export async function installMocks(context, { user, rows, latency = 0, failWrites = 0, failAll = false, missingTable = null, photoNoFood = false, signedOut = false, analytics = false, rng = Math.random, log }) {
   const db = rows;
+  if (user) user.user_metadata = { privacy_version: PRIVACY_VERSION, ...user.user_metadata };
   let nextId = 1000;
   let photosUsed = 0;
   const stats = { reads: 0, writes: 0, failedWrites: 0, photoCalls: 0, foodSearches: 0, unmocked: [] };
@@ -184,7 +190,10 @@ export async function installMocks(context, { user, rows, latency = 0, failWrite
     if (latency) await wait(latency);
 
     if (url.pathname.startsWith("/auth/v1/")) {
-      if (url.pathname.endsWith("/user")) return json(route, 200, user);
+      if (url.pathname.endsWith("/user")) {
+        if (method === "PUT") user.user_metadata = { ...user.user_metadata, ...(req.postDataJSON()?.data || {}) };
+        return json(route, 200, user);
+      }
       if (url.pathname.endsWith("/logout")) return route.fulfill({ status: 204, headers: { "access-control-allow-origin": "*" } });
       if (url.pathname.endsWith("/token")) return json(route, 200, fakeSession(user));
       return json(route, 200, {});

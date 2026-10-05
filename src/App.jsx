@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase";
 import Auth from "./Auth";
+import ConsentGate from "./ConsentGate";
+import { hasAgreed, agreedBeforeSignIn, saveAgreement } from "./consent";
 import "./App.css";
 import Dashboard from "./Dashboard";
 import { identify } from "./tracking";
@@ -158,6 +160,9 @@ export default function App() {
   }, []);
 
   if (checking) return <div style={{ background: "#062a63", minHeight: "100vh" }} />;
+  if (user && !hasAgreed(user)) {
+    return <ConsentGate user={user} auto={agreedBeforeSignIn()} onAgreed={setUser} save={saveAgreement} />;
+  }
   if (user) return <Dashboard user={user} />;
 
   return (
