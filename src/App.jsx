@@ -3,7 +3,7 @@ import { supabase } from "./supabase";
 import Auth from "./Auth";
 import "./App.css";
 import Dashboard from "./Dashboard";
-import { identify } from "./analytics";
+import { identify } from "./tracking";
 
 function RouteCanvas() {
   const canvasRef = useRef(null);

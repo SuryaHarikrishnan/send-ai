@@ -13,7 +13,7 @@ import FoodProgress from "./FoodProgress";
 import OwnerStats from "./OwnerStats";
 import "./Food.css";
 import "./Nav.css";
-import { forget, track } from "./analytics";
+import { forget, track } from "./tracking";
 
 const SPORTS = [
   { id: "lifting", name: "Lifting", line: "Workouts, muscles and PRs" },
