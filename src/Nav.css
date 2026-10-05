@@ -36,6 +36,14 @@
 .tabbar button.on { color: #fff; }
 .tabbar button:focus-visible { outline: 2px solid #fff; outline-offset: -4px; border-radius: 14px; }
 .tabbar svg { width: 27px; height: 27px; }
+/* the sport button opens a sheet from below, so it gets the same pill and caret as the sport button in the top bar */
+.tabbar-sport {
+  display: inline-flex; align-items: center; gap: 5px; padding: 7px 9px 7px 11px; border-radius: 99px;
+  background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.16);
+}
+.tabbar button.on .tabbar-sport { background: rgba(255, 255, 255, 0.2); }
+.tabbar .tabbar-sport svg { width: 23px; height: 23px; }
+.tabbar .tabbar-sport .tabbar-caret { width: 11px; height: 7px; opacity: 0.85; }
 .tabbar-av { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; box-shadow: 0 0 0 1.5px transparent; }
 .tabbar-av.on { box-shadow: 0 0 0 2px #fff; }
 
