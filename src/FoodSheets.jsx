@@ -256,6 +256,7 @@ export function PhotoSheet({ photo, meal: meal0, saving, error, onSave, onRetake
       {photo.status === "error" && (
         <>
           <p className="fph-msg">{photo.error}</p>
+          {photo.reason && <p className="fd-src">Details: {photo.reason}</p>}
           {photo.remaining !== 0 && <button className="fd-primary" onClick={onRetake}>Try another photo</button>}
         </>
       )}
@@ -263,6 +264,7 @@ export function PhotoSheet({ photo, meal: meal0, saving, error, onSave, onRetake
       {photo.status === "done" && foods.length === 0 && (
         <>
           <p className="fph-msg">Couldn't spot any food in that photo. It didn't count toward your daily photos.</p>
+          {photo.model && <p className="fd-src">Checked by {photo.model}</p>}
           <button className="fd-primary" onClick={onRetake}>Try another photo</button>
         </>
       )}

@@ -186,9 +186,9 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
       const [image, { data }] = await Promise.all([shrinkPhoto(file), supabase.auth.getSession()]);
       const out = await scanPhoto(image, data.session?.access_token || "");
       track("meal_photo_scanned", { items: out.items.length, remaining: out.remaining });
-      setPhoto(p => (p?.url === url ? { url, status: "done", items: out.items, remaining: out.remaining } : p));
+      setPhoto(p => (p?.url === url ? { url, status: "done", items: out.items, model: out.model, remaining: out.remaining } : p));
     } catch (err) {
-      setPhoto(p => (p?.url === url ? { url, status: "error", error: err.message || "Couldn't read that photo.", remaining: err.remaining } : p));
+      setPhoto(p => (p?.url === url ? { url, status: "error", error: err.message || "Couldn't read that photo.", reason: err.reason, remaining: err.remaining } : p));
     }
   }
   function closePhoto() {

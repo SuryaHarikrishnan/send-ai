@@ -503,7 +503,7 @@ export async function scanPhoto(image, token) {
     body: JSON.stringify({ image }),
   });
   const j = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error(j.error || `Photo logging didn't answer (${res.status}).`), { remaining: j.remaining });
+  if (!res.ok) throw Object.assign(new Error(j.error || `Photo logging didn't answer (${res.status}).`), { remaining: j.remaining, reason: j.reason });
   return j;
 }
 
