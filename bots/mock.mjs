@@ -162,7 +162,7 @@ function project(row, select) {
  * opts.missingTable: a table name that answers "table doesn't exist"
  * opts.photoNoFood: the photo AI finds nothing
  */
-export async function installMocks(context, { user, rows, latency = 0, failWrites = 0, failAll = false, missingTable = null, photoNoFood = false, signedOut = false, rng = Math.random, log }) {
+export async function installMocks(context, { user, rows, latency = 0, failWrites = 0, failAll = false, missingTable = null, photoNoFood = false, signedOut = false, analytics = false, rng = Math.random, log }) {
   const db = rows;
   let nextId = 1000;
   let photosUsed = 0;
@@ -171,6 +171,7 @@ export async function installMocks(context, { user, rows, latency = 0, failWrite
   const json = (route, status, body, headers = {}) =>
     route.fulfill({ status, contentType: "application/json", headers: { "access-control-allow-origin": "*", ...headers }, body: body === undefined ? "" : JSON.stringify(body) });
 
+  if (analytics) await context.addInitScript(() => { try { localStorage.setItem("send.analytics", "on"); } catch { /* ignore */ } });
   if (!signedOut) await context.addInitScript(([key, session]) => {
     try { if (!localStorage.getItem("__bot_seeded")) { localStorage.setItem(key, JSON.stringify(session)); localStorage.setItem("__bot_seeded", "1"); } } catch { /* ignore */ }
   }, [STORAGE_KEY, fakeSession(user)]);
@@ -281,6 +282,7 @@ export async function installMocks(context, { user, rows, latency = 0, failWrite
   await context.route(/^https?:\/\/(?!127\.0\.0\.1|localhost)/, async route => {
     const u = route.request().url();
     if (u.startsWith(SUPABASE) || /openfoodfacts/.test(u)) return route.fallback();
+    if (analytics && /^https:\/\/[a-z-]+\.i\.posthog\.com\//.test(u)) return route.continue();
     stats.unmocked.push(u.slice(0, 120));
     return route.abort();
   });

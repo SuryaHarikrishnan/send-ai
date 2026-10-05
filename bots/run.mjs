@@ -7,6 +7,7 @@
 // Results land in bots/report/ (report.md, report.json, screenshots).
 // Add --save-to <dir> (or BOT_LOG_DIR) to keep every bot's session log and
 // timings in <dir>/run-<time>/, with one line per run added to <dir>/runs.csv.
+// Add --posthog to send the sessions to PostHog (build must include PostHog).
 
 import { chromium } from "playwright";
 import { preview } from "vite";
@@ -25,6 +26,16 @@ const args = process.argv.slice(2);
 const flag = n => args.includes(n);
 const opt = n => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : null; };
 const CONCURRENCY = Number(opt("--workers") || 6);
+// --posthog: let the app send analytics and replays to PostHog, with
+// everyday names, for a demo project. Needs a build that includes PostHog.
+const DEMO = flag("--posthog");
+const DEMO_NAMES = [
+  ["Maya", "Chen"], ["Jordan", "Reyes"], ["Priya", "Nair"], ["Sam", "Okafor"], ["Alex", "Kim"], ["Chris", "Walsh"], ["Dee", "Martinez"], ["Ravi", "Patel"],
+  ["Tom", "Becker"], ["Kim", "Nguyen"], ["Lee", "Park"], ["Ana", "Silva"], ["Ben", "Carter"], ["Noah", "Fischer"], ["Zoe", "Adams"], ["Marco", "Rossi"],
+  ["Ivy", "Brooks"], ["Hugo", "Laurent"], ["Nina", "Kowalski"], ["Eli", "Turner"], ["Grace", "Lin"], ["Omar", "Haddad"], ["Lena", "Vogel"], ["Femi", "Adebayo"],
+  ["Sara", "Lindqvist"], ["Will", "Hughes"], ["Hana", "Sato"], ["Leo", "Moreau"], ["Aroha", "Ngata"], ["Dylan", "Price"], ["Lucia", "Gomez"], ["Jade", "Murphy"],
+  ["Ryan", "Cooper"], ["Mei", "Zhang"], ["Riley", "Shaw"], ["Kai", "Jensen"], ["Isla", "Grant"], ["Theo", "Russo"], ["Ava", "Bennett"], ["Owen", "Clarke"],
+];
 
 const SEV = { high: 3, medium: 2, low: 1 };
 
@@ -61,13 +72,13 @@ class Bot {
     this.dialogs = [];
     this.consoleErrors = [];
     this.layoutSeen = new Set();
-    const first = persona.name.split(/[ ,]/)[0];
+    const [first, last] = DEMO ? DEMO_NAMES[index % DEMO_NAMES.length] : [persona.name.split(/[ ,]/)[0], "Bot"];
     this.user = {
       id: `bot-${index + 1}`,
       aud: "authenticated",
       role: "authenticated",
-      email: `${first.toLowerCase()}.bot${index + 1}@example.com`,
-      user_metadata: { full_name: `${first} Bot`, name: `${first} Bot` },
+      email: DEMO ? `${first}.${last}${index + 7}@example.com`.toLowerCase() : `${first.toLowerCase()}.bot${index + 1}@example.com`,
+      user_metadata: { full_name: `${first} ${last}`, name: `${first} ${last}` },
       app_metadata: { provider: "google" },
       created_at: new Date().toISOString(),
     };
@@ -182,7 +193,7 @@ class Bot {
     const rows = p.returning ? seedData(this.user.id) : { workouts: [], food_logs: [], climbs: [] };
     const { db, stats } = await installMocks(this.context, {
       user: this.user, rows, rng: this.rng, log: s => this.log(s),
-      latency: p.faults.latency || 0, failWrites: p.faults.failWrites || 0, failAll: !!p.faults.failAll, photoNoFood: !!p.faults.photoNoFood, signedOut: !!p.signedOut,
+      latency: p.faults.latency || 0, failWrites: p.faults.failWrites || 0, failAll: !!p.faults.failAll, photoNoFood: !!p.faults.photoNoFood, signedOut: !!p.signedOut, analytics: DEMO,
     });
     this.db = db;
     this.stats = stats;
@@ -237,6 +248,8 @@ class Bot {
       this.journey = "console";
       await this.issue("medium", "Error in the browser console", e);
     }
+    if (DEMO) await this.page.evaluate(() => window.posthog?.flush?.()).catch(() => {});
+    if (DEMO) await this.page.waitForTimeout(3000); // let PostHog send the last batch and replay chunk
     await this.context.close();
     // Time spent on each step = gap until the next step.
     this.steps.forEach((x, i) => { x.ms = (this.steps[i + 1]?.t ?? Date.now() - started) - x.t; });
