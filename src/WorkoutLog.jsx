@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import ExercisePicker from "./ExercisePicker";
 import DurationPicker from "./DurationPicker";
-import { track } from "./analytics";
+import { track } from "./tracking";
 import { MUSCLE_NAMES, WORKOUT_NAMES, findExercise, formatDuration, setSummary, workoutsError } from "./lifting";
 
 const todayISO = () => {

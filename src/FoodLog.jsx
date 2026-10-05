@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import BarcodeScanner from "./BarcodeScanner";
-import { track } from "./analytics";
+import { track } from "./tracking";
 import { AmountSheet, CustomSheet, PhotoSheet, Thumb } from "./FoodSheets";
 import { COMMON_FOODS, COMMON_GROUPS, DAY_MS, MEALS, amountText, dayLabel, eatenAt, MEAL_NAMES, foodsError, logRow, lookupBarcode, mealForNow, mealSingular, nutrition, recentFoods, scanPhoto, searchFoods, shrinkPhoto } from "./food";
 
