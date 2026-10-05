@@ -14,6 +14,16 @@ const newSet = (prev) => ({ reps: prev?.reps ?? "", weight: prev?.weight ?? "" }
 function readRest() {
   try { return Math.min(600, Math.max(15, Number(localStorage.getItem("send.restSec")) || 90)); } catch { return 90; }
 }
+// The workout being logged is kept on the phone until it's saved, so tabbing
+// out, switching apps or closing the app doesn't lose it.
+const draftKey = user => `send.workoutDraft.${user.id}`;
+function readDraft(user) {
+  try { return JSON.parse(localStorage.getItem(draftKey(user))) || null; } catch { return null; }
+}
+function clearDraft(user) {
+  try { localStorage.removeItem(draftKey(user)); } catch { /* storage blocked */ }
+}
+
 const clock = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 
 // A short double beep when rest is over. Quietly does nothing where audio isn't allowed.
@@ -75,12 +85,13 @@ function RestTimer({ rest, onChange, onDone }) {
 }
 
 export default function WorkoutLog({ user, onNavigate }) {
-  const [title, setTitle] = useState("Push");
-  const [date, setDate] = useState(todayISO);
-  const [duration, setDuration] = useState("");
+  const [draft] = useState(() => readDraft(user));
+  const [title, setTitle] = useState(draft?.title ?? "Push");
+  const [date, setDate] = useState(() => (draft?.date && draft.date <= todayISO() ? draft.date : todayISO()));
+  const [duration, setDuration] = useState(draft?.duration ?? "");
   const [pickingDur, setPickingDur] = useState(false);
-  const [exercises, setExercises] = useState([]);
-  const [rest, setRest] = useState(null);
+  const [exercises, setExercises] = useState(draft?.exercises ?? []);
+  const [rest, setRest] = useState(() => (draft?.rest && draft.rest.end > Date.now() ? draft.rest : null));
   const [history, setHistory] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -94,6 +105,24 @@ export default function WorkoutLog({ user, onNavigate }) {
       .limit(40)
       .then(({ data }) => setHistory(data || []));
   }, [user]);
+
+  useEffect(() => {
+    try {
+      if (exercises.length) localStorage.setItem(draftKey(user), JSON.stringify({ title, date, duration, exercises, rest }));
+      else localStorage.removeItem(draftKey(user));
+    } catch { /* storage blocked */ }
+  }, [user, title, date, duration, exercises, rest]);
+
+  function discard() {
+    if (!window.confirm("Discard this workout? What you've entered will be lost.")) return;
+    clearDraft(user);
+    setExercises([]);
+    setTitle("Push");
+    setDate(todayISO());
+    setDuration("");
+    setRest(null);
+    setError("");
+  }
 
   // Most recent sets for an exercise, from earlier workouts.
   function lastTime(name) {
@@ -151,6 +180,16 @@ export default function WorkoutLog({ user, onNavigate }) {
     update(ei, x => ({ ...x, sets: x.sets.map((s, j) => (j === si ? { ...s, [field]: value } : s)) }));
 
   async function save() {
+    if (date > todayISO()) { setError("The date is in the future. Pick today or an earlier day."); return; }
+    for (const e of exercises) {
+      for (const s of e.sets) {
+        if (s.reps === "" && s.weight === "") continue;
+        const reps = Number(s.reps), weight = Number(s.weight) || 0;
+        if (reps < 0 || weight < 0) { setError(`${e.name}: reps and weight can't be negative.`); return; }
+        if (reps > 100) { setError(`${e.name}: ${reps} reps looks like a typo. Use 100 or fewer.`); return; }
+        if (weight > 1500) { setError(`${e.name}: ${weight} lb looks like a typo. Use 1500 lb or less.`); return; }
+      }
+    }
     const cleaned = exercises
       .map(e => ({ name: e.name, sets: e.sets.filter(s => Number(s.reps) > 0).map(s => ({ reps: Number(s.reps), weight: Number(s.weight) || 0 })) }))
       .filter(e => e.sets.length);
@@ -172,6 +211,7 @@ export default function WorkoutLog({ user, onNavigate }) {
       setError(e.title === "Couldn't load workouts." ? `Couldn't save the workout: ${err.message}` : `${e.title} ${e.detail}`);
       return;
     }
+    clearDraft(user);
     track("workout_logged", { title: title.trim() || "Workout", exercises: cleaned.length, sets: cleaned.reduce((a, e) => a + e.sets.length, 0), backdated: !isToday });
     onNavigate("home");
   }
@@ -180,7 +220,7 @@ export default function WorkoutLog({ user, onNavigate }) {
     <div className="lift">
       <header className="lift-head">
         <div>
-          <p className="lift-date">New workout</p>
+          <p className="lift-date">{draft?.exercises?.length && exercises.length ? "Picking up where you left off" : "New workout"}</p>
           <h1 className="lift-title">Log workout</h1>
         </div>
       </header>
@@ -262,6 +302,7 @@ export default function WorkoutLog({ user, onNavigate }) {
       <button className="lift-start wl-save" onClick={save} disabled={saving || !exercises.length}>
         {saving ? "Saving..." : "Save workout"}
       </button>
+      {exercises.length > 0 && <button className="wl-discard" onClick={discard}>Discard workout</button>}
       {rest && <div className="wl-rest-space" />}
       {rest && <RestTimer rest={rest} onChange={adjustRest} onDone={() => setRest(null)} />}
     </div>

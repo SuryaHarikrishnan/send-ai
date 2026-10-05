@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
+import { topSend } from "./climbing";
 
 export default function Home({ user, onNavigate }) {
   const [climbs, setClimbs] = useState([]);
@@ -29,7 +30,7 @@ export default function Home({ user, onNavigate }) {
     setAiLoading(true);
     const recent = climbs.slice(-5);
     const sent = climbs.filter(c => c.sent);
-    const topGrade = sent.length > 0 ? sent[sent.length - 1].grade : "unknown";
+    const topGrade = topSend(climbs) ?? "unknown";
     const lastSession = recent[recent.length - 1];
     const daysSince = lastSession
       ? Math.floor((Date.now() - new Date(lastSession.created_at)) / 86400000)
@@ -69,7 +70,7 @@ Give them a personalized check-in. Reference their actual data.`;
 
   const sent = climbs.filter(c => c.sent);
   const sendRate = climbs.length > 0 ? Math.round((sent.length / climbs.length) * 100) : 0;
-  const topGrade = sent.length > 0 ? sent[sent.length - 1].grade : "—";
+  const topGrade = topSend(climbs) ?? "—";
   const thisWeek = climbs.filter(c => {
     const d = new Date(c.created_at);
     const now = new Date();

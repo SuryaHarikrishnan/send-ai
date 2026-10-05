@@ -70,12 +70,30 @@ function Avatar({ user, size = 26 }) {
   return <span className="nav-avatar nav-initial" style={{ width: size, height: size, fontSize: size * 0.45 }}>{name.trim()[0].toUpperCase()}</span>;
 }
 
+// The current day, updated when the date changes or the app comes back to the front.
+function useToday() {
+  const [today, setToday] = useState(() => new Date());
+  useEffect(() => {
+    const check = () => setToday(t => (t.toDateString() === new Date().toDateString() ? t : new Date()));
+    const id = setInterval(check, 30000);
+    document.addEventListener("visibilitychange", check);
+    window.addEventListener("focus", check);
+    return () => { clearInterval(id); document.removeEventListener("visibilitychange", check); window.removeEventListener("focus", check); };
+  }, []);
+  return today;
+}
+
 export default function Dashboard({ user }) {
   const [sport, setSport] = useState(readSport);
   const [tab, setTab] = useState("home");
   const [focus, setFocus] = useState(null);
   const [picking, setPicking] = useState(false);
-  const [foodDay, setFoodDay] = useState(() => new Date());
+  // null means "today", which moves on by itself when the clock passes midnight
+  // (phones keep the app open for days).
+  const [foodPick, setFoodPick] = useState(null);
+  const today = useToday();
+  const foodDay = foodPick ?? today;
+  const setFoodDay = d => setFoodPick(d.toDateString() === new Date().toDateString() ? null : d);
   const [foodMeal, setFoodMeal] = useState(null);
   const [owner, setOwner] = useState(false);
 

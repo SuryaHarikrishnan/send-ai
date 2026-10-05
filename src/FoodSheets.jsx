@@ -146,7 +146,11 @@ export function CustomSheet({ initial, meal: meal0, saving, error, onSave, onCan
   const set = k => e => setF(x => ({ ...x, [k]: e.target.value }));
   const fromMacros = Math.round((Number(f.protein) || 0) * 4 + (Number(f.carbs) || 0) * 4 + (Number(f.fat) || 0) * 9);
   const kcal = f.kcal === "" ? fromMacros : Number(f.kcal);
-  const valid = f.name.trim() && (f.kcal !== "" || fromMacros > 0);
+  const nums = ["kcal", "protein", "carbs", "fat"].map(k => Number(f[k]) || 0);
+  const problem = nums.some(v => v < 0) ? "Calories and macros can't be negative."
+    : kcal > 5000 ? `${kcal.toLocaleString()} calories in one serving looks like a typo.`
+    : nums.slice(1).some(v => v > 500) ? "Over 500 g of a macro in one serving looks like a typo." : "";
+  const valid = f.name.trim() && (f.kcal !== "" || fromMacros > 0) && !problem;
 
   return (
     <Sheet label="Create a food" onCancel={onCancel}>
@@ -166,7 +170,7 @@ export function CustomSheet({ initial, meal: meal0, saving, error, onSave, onCan
         <label>Fat (g)<input type="number" inputMode="decimal" min="0" value={f.fat} onChange={set("fat")} placeholder="0" /></label>
       </div>
       <MealChips meal={meal} onChange={setMeal} />
-      {error && <p className="wl-error">{error}</p>}
+      {(problem || error) && <p className="wl-error">{problem || error}</p>}
       <button
         className="fd-primary" disabled={!valid || saving}
         onClick={() => onSave(customFood({ ...f, kcal }), meal)}

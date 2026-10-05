@@ -139,13 +139,31 @@ export const journeys = {
     const date = b.page.getByLabel("Date");
     const future = new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10);
     await date.fill(future).catch(() => {});
+    const before = b.db.workouts.length;
     await saveWorkout(b);
     await b.page.waitForTimeout(800);
+    if (b.db.workouts.length === before) {
+      // Rejected: the app should say why on the page.
+      const msg = await b.page.locator(".wl-error").textContent().catch(() => "");
+      b.check(!!msg, "typos are rejected with a message", "Save did nothing and showed no reason");
+      b.note(`typo message: "${msg}"`);
+      await date.fill(await b.page.evaluate(() => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); })).catch(() => {});
+      await saveWorkout(b);
+      const msg2 = await b.page.locator(".wl-error").textContent().catch(() => "");
+      b.check(/negative/i.test(msg2 || ""), "negative weight is called out", `after fixing the date the message reads "${msg2}"`);
+      await fillSets(b, 0, [[8, 135], [9999, 135], [0, 135]]);
+      await saveWorkout(b);
+      const msg3 = await b.page.locator(".wl-error").textContent().catch(() => "");
+      b.check(/typo/i.test(msg3 || ""), "absurd rep counts are questioned", `with 9999 reps the message reads "${msg3}"`);
+      await fillSets(b, 0, [[8, 135], [9, 135], [0, 135]]);
+      await saveWorkout(b);
+      await b.page.waitForTimeout(800);
+    }
     const w = b.db.workouts[b.db.workouts.length - 1];
-    if (!w) return b.issue("high", "Workout with typos didn't save", "Expected a saved workout or a clear error.");
+    if (!w || b.db.workouts.length === before) return b.issue("high", "Workout didn't save after fixing the typos", "Expected the corrected workout to save.");
     const sets = w.exercises[0].sets;
     b.check(!sets.some(s => s.weight < 0), "negative weight is rejected", `saved a set with weight ${sets.find(s => s.weight < 0)?.weight} lb`);
-    b.check(!sets.some(s => s.reps > 500), "absurd rep counts are questioned", `saved a set with ${sets.find(s => s.reps > 500)?.reps} reps without a warning`);
+    b.check(!sets.some(s => s.reps > 500), "absurd rep counts are kept out", `saved a set with ${sets.find(s => s.reps > 500)?.reps} reps without a warning`);
     b.check(new Date(w.performed_at).getTime() < Date.now() + 3600000, "future dates are rejected", `typed ${future} into Date and the workout saved for the future (${w.performed_at})`);
     b.note(`name saved as "${w.title}" (${w.title.length} chars)`);
   },
@@ -170,6 +188,9 @@ export const journeys = {
     b.check(kept > 0, "an unsaved workout survives leaving the Log tab", "the half-logged workout (Barbell row, 2 sets) was wiped with no warning after tapping Home");
     await b.page.reload();
     await b.page.waitForTimeout(800);
+    if (!(await b.page.locator("section.wl-ex").count())) await b.tap(tab(b, "Log workout"), "Log workout after reopening the app");
+    const reps = await b.page.getByLabel("Set 2 reps").inputValue().catch(() => "");
+    b.check(reps === "8", "an unsaved workout survives closing the app", `after reopening the app the Log screen shows set 2 reps as "${reps}"`);
   },
 
   async liftCustomExercise(b) {
