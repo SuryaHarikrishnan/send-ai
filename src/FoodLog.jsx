@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import BarcodeScanner from "./BarcodeScanner";
+import { track } from "./analytics";
 import { AmountSheet, CustomSheet, PhotoSheet, Thumb } from "./FoodSheets";
 import { COMMON_FOODS, COMMON_GROUPS, DAY_MS, MEALS, amountText, dayLabel, eatenAt, MEAL_NAMES, foodsError, logRow, lookupBarcode, mealForNow, mealSingular, nutrition, recentFoods, scanPhoto, searchFoods, shrinkPhoto } from "./food";
 
@@ -129,6 +130,7 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
       setSheetError(msg);
       return false;
     }
+    track("food_logged", { source: food.source, meal: m, kcal: Math.round(data.kcal || 0) });
     setHistory(h => [data, ...h]);
     setAdded(a => [...a, data.id]);
     setMeal(m);
@@ -148,6 +150,7 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
     setScanStatus({ kind: "looking", code });
     try {
       const food = await lookupBarcode(code);
+      track("barcode_scanned", { found: !!food?.per100 });
       if (!food) {
         setScanStatus({ kind: "notfound", code, title: "Barcode not found.", detail: `Barcode ${code} isn't in Open Food Facts or the USDA database yet. Copy the numbers from the label and it'll be one tap next time.` });
         return;
@@ -182,6 +185,7 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
     try {
       const [image, { data }] = await Promise.all([shrinkPhoto(file), supabase.auth.getSession()]);
       const out = await scanPhoto(image, data.session?.access_token || "");
+      track("meal_photo_scanned", { items: out.items.length, remaining: out.remaining });
       setPhoto(p => (p?.url === url ? { url, status: "done", items: out.items, remaining: out.remaining } : p));
     } catch (err) {
       setPhoto(p => (p?.url === url ? { url, status: "error", error: err.message || "Couldn't read that photo.", remaining: err.remaining } : p));
@@ -199,6 +203,7 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
     const { data, error } = await supabase.from("food_logs").insert(rows).select();
     setSaving(false);
     if (error) { setSheetError(`Couldn't add them: ${error.message}`); return; }
+    track("food_logged", { source: "photo", meal: m, items: data.length });
     setHistory(h => [...data, ...h]);
     setAdded(a => [...a, ...data.map(d => d.id)]);
     setMeal(m);

@@ -3,6 +3,7 @@ import { supabase } from "./supabase";
 import Auth from "./Auth";
 import "./App.css";
 import Dashboard from "./Dashboard";
+import { identify } from "./analytics";
 
 function RouteCanvas() {
   const canvasRef = useRef(null);
@@ -146,10 +147,12 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setUser(data.session?.user ?? null);
+      identify(data.session?.user);
       setChecking(false);
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null);
+      identify(session?.user);
     });
     return () => subscription.unsubscribe();
   }, []);

@@ -13,6 +13,7 @@ import FoodProgress from "./FoodProgress";
 import OwnerStats from "./OwnerStats";
 import "./Food.css";
 import "./Nav.css";
+import { forget, track } from "./analytics";
 
 const SPORTS = [
   { id: "lifting", name: "Lifting", line: "Workouts, muscles and PRs" },
@@ -92,6 +93,7 @@ export default function Dashboard({ user }) {
   }, [picking]);
 
   function chooseSport(id) {
+    if (id !== sport) track("sport_switched", { from: sport, to: id });
     setSport(id);
     try { localStorage.setItem("send.sport", id); } catch { /* storage blocked */ }
     setPicking(false);
@@ -154,7 +156,7 @@ export default function Dashboard({ user }) {
               <button onClick={() => go("news")}><span>News<small>Climbing headlines</small></span>{I.chevron()}</button>
               <a href="/privacy.html"><span>Privacy</span>{I.chevron()}</a>
             </div>
-            <button className="you-signout" onClick={() => supabase.auth.signOut()}>Sign out</button>
+            <button className="you-signout" onClick={() => { track("signed_out"); forget(); supabase.auth.signOut(); }}>Sign out</button>
           </div>
         )}
       </main>
@@ -237,6 +239,7 @@ function LogTab({ user }) {
       console.error("Insert error:", error);
       alert(error.message);
     } else {
+      track("climb_logged", { grade, style, sent, attempts });
       setSaved(true);
       setGrade("");
       setAngle([]);
