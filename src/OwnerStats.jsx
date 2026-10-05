@@ -18,29 +18,6 @@ const fmt = n => (Number(n) || 0).toLocaleString();
 const pct = (a, b) => (b > 0 ? Math.round((a / b) * 100) : 0);
 const dayLabel = d => new Date(`${d}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
-// Adds the PostHog demo people (who never touched the database) on top of the real accounts.
-function withDemo(stats, demo) {
-  if (!stats || !demo) return stats;
-  const add = (a = {}, b = {}) => Object.fromEntries(Object.keys(a).map(k => [k, (a[k] || 0) + (b[k] || 0)]));
-  const sports = new Map(stats.sports.map(s => [s.sport, s]));
-  for (const s of demo.sports) {
-    const real = sports.get(s.sport) || { sport: s.sport, users: 0, entries: 0, entries_7d: 0 };
-    sports.set(s.sport, { sport: s.sport, users: real.users + s.users, entries: real.entries + s.entries, entries_7d: real.entries_7d + s.entries_7d });
-  }
-  const demoDays = new Map(demo.daily.map(d => [d.day, d]));
-  return {
-    ...stats,
-    users: { ...stats.users, total: stats.users.total + demo.users.total, new_7d: stats.users.new_7d + demo.users.new_7d, new_30d: stats.users.new_30d + demo.users.new_30d, signed_in_7d: stats.users.signed_in_7d + demo.active.d7 },
-    active: add(stats.active, demo.active),
-    entries: add(stats.entries, demo.entries),
-    sports: [...sports.values()].filter(s => s.entries > 0).sort((a, b) => b.entries - a.entries),
-    daily: stats.daily.map(d => {
-      const x = demoDays.get(d.day) || {};
-      return { ...d, signups: d.signups + (x.signups || 0), active: d.active + (x.active || 0), entries: d.entries + (x.entries || 0) };
-    }),
-  };
-}
-
 function Tile({ value, label, sub, tone }) {
   return (
     <div className={`st-tile${tone ? ` st-${tone}` : ""}`}>
@@ -117,7 +94,7 @@ export default function OwnerStats() {
   if (error) return <div className="st"><div className="st-card st-error">{error}</div></div>;
   if (!stats) return <div className="st"><div className="st-card st-loading">Loading stats…</div></div>;
 
-  const { users, active, entries, sports, daily } = withDemo(stats, visits?.demo);
+  const { users, active, entries, sports, daily } = stats;
   const sportMax = Math.max(1, ...sports.map(s => s.users));
   const updated = new Date(stats.generated_at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 
