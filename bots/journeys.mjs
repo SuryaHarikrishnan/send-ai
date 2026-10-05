@@ -663,6 +663,10 @@ export const journeys = {
     await b.checkLayout("start page");
     const txt = (await b.page.locator("body").textContent()) || "";
     b.check(!/climb(?!ing app)/i.test(txt.replace(/climbing,? /gi, "")) || /lift|food/i.test(txt), "start page is sport-neutral", txt.slice(0, 160));
+    const early = b.page.waitForRequest(r => r.url().includes("/auth/v1/authorize"), { timeout: 1500 }).then(() => true).catch(() => false);
+    await b.tap(b.page.getByRole("button", { name: "Continue with Google" }), "Continue with Google before agreeing");
+    b.check(!(await early) && await b.page.locator(".start-agree-hint").isVisible(), "sign-in waits for the privacy agreement", "Google sign-in started without the box ticked");
+    await b.tap(b.page.getByRole("checkbox"), "tick I agree to the Privacy Policy");
     const req = b.page.waitForRequest(r => r.url().includes("/auth/v1/authorize"), { timeout: 5000 }).catch(() => null);
     await b.tap(b.page.getByRole("button", { name: "Continue with Google" }), "Continue with Google");
     const r = await req;
