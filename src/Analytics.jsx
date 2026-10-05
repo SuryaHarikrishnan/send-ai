@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
+import { topSend } from "./climbing";
 
 export default function Analytics({ user }) {
   const [climbs, setClimbs] = useState([]);
@@ -27,9 +28,7 @@ export default function Analytics({ user }) {
   const gradeOrder = ["VB","V0","V1","V2","V3","V4","V5","V6","V7","V8","V9","V10","V11","V12","V13","V14","V15","V16","V17"];
   const gradeMap = Object.fromEntries(gradeOrder.map((g, i) => [g, i]));
 
-  const topGrade = sent.length > 0
-    ? sent.reduce((best, c) => (gradeMap[c.grade] ?? -1) > (gradeMap[best.grade] ?? -1) ? c : best).grade
-    : "—";
+  const topGrade = topSend(climbs) ?? "—";
 
   const holdCounts = {};
   const angleCounts = {};
