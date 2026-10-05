@@ -26,8 +26,12 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .then((res) => {
-          const copy = res.clone()
-          caches.open(CACHE).then((cache) => cache.put('/', copy))
+          // Only the app shell is cached; other pages (like /privacy.html)
+          // must not overwrite it.
+          if (res.ok && url.pathname === '/') {
+            const copy = res.clone()
+            caches.open(CACHE).then((cache) => cache.put('/', copy))
+          }
           return res
         })
         .catch(() => caches.match('/'))

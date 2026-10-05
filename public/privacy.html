@@ -3,48 +3,142 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0b63bd" />
+  <link rel="icon" type="image/png" href="/favicon.png" />
   <title>Privacy Policy · SendIt</title>
   <style>
-    body { margin: 0; background: #0a0a0a; color: #f0ede6; font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; }
-    main { max-width: 680px; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
-    h1 { font-size: 28px; margin-bottom: 0.25rem; }
-    h2 { font-size: 18px; margin-top: 2rem; color: #c8f57a; }
-    p, li { color: rgba(240,237,230,0.8); }
-    a { color: #c8f57a; }
-    .updated { color: rgba(240,237,230,0.5); font-size: 14px; }
+    body { margin: 0; background: linear-gradient(180deg, #0b63bd 0%, #073a86 45%, #04214f 100%) fixed #062a63; color: #ffffff; font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; }
+    main { max-width: 700px; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
+    h1 { font-size: 30px; margin: 1rem 0 0.25rem; }
+    h2 { font-size: 19px; margin-top: 2.25rem; color: #8cc8ff; }
+    h3 { font-size: 16px; margin: 1.25rem 0 0.25rem; }
+    p, li { color: rgba(255,255,255,0.84); }
+    li { margin-bottom: 0.4rem; }
+    a { color: #8cc8ff; }
+    .updated { color: rgba(255,255,255,0.6); font-size: 14px; margin-top: 0; }
+    .summary { background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 0.5rem 1.25rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 15px; }
+    th, td { text-align: left; vertical-align: top; padding: 0.6rem 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.84); }
+    th { color: #ffffff; }
+    .table-wrap { overflow-x: auto; }
   </style>
 </head>
 <body>
   <main>
     <p><a href="/">← Back to SendIt</a></p>
     <h1>Privacy Policy</h1>
-    <p class="updated">Last updated October 5, 2026</p>
+    <p class="updated">Effective October 5, 2026</p>
 
-    <p>SendIt is a training log for lifting, climbing and food. This page explains what information we collect and how we use it.</p>
+    <p>SendIt (at <a href="https://justsend.fit">justsend.fit</a>) is a free training log for lifting, climbing and food. It is run by an independent developer, referred to here as "we" or "us". This page explains, in plain English, what information SendIt collects, why, who it is shared with, how long it is kept, and what you can do about it.</p>
 
-    <h2>What we collect</h2>
+    <div class="summary">
+      <h3>The short version</h3>
+      <ul>
+        <li>We collect your Google name and email, the workouts, climbs and food you log, and how you use the app.</li>
+        <li>We use it to run the app and make it better. We do not sell it and we do not show ads.</li>
+        <li>A few service providers (listed below) help us run SendIt and handle some of it for us.</li>
+        <li>You can ask us to delete your account and everything in it at any time by emailing us.</li>
+      </ul>
+    </div>
+
+    <h2>1. Information we collect</h2>
+
+    <h3>From your Google account</h3>
+    <p>SendIt only lets you sign in with Google. When you do, Google shares your name, email address, profile picture and a Google account ID with us. We never see your Google password and we cannot access your Gmail, Drive, contacts or anything else in your Google account.</p>
+
+    <h3>What you log in the app</h3>
     <ul>
-      <li><strong>Your Google account basics.</strong> When you sign in with Google we receive your name, email address and profile picture. We do not get your Google password or access to anything else in your Google account.</li>
-      <li><strong>Your training and food data.</strong> The workouts, climbs, food and notes you log in the app.</li>
-      <li><strong>How you use the app.</strong> We use PostHog to see which screens and buttons get used and to replay sessions so we can find what's confusing. Replays show your screen in the app, including what you type, except passwords and email fields.</li>
+      <li><strong>Lifting:</strong> workout titles, dates, durations, exercises, sets, reps, weights and notes.</li>
+      <li><strong>Climbing:</strong> grades, whether you sent, wall angle, hold type, dates and notes.</li>
+      <li><strong>Food:</strong> the foods you log, amounts, meal, date, calories and macros, and barcodes you scan.</li>
+    </ul>
+    <p>Workout and food logs can say something about your health and body. Please only log what you are comfortable storing with us.</p>
+
+    <h3>Meal photos</h3>
+    <p>If you use "log food from a photo", the photo is sent from your device to our server and on to Google's Gemini AI to estimate what's in it. <strong>We do not store the photo.</strong> We only record that a photo was used, and when, so we can apply the daily limit. The food entries you choose to save are stored like any other food log.</p>
+
+    <h3>Camera</h3>
+    <p>The barcode scanner uses your camera only while it is open, and the barcode is read on your device. Video from the scanner is not sent to us.</p>
+
+    <h3>How you use the app (analytics and session replays)</h3>
+    <p>We use PostHog to understand how SendIt is used: pages and screens you open, buttons you tap, things like "workout logged" or "sport switched", plus your device type, browser, approximate location from your IP address, and referring website. Once you sign in, this activity is linked to your account ID, name and email.</p>
+    <p>PostHog also records <strong>session replays</strong>: a video-like reconstruction of what you saw and did on SendIt pages, so we can find bugs and confusing screens. Replays can include what you type into SendIt (for example food names and workout notes), except email and password fields, which are hidden. Replays only cover SendIt itself, not other websites or apps.</p>
+
+    <h3>Usage counters</h3>
+    <p>To keep the free AI features free, we store a timestamp each time you use the AI coach or a meal photo scan, so we can apply daily limits.</p>
+
+    <h3>Technical information</h3>
+    <p>Like almost every website, our hosting and database providers automatically log technical details such as IP address, browser, and the time of each request, for security and troubleshooting.</p>
+
+    <h3>Stored on your own device</h3>
+    <p>SendIt saves a few settings in your browser's local storage: your current sport, food goals, weekly workout goal, rest timer length and any unsaved workout draft. These stay on your device and are not sent to us. Sign-in also keeps a session token in your browser so you stay logged in. The app is cached on your device so it opens quickly and can be installed to your home screen.</p>
+
+    <h2>2. How we use it</h2>
+    <ul>
+      <li>To sign you in and keep your logs tied to your account.</li>
+      <li>To show your history, progress, charts, streaks and personal records.</li>
+      <li>To look up foods and nutrition information and estimate meals from photos.</li>
+      <li>To provide AI coaching tips when you ask for them (a summary of your climbs is sent to Gemini to write the answer).</li>
+      <li>To find bugs, understand which features are used, and improve the app.</li>
+      <li>To keep SendIt secure and prevent abuse, such as enforcing daily limits.</li>
+      <li>To reply when you contact us.</li>
+    </ul>
+    <p><strong>We do not sell or rent your personal information, we do not share it for advertising, and we do not use it to show you ads.</strong></p>
+    <p>If you are in the UK or European Economic Area, our legal bases are: performing our agreement with you (running the app you signed up for), our legitimate interests (keeping the app secure and improving it through analytics), and your consent for health-related information you choose to log. You can withdraw consent at any time by deleting those entries or contacting us.</p>
+
+    <h2>3. Who we share it with</h2>
+    <p>We use these service providers to run SendIt. They only get what they need to do their job.</p>
+    <div class="table-wrap">
+      <table>
+        <tr><th>Provider</th><th>What it does</th><th>What it receives</th></tr>
+        <tr><td>Google (Sign-In)</td><td>Lets you sign in</td><td>Your sign-in request</td></tr>
+        <tr><td>Supabase</td><td>Database and sign-in</td><td>Your account details and everything you log</td></tr>
+        <tr><td>Vercel</td><td>Hosts the website and our server code</td><td>Every request to justsend.fit, including meal photos passing through to Gemini</td></tr>
+        <tr><td>PostHog (US)</td><td>Analytics and session replays</td><td>Usage events, replays, device info, your account ID, name and email</td></tr>
+        <tr><td>Google Gemini API</td><td>Estimates meals from photos and writes coaching tips</td><td>Meal photos you submit; a summary of your climbs when you ask the coach</td></tr>
+        <tr><td>Open Food Facts</td><td>Barcode and food search</td><td>Barcodes and search words, sent straight from your browser (so they also see your IP address)</td></tr>
+        <tr><td>USDA FoodData Central, FatSecret</td><td>Food and restaurant search</td><td>Your search words, sent from our server, without your name or account</td></tr>
+        <tr><td>NewsAPI, YouTube</td><td>The news tab</td><td>A request for headlines, sent from our server, with nothing about you</td></tr>
+      </table>
+    </div>
+    <p>Note on Gemini: we use Google's free tier of the Gemini API. Under Google's terms for that tier, Google may use what is sent to it (such as meal photos) to improve its products, and people at Google may review it. If you don't want that, don't use the photo or coach features. Everything else in SendIt works without them.</p>
+    <p>We may also share information if the law requires it, to protect the rights or safety of SendIt, our users or others, or as part of a sale or transfer of SendIt (in which case this policy would continue to apply to your information, or you'd be told).</p>
+
+    <h2>4. Where it's stored</h2>
+    <p>Our providers store and process data in the United States and possibly other countries. If you use SendIt from outside the US, your information will be transferred there. We rely on our providers' standard safeguards for these transfers.</p>
+
+    <h2>5. How long we keep it</h2>
+    <ul>
+      <li><strong>Your account and logs:</strong> until you delete them or ask us to delete your account.</li>
+      <li><strong>Analytics events and session replays:</strong> kept by PostHog for a limited time under their retention settings (replays for weeks, events for up to about a year), then deleted automatically.</li>
+      <li><strong>Meal photos:</strong> not stored by us at all.</li>
+      <li><strong>Technical logs:</strong> kept for a short time by our hosting and database providers.</li>
     </ul>
 
-    <h2>How we use it</h2>
+    <h2>6. Your choices and rights</h2>
     <ul>
-      <li>To sign you in and keep your climbing log tied to your account.</li>
-      <li>To show your progress and analytics.</li>
-      <li>To generate coaching tips. When you use the AI coach, a summary of your recent climbs is sent to Google's Gemini API to produce a response.</li>
+      <li><strong>Delete individual entries</strong> (workouts, climbs, food) any time in the app.</li>
+      <li><strong>Delete your whole account:</strong> email us from the address you sign in with and we will delete your account and all of its logs, and ask PostHog to delete your analytics data, within 30 days.</li>
+      <li><strong>Get a copy</strong> of your data, or <strong>correct</strong> it: email us.</li>
+      <li><strong>Limit analytics:</strong> browser tracker blockers and privacy settings that block PostHog will stop analytics and replays; the app still works.</li>
+      <li><strong>Disconnect Google:</strong> you can remove SendIt's access in your Google account's security settings.</li>
     </ul>
-    <p>We do not sell your information or use it for advertising.</p>
+    <p>Depending on where you live (for example the EU, UK, California or other US states), you may have legal rights to access, correct, delete, or move your data, to object to or restrict some uses, and to complain to your local data protection authority. We honor these requests for everyone, wherever you live, and we will not treat you differently for making one. We don't sell personal information or share it for targeted advertising.</p>
 
-    <h2>Where it's stored</h2>
-    <p>Your account and climbing data are stored with Supabase, our database and sign-in provider. The app is hosted on Vercel. Usage analytics and session replays are stored with PostHog in the US.</p>
+    <h2>7. Security</h2>
+    <p>Data is sent over encrypted connections (HTTPS). Our database only lets each signed-in user read and change their own entries. No system is perfectly secure, though, so we can't guarantee that information will never be accessed without permission. If a breach affects you, we will tell you as the law requires.</p>
 
-    <h2>Deleting your data</h2>
-    <p>You can delete individual climbs in the app at any time. To delete your whole account and all its data, contact us and we will remove it.</p>
+    <h2>8. Children</h2>
+    <p>SendIt is not meant for children under 13, and we do not knowingly collect information from them. In the EU and UK, you must be at least 16, or have a parent's permission where the law allows. If you believe a child has signed up, email us and we will delete the account.</p>
 
-    <h2>Contact</h2>
-    <p>Questions or deletion requests: <a href="mailto:suryanarayanan.harikrishnan@gmail.com">suryanarayanan.harikrishnan@gmail.com</a></p>
+    <h2>9. Not medical advice</h2>
+    <p>Calorie estimates, nutrition data and coaching tips in SendIt may be wrong and are not medical advice. SendIt is not a healthcare provider, and the data you log is not covered by health privacy laws like HIPAA.</p>
+
+    <h2>10. Changes to this policy</h2>
+    <p>If we change this policy, we will update the date at the top of this page. If the change is significant, we will also let you know, for example by email or with a notice in the app.</p>
+
+    <h2>11. Contact</h2>
+    <p>Questions, data requests or deletion requests: <a href="mailto:suryanarayanan.harikrishnan@gmail.com">suryanarayanan.harikrishnan@gmail.com</a></p>
   </main>
 </body>
 </html>
