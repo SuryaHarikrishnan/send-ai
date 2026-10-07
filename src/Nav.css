@@ -105,3 +105,24 @@
   .sheet, .sheet-wrap { animation: none; }
   .tabbar button { transition: none; }
 }
+
+/* Add to Home Screen help (landing page + You tab) */
+.ih-sheet { gap: 10px; }
+.ih-lead { font-size: 15px; color: rgba(255, 255, 255, 0.8); padding: 0 4px; margin-top: -6px; }
+.ih-tabs { display: flex; gap: 4px; padding: 4px; background: rgba(0, 20, 60, 0.35); border-radius: 99px; align-self: flex-start; }
+.ih-tabs button { font: 700 14px 'Figtree', sans-serif; color: #fff; background: none; border: 0; border-radius: 99px; padding: 8px 16px; cursor: pointer; }
+.ih-tabs button.on { background: #fff; color: #0a2f6b; }
+.ih-steps { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ih-steps li { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 18px; }
+.ih-num { flex: none; width: 28px; height: 28px; border-radius: 50%; background: #8cc8ff; color: #0a2f6b; font-weight: 800; font-size: 14px; display: grid; place-items: center; }
+.ih-txt { flex: 1; font-size: 16px; line-height: 1.35; }
+.ih-ic { flex: none; width: 40px; height: 40px; border-radius: 12px; background: rgba(255, 255, 255, 0.95); color: #0a6cff; display: grid; place-items: center; }
+.ih-ic svg { width: 22px; height: 22px; }
+.ih-note { font-size: 13px; color: rgba(255, 255, 255, 0.72); padding: 2px 4px; }
+.ih-install, .ih-done { font: 700 16px 'Figtree', sans-serif; border-radius: 16px; padding: 14px; cursor: pointer; border: 0; }
+.ih-install { background: #8cc8ff; color: #0a2f6b; }
+.ih-done { background: #fff; color: #0a2f6b; margin-top: 2px; }
+.ih-tabs button:focus-visible, .ih-install:focus-visible, .ih-done:focus-visible, .start-install:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.start-install { display: inline-flex; align-items: center; gap: 8px; margin-top: 1rem; font: 600 15px 'Figtree', sans-serif; color: #fff; background: rgba(140, 200, 255, 0.1); border: 1px solid rgba(140, 200, 255, 0.4); border-radius: 99px; padding: 10px 16px 10px 12px; cursor: pointer; }
+.start-install:hover { background: rgba(140, 200, 255, 0.18); }
+.start-install svg { width: 20px; height: 20px; color: #8cc8ff; }

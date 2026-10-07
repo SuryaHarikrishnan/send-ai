@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "./supabase";
 import BodyMap from "./BodyMap";
 import { rememberAgreement } from "./consent";
+import { InstallLink } from "./InstallHelp";
 
 function GoogleIcon() {
   return (
@@ -78,6 +79,7 @@ export default function Auth() {
           </button>
 
           <p className="start-fine">Free to use · no credit card · works on any phone or laptop</p>
+          <InstallLink />
         </section>
 
         <aside className="deck" aria-label="Sports you can track">
