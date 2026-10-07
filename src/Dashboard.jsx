@@ -14,6 +14,8 @@ import OwnerStats from "./OwnerStats";
 import "./Food.css";
 import "./Nav.css";
 import { forget, track } from "./tracking";
+import { InstallSheet } from "./InstallHelp";
+import { isInstalled } from "./install";
 
 const SPORTS = [
   { id: "lifting", name: "Lifting", line: "Workouts, muscles and PRs" },
@@ -88,6 +90,7 @@ export default function Dashboard({ user }) {
   const [tab, setTab] = useState("home");
   const [focus, setFocus] = useState(null);
   const [picking, setPicking] = useState(false);
+  const [installHelp, setInstallHelp] = useState(false);
   // null means "today", which moves on by itself when the clock passes midnight
   // (phones keep the app open for days).
   const [foodPick, setFoodPick] = useState(null);
@@ -172,6 +175,7 @@ export default function Dashboard({ user }) {
               <button onClick={() => setPicking(true)}><span>Sport<small>{SPORT_NAMES[sport]}</small></span>{I.chevron()}</button>
               <button onClick={() => go("coach")}><span>AI coach<small>Ask questions about your training</small></span>{I.chevron()}</button>
               <button onClick={() => go("news")}><span>News<small>Climbing headlines</small></span>{I.chevron()}</button>
+              {!isInstalled() && <button onClick={() => setInstallHelp(true)}><span>Add to Home Screen<small>Open SendIt like an app</small></span>{I.chevron()}</button>}
               <a href="/privacy.html"><span>Privacy</span>{I.chevron()}</a>
             </div>
             <button className="you-signout" onClick={() => { track("signed_out"); forget(); supabase.auth.signOut(); }}>Sign out</button>
@@ -195,6 +199,8 @@ export default function Dashboard({ user }) {
           <span className={`tabbar-av${youTab ? " on" : ""}`}><Avatar user={user} /></span>
         </button>
       </nav>
+
+      {installHelp && <InstallSheet onClose={() => setInstallHelp(false)} />}
 
       {picking && (
         <div className="sheet-wrap" onClick={() => setPicking(false)}>

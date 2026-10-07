@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "./supabase";
 import BodyMap from "./BodyMap";
 import { rememberAgreement } from "./consent";
+import { InstallLink } from "./InstallHelp";
 
 function GoogleIcon() {
   return (
@@ -78,6 +79,7 @@ export default function Auth() {
           </button>
 
           <p className="start-fine">Free to use · no credit card · works on any phone or laptop</p>
+          <InstallLink />
         </section>
 
         <aside className="deck" aria-label="Sports you can track">
@@ -99,6 +101,16 @@ export default function Auth() {
             <div className="deck-line">Top send <b>V5</b></div>
           </div>
 
+          <div className="deck-card deck-food">
+            <div className="deck-top"><span className="deck-sport">Food</span><span className="deck-when">Today</span></div>
+            <div className="deck-big">1,840 <small>kcal</small></div>
+            <div className="deck-macros">
+              {MACROS.map(([name, g, pct]) => (
+                <div key={name}><span>{name}</span><i><b style={{ width: `${pct}%` }} /></i><span>{g} g</span></div>
+              ))}
+            </div>
+          </div>
+
           <div className="deck-card deck-run">
             <div className="deck-top"><span className="deck-sport">Running</span><span className="deck-soon">Soon</span></div>
             <div className="deck-big">5.2 <small>km</small></div>
@@ -107,16 +119,6 @@ export default function Auth() {
               <circle cx="6" cy="58" r="4" /><circle cx="194" cy="30" r="4" />
             </svg>
             <div className="deck-line">26:41 · 5:08 per km</div>
-          </div>
-
-          <div className="deck-card deck-food">
-            <div className="deck-top"><span className="deck-sport">Food</span><span className="deck-soon">Soon</span></div>
-            <div className="deck-big">1,840 <small>kcal</small></div>
-            <div className="deck-macros">
-              {MACROS.map(([name, g, pct]) => (
-                <div key={name}><span>{name}</span><i><b style={{ width: `${pct}%` }} /></i><span>{g} g</span></div>
-              ))}
-            </div>
           </div>
 
           <div className="deck-chip">6 week streak</div>
