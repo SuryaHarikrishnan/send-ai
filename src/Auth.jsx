@@ -101,16 +101,6 @@ export default function Auth() {
             <div className="deck-line">Top send <b>V5</b></div>
           </div>
 
-          <div className="deck-card deck-run">
-            <div className="deck-top"><span className="deck-sport">Running</span><span className="deck-soon">Soon</span></div>
-            <div className="deck-big">5.2 <small>km</small></div>
-            <svg className="deck-route" viewBox="0 0 200 70" preserveAspectRatio="none" aria-hidden="true">
-              <path d="M6 58 C30 58 28 18 58 20 S90 54 116 44 S140 8 166 14 S192 40 194 30" />
-              <circle cx="6" cy="58" r="4" /><circle cx="194" cy="30" r="4" />
-            </svg>
-            <div className="deck-line">26:41 · 5:08 per km</div>
-          </div>
-
           <div className="deck-card deck-food">
             <div className="deck-top"><span className="deck-sport">Food</span><span className="deck-when">Today</span></div>
             <div className="deck-big">1,840 <small>kcal</small></div>
@@ -119,6 +109,16 @@ export default function Auth() {
                 <div key={name}><span>{name}</span><i><b style={{ width: `${pct}%` }} /></i><span>{g} g</span></div>
               ))}
             </div>
+          </div>
+
+          <div className="deck-card deck-run">
+            <div className="deck-top"><span className="deck-sport">Running</span><span className="deck-soon">Soon</span></div>
+            <div className="deck-big">5.2 <small>km</small></div>
+            <svg className="deck-route" viewBox="0 0 200 70" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M6 58 C30 58 28 18 58 20 S90 54 116 44 S140 8 166 14 S192 40 194 30" />
+              <circle cx="6" cy="58" r="4" /><circle cx="194" cy="30" r="4" />
+            </svg>
+            <div className="deck-line">26:41 · 5:08 per km</div>
           </div>
 
           <div className="deck-chip">6 week streak</div>

@@ -81,8 +81,8 @@
 }
 .deck-lift { grid-column: 1; grid-row: 1 / span 3; padding: 18px; gap: 10px; transform: rotate(-2deg); background: linear-gradient(160deg, #2a8ae0, #0c56b4 55%, #073a86); }
 .deck-climb { grid-column: 2; transform: rotate(2deg); }
-.deck-run { grid-column: 2; transform: rotate(-1.5deg); }
-.deck-food { grid-column: 2; transform: rotate(1.5deg); }
+.deck-run { grid-column: 2; transform: rotate(1.5deg); }
+.deck-food { grid-column: 2; transform: rotate(-1.5deg); }
 .deck-top { display: flex; justify-content: space-between; align-items: center; }
 .deck-sport { font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: rgba(255, 255, 255, 0.8); }
 .deck-when { font-size: 12px; color: rgba(255, 255, 255, 0.7); }
