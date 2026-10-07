@@ -112,7 +112,7 @@ export default function Auth() {
           </div>
 
           <div className="deck-card deck-food">
-            <div className="deck-top"><span className="deck-sport">Food</span><span className="deck-soon">Soon</span></div>
+            <div className="deck-top"><span className="deck-sport">Food</span><span className="deck-when">Today</span></div>
             <div className="deck-big">1,840 <small>kcal</small></div>
             <div className="deck-macros">
               {MACROS.map(([name, g, pct]) => (
