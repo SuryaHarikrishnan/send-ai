@@ -41,28 +41,46 @@ const SCHEMA = {
   required: ["items"],
 };
 
+const BUSY = new Set([429, 500, 502, 503, 504]);
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+// Gemini answers 503 "overloaded" or 429 when it's busy. Try each model, then go round once more after a pause.
 async function askGemini(image) {
   let last;
-  for (const model of MODELS) {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ inline_data: { mime_type: "image/jpeg", data: image } }, { text: PROMPT }] }],
-        generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA, temperature: 0.2 },
-      }),
-    });
-    const data = await r.json().catch(() => ({}));
-    // 404: the key can't use this model. 429: its free-tier quota is used up. Either way, try the next one.
-    if (r.status === 404 || r.status === 429) { last = new Error(`${model} ${r.status}`); continue; }
-    if (!r.ok) throw new Error(`${model} ${r.status}: ${data.error?.message || "no details"}`);
-    const cand = data.candidates?.[0];
-    // Thinking models can return several parts; the answer is the text that isn't a thought.
-    const text = (cand?.content?.parts || []).filter(p => p.text && !p.thought).map(p => p.text).join("");
-    if (!text) throw new Error(`${model} gave no answer (${cand?.finishReason || data.promptFeedback?.blockReason || "unknown"})`);
-    return { model, items: parseItems(text) };
+  for (let round = 0; round < 2; round++) {
+    if (round) await wait(2000);
+    for (const model of MODELS) {
+      try {
+        return await askModel(model, image);
+      } catch (e) {
+        if (!e.next) throw e;
+        last = e;
+      }
+    }
   }
   throw last;
+}
+
+async function askModel(model, image) {
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ inline_data: { mime_type: "image/jpeg", data: image } }, { text: PROMPT }] }],
+      generationConfig: { responseMimeType: "application/json", responseSchema: SCHEMA, temperature: 0.2 },
+    }),
+  });
+  const data = await r.json().catch(() => ({}));
+  // 404: the key can't use this model. Busy or out of free quota: try the next one.
+  if (r.status === 404 || BUSY.has(r.status)) {
+    throw Object.assign(new Error(`${model} ${r.status}: ${data.error?.message || "no details"}`.slice(0, 160)), { next: true, busy: r.status !== 404 });
+  }
+  if (!r.ok) throw new Error(`${model} ${r.status}: ${data.error?.message || "no details"}`);
+  const cand = data.candidates?.[0];
+  // Thinking models can return several parts; the answer is the text that isn't a thought.
+  const text = (cand?.content?.parts || []).filter(p => p.text && !p.thought).map(p => p.text).join("");
+  if (!text) throw new Error(`${model} gave no answer (${cand?.finishReason || data.promptFeedback?.blockReason || "unknown"})`);
+  return { model, items: parseItems(text) };
 }
 
 // Accept {"items": [...]}, a bare [...] or JSON wrapped in ``` fences.
@@ -120,6 +138,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ items, model: answer.model, remaining: DAILY_LIMIT - used - (items.length ? 1 : 0) });
   } catch (e) {
     console.error(e);
+    if (e.busy) return res.status(503).json({ error: "The AI is busy right now. Your photo didn't count. Try again in a minute.", reason: String(e.message).slice(0, 200) });
     // The reason is shown in small print so a person can pass it on; it never includes the key.
     return res.status(500).json({ error: "Couldn't read that photo right now. Try again in a minute.", reason: String(e.message || e).slice(0, 200) });
   }

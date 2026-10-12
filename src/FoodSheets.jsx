@@ -319,3 +319,26 @@ export function PhotoSheet({ photo, meal: meal0, saving, error, onSave, onRetake
     </Sheet>
   );
 }
+
+// Where the meal photo comes from: take one now or pick one already in the library.
+export function PhotoSourceSheet({ onPick, onCancel }) {
+  return (
+    <Sheet label="Add a meal photo" onCancel={onCancel}>
+      <div className="fd-sh-title">
+        <h2>Meal photo</h2>
+        <button className="fd-x" onClick={onCancel} aria-label="Close"><Close /></button>
+      </div>
+      <div className="fph-src">
+        <button onClick={() => onPick("camera")}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v9A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5z" /><circle cx="12" cy="12.8" r="3.6" /></svg>
+          <span><b>Take a photo</b><small>Use the camera now</small></span>
+        </button>
+        <button onClick={() => onPick("library")}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3" /><circle cx="9" cy="10" r="1.8" /><path d="M20.5 16l-5-5-8.5 8.5" /></svg>
+          <span><b>Upload a photo</b><small>Pick one from your photos</small></span>
+        </button>
+      </div>
+      <p className="fd-src">3 meal photos a day. A photo with no food in it doesn't count.</p>
+    </Sheet>
+  );
+}

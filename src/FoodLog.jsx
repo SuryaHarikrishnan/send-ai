@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import BarcodeScanner from "./BarcodeScanner";
 import { track } from "./tracking";
-import { AmountSheet, CustomSheet, PhotoSheet, Thumb } from "./FoodSheets";
+import { AmountSheet, CustomSheet, PhotoSheet, PhotoSourceSheet, Thumb } from "./FoodSheets";
 import { COMMON_FOODS, COMMON_GROUPS, DAY_MS, MEALS, amountText, dayLabel, eatenAt, MEAL_NAMES, foodsError, logRow, lookupBarcode, mealForNow, mealSingular, nutrition, recentFoods, scanPhoto, searchFoods, shrinkPhoto } from "./food";
 
 const ScanIcon = () => (
@@ -75,7 +75,9 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
   const [quickDone, setQuickDone] = useState([]);
   const [more, setMore] = useState({ key: "" });
   const [photo, setPhoto] = useState(null); // { url, status: loading|done|error, items, error, remaining }
-  const photoInput = useRef(null);
+  const cameraInput = useRef(null);
+  const libraryInput = useRef(null);
+  const [photoMenu, setPhotoMenu] = useState(false);
   const toastTimer = useRef(0);
 
   useEffect(() => {
@@ -172,8 +174,11 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
     setCustom({ barcode: code, name: food?.name || "", brand: food?.brand || "" });
   }
 
-  function pickPhoto() {
-    if (photoInput.current) { photoInput.current.value = ""; photoInput.current.click(); }
+  // Camera or photo library; the click has to happen inside the tap so the browser allows it.
+  function pickPhoto(from) {
+    const input = from === "camera" ? cameraInput.current : libraryInput.current;
+    setPhotoMenu(false);
+    if (input) { input.value = ""; input.click(); }
   }
   async function onPhoto(e) {
     const file = e.target.files?.[0];
@@ -329,14 +334,15 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
       <div className="fl-fab-space" />
 
       <div className="fl-fabs">
-        <button className="fl-fab" onClick={pickPhoto}>
+        <button className="fl-fab" onClick={() => setPhotoMenu(true)}>
           <CameraIcon /><span>Photo</span>
         </button>
         <button className="fl-fab" onClick={() => { setScanStatus(null); setScanning(true); }}>
           <ScanIcon /><span>Scan barcode</span>
         </button>
       </div>
-      <input ref={photoInput} type="file" accept="image/*" capture="environment" hidden onChange={onPhoto} />
+      <input ref={cameraInput} type="file" accept="image/*" capture="environment" hidden onChange={onPhoto} />
+      <input ref={libraryInput} type="file" accept="image/*" hidden onChange={onPhoto} />
 
       {toast && <div className="fl-toast" role="status">{toast}</div>}
 
@@ -355,10 +361,11 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
           onSave={async (food, m) => { if (await addLog(food, "serving", 1, m)) { setCustom(null); setQuery(""); } }}
         />
       )}
+      {photoMenu && <PhotoSourceSheet onPick={pickPhoto} onCancel={() => setPhotoMenu(false)} />}
       {photo && (
         <PhotoSheet
           key={photo.url} photo={photo} meal={meal} saving={saving} error={sheetError}
-          onSave={addPhotoItems} onRetake={pickPhoto} onCancel={closePhoto}
+          onSave={addPhotoItems} onRetake={() => { closePhoto(); setPhotoMenu(true); }} onCancel={closePhoto}
         />
       )}
       {scanning && (
