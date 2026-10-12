@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Sparkline } from "./TrendChart";
-import { DAY_MS, groupSetsPerWeek, mainLifts, setsByDay, weekStart, weeklyTotals } from "./lifting";
+import TrendChart, { Sparkline } from "./TrendChart";
+import { DAY_MS, groupSetsPerWeek, setsByDay, strengthHistory, weekStart, weeklyTotals } from "./lifting";
 
 const bigNumber = n => (n >= 10000 ? `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}k` : Math.round(n).toLocaleString());
 const shortDate = d => new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -64,44 +64,53 @@ export function TrainingWeeks({ workouts }) {
   );
 }
 
-// The headline lifts: estimated max now, and how it moved over 3 months.
-export function MainLifts({ stats, onFocus }) {
-  const lifts = mainLifts(stats);
+// Overall strength from the first log to now: the combined estimated max of the
+// headline lifts, then each lift's change since it was first logged.
+export function StrengthOverview({ stats, onFocus }) {
+  const { lifts, sbd, points } = strengthHistory(stats);
   if (!lifts.length) return null;
-  const cutoff = new Date().getTime() - 91 * DAY_MS;
-  const rows = lifts.map(e => {
-    const recent = e.sessions.filter(s => new Date(s.date).getTime() >= cutoff);
-    const before = e.sessions.filter(s => new Date(s.date).getTime() < cutoff).pop();
-    const now = recent.length ? Math.max(...recent.map(s => s.value)) : e.last.value;
-    const from = before || recent[0];
-    return { e, now, change: from && from !== e.last ? now - from.value : null, spark: (recent.length > 1 ? recent : e.sessions.slice(-8)).map(s => s.value) };
-  });
-  const sbd = ["back squat", "bench press", "deadlift"].map(k => rows.find(r => r.e.key === k));
-  const total = sbd.every(Boolean) ? sbd.reduce((a, r) => a + r.now, 0) : null;
+  const first = points[0], last = points[points.length - 1];
+  const change = first && last ? last.v - first.v : 0;
+  const label = sbd ? "Squat + bench + deadlift" : lifts.map(e => e.name).join(" + ");
 
   return (
-    <section className="lift-card lc-main" data-shot="main-lifts">
-      <div className="lift-row">
-        <h2 className="lift-h2">Strength</h2>
-        <span className="lift-sub">Est. max · 3 months</span>
-      </div>
-      {total != null && (
-        <div className="lc-total">
-          <small>Squat + bench + deadlift</small>
-          <b>{total.toLocaleString()}<span> lb</span></b>
+    <>
+      <section className="lift-card lp-chart" data-shot="strength-overall">
+        <div className="lp-hero">
+          <small>{label}</small>
+          <b>{last ? last.v.toLocaleString() : "–"}<span> lb</span></b>
+          {points.length > 1 && (
+            <em className={change > 0 ? "up" : change < 0 ? "down" : ""}>
+              {change > 0 ? "▲ " : change < 0 ? "▼ " : ""}{change === 0 ? "No change" : `${Math.abs(change).toLocaleString()} lb`} since {shortDate(first.t)}
+            </em>
+          )}
         </div>
-      )}
-      {rows.map(({ e, now, change, spark }) => (
-        <button key={e.key} className="lp-row" onClick={() => onFocus(e.key)}>
-          <span className="lp-row-name"><b>{e.name}</b><small>{e.sessions.length} sessions</small></span>
-          <Sparkline values={spark} />
-          <span className="lp-row-val">
-            <b>{now.toLocaleString()} lb</b>
-            {change != null && <small className={change > 0 ? "up" : change < 0 ? "down" : ""}>{change > 0 ? "▲ " : change < 0 ? "▼ " : ""}{change === 0 ? "No change" : `${Math.abs(change)} lb`}</small>}
-          </span>
-        </button>
-      ))}
-    </section>
+        {points.length > 0 && <TrendChart points={points.map(p => ({ ...p, detail: p.pr ? "New best total" : "" }))} unit="lb" label="Strength total" />}
+        {points.length < 2 && <p className="lift-sub lp-center">Log {lifts.map(e => e.name.toLowerCase()).join(", ")} a few times to see your strength climb.</p>}
+        <p className="lc-note">Estimated one-rep maxes added up, using your best set so far for each lift.</p>
+      </section>
+
+      <section className="lift-card lc-main" data-shot="main-lifts">
+        <div className="lift-row">
+          <h2 className="lift-h2">Your main lifts</h2>
+          <span className="lift-sub">Since you started</span>
+        </div>
+        {lifts.map(e => {
+          const best = Math.max(...e.sessions.map(s => s.value));
+          const diff = best - e.sessions[0].value;
+          return (
+            <button key={e.key} className="lp-row" onClick={() => onFocus(e.key)}>
+              <span className="lp-row-name"><b>{e.name}</b><small>{e.sessions.length} sessions · {e.sessions[0].value} lb at the start</small></span>
+              <Sparkline values={e.sessions.map(s => s.value)} />
+              <span className="lp-row-val">
+                <b>{best.toLocaleString()} lb</b>
+                {e.sessions.length > 1 && <small className={diff > 0 ? "up" : ""}>{diff > 0 ? `▲ ${diff} lb` : "No change"}</small>}
+              </span>
+            </button>
+          );
+        })}
+      </section>
+    </>
   );
 }
 

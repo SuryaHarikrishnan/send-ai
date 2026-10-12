@@ -429,3 +429,15 @@
 .lc-cal-foot { font-size: 12px; color: var(--mut); font-weight: 600; }
 .lc-key { display: inline-flex; align-items: center; gap: 4px; }
 .lc-key i { width: 11px; }
+
+/* progress pager */
+.lpg-tabs { display: flex; gap: 8px; scroll-padding-inline: 16px; overflow-x: auto; scrollbar-width: none; margin: -4px -16px 0; padding: 4px 16px; }
+.lpg-tabs::-webkit-scrollbar { display: none; }
+.lpg-tabs::after { content: ""; flex: 0 0 8px; }
+.lpg-tabs button { flex: none; border: 1px solid var(--card-line); background: var(--card); border-radius: 99px; padding: 8px 15px; font-size: 14px !important; font-weight: 700; color: var(--mut) !important; white-space: nowrap; transition: background 0.2s, color 0.2s; }
+.lpg-tabs button.on { background: #fff; border-color: #fff; color: var(--navy) !important; }
+.lpg-track { display: flex; align-items: flex-start; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; margin: 0 -16px; transition: height 0.25s ease; }
+.lpg-track::-webkit-scrollbar { display: none; }
+.lpg-page { flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always; padding: 0 16px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.lpg-page .tc svg { touch-action: pan-y; }
+

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import TrendChart, { Sparkline } from "./TrendChart";
-import { Consistency, MainLifts, MuscleBalance, TrainingWeeks } from "./LiftCharts";
+import { Consistency, MuscleBalance, StrengthOverview, TrainingWeeks } from "./LiftCharts";
 import { DAY_MS, MUSCLE_NAMES, exerciseStats, totalVolume, workoutsError } from "./lifting";
 import "./Lift.css";
 
@@ -88,57 +88,116 @@ export default function LiftProgress({ user, focus, onFocus, onNavigate }) {
         </div>
       ) : (
         <>
-          <section className="lp-tiles">
-            <div className="lift-card lp-tile"><b>{workouts.length}</b><span>Workouts logged</span></div>
-            <div className="lift-card lp-tile"><b>{prsThisMonth}</b><span>PRs in 30 days</span></div>
-            <div className="lift-card lp-tile"><b>{bigNumber(liftedThisMonth)}</b><span>lb lifted in 30 days</span></div>
-          </section>
+          <Pager tabs={TABS}>
+            <div className="lpg-page">
+              <StrengthOverview stats={stats} onFocus={onFocus} />
+              <section className="lp-tiles">
+                <div className="lift-card lp-tile"><b>{workouts.length}</b><span>Workouts logged</span></div>
+                <div className="lift-card lp-tile"><b>{prsThisMonth}</b><span>PRs in 30 days</span></div>
+                <div className="lift-card lp-tile"><b>{bigNumber(liftedThisMonth)}</b><span>lb lifted in 30 days</span></div>
+              </section>
+            </div>
+            <div className="lpg-page"><TrainingWeeks workouts={workouts} /></div>
+            <div className="lpg-page"><MuscleBalance workouts={workouts} /></div>
+            <div className="lpg-page"><Consistency workouts={workouts} /></div>
+            <div className="lpg-page">
+              {recentPrs.length > 0 && (
+                <section className="lift-card lp-prs">
+                  <h2 className="lift-h2">Recent PRs</h2>
+                  {recentPrs.slice(0, 5).map(({ ex: e, p }) => (
+                    <button key={e.key + p.date} className="lp-pr-row" onClick={() => onFocus(e.key)}>
+                      <span className="lp-pr-ic"><Trophy /></span>
+                      <span className="lp-pr-name"><b>{e.name}</b><small>{e.weighted ? `Best set ${setText(p.bestSet)}` : `${reps(p.maxReps)} in a set`}</small></span>
+                      <span className="lp-pr-val"><b>{valueText(e, p.value)}</b><small>{ago(p.date)}</small></span>
+                    </button>
+                  ))}
+                </section>
+              )}
 
-          <TrainingWeeks workouts={workouts} />
-          <MainLifts stats={stats} onFocus={onFocus} />
-          <MuscleBalance workouts={workouts} />
-          <Consistency workouts={workouts} />
-
-          {recentPrs.length > 0 && (
-            <section className="lift-card lp-prs">
-              <h2 className="lift-h2">Recent PRs</h2>
-              {recentPrs.slice(0, 5).map(({ ex: e, p }) => (
-                <button key={e.key + p.date} className="lp-pr-row" onClick={() => onFocus(e.key)}>
-                  <span className="lp-pr-ic"><Trophy /></span>
-                  <span className="lp-pr-name"><b>{e.name}</b><small>{e.weighted ? `Best set ${setText(p.bestSet)}` : `${reps(p.maxReps)} in a set`}</small></span>
-                  <span className="lp-pr-val"><b>{valueText(e, p.value)}</b><small>{ago(p.date)}</small></span>
-                </button>
-              ))}
-            </section>
-          )}
-
-          <div className="lift-row lift-list-head">
-            <h2 className="lift-h2">All lifts</h2>
-            <span className="lift-sub">{Object.keys(stats).length} exercises</span>
-          </div>
-          {Object.keys(stats).length > 6 && (
-            <input className="lp-search" type="search" placeholder="Search your lifts" value={query} onChange={e => setQuery(e.target.value)} aria-label="Search your lifts" />
-          )}
-          <div className="lift-card lp-list">
-            {list.map(e => (
-              <button key={e.key} className="lp-row" onClick={() => onFocus(e.key)}>
-                <span className="lp-row-name">
-                  <b>{e.name}</b>
-                  <small>{ago(e.last.date)} · {setText(e.last.bestSet)}</small>
-                </span>
-                <Sparkline values={e.sessions.slice(-12).map(s => s.value)} />
-                <span className="lp-row-val">
-                  <b>{valueText(e, e.best.value.value)}</b>
-                  <small>{e.weighted ? "best est. max" : "best set"}</small>
-                </span>
-              </button>
-            ))}
-            {!list.length && <p className="lift-sub lp-none">No lifts match "{query}".</p>}
-          </div>
-          <p className="lp-foot">Estimated max is what you could lift once, worked out from your best set (Epley formula, sets of 12 reps or fewer).</p>
+              <div className="lift-row lift-list-head">
+                <h2 className="lift-h2">All lifts</h2>
+                <span className="lift-sub">{Object.keys(stats).length} exercises</span>
+              </div>
+              {Object.keys(stats).length > 6 && (
+                <input className="lp-search" type="search" placeholder="Search your lifts" value={query} onChange={e => setQuery(e.target.value)} aria-label="Search your lifts" />
+              )}
+              <div className="lift-card lp-list">
+                {list.map(e => (
+                  <button key={e.key} className="lp-row" onClick={() => onFocus(e.key)}>
+                    <span className="lp-row-name">
+                      <b>{e.name}</b>
+                      <small>{ago(e.last.date)} · {setText(e.last.bestSet)}</small>
+                    </span>
+                    <Sparkline values={e.sessions.slice(-12).map(s => s.value)} />
+                    <span className="lp-row-val">
+                      <b>{valueText(e, e.best.value.value)}</b>
+                      <small>{e.weighted ? "best est. max" : "best set"}</small>
+                    </span>
+                  </button>
+                ))}
+                {!list.length && <p className="lift-sub lp-none">No lifts match "{query}".</p>}
+              </div>
+              <p className="lp-foot">Estimated max is what you could lift once, worked out from your best set (Epley formula, sets of 12 reps or fewer).</p>
+            </div>
+          </Pager>
         </>
       )}
     </div>
+  );
+}
+
+const TABS = ["Strength", "Training", "Muscles", "Consistency", "All lifts"];
+// Remembered while the app is open, so coming back from a lift opens the same tab.
+let lastTab = 0;
+
+// Swipeable pages with a row of tabs. The pager takes the height of the page in view.
+function Pager({ tabs, children }) {
+  const track = useRef(null);
+  const chips = useRef(null);
+  const [tab, setTab] = useState(lastTab);
+  const [height, setHeight] = useState(undefined);
+  const jumping = useRef(null);
+
+  useLayoutEffect(() => {
+    const el = track.current;
+    el.scrollLeft = lastTab * el.clientWidth;
+  }, []);
+
+  useEffect(() => {
+    lastTab = tab;
+    const page = track.current.children[tab];
+    const ro = new ResizeObserver(() => setHeight(page.offsetHeight));
+    ro.observe(page);
+    chips.current.children[tab]?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+    return () => ro.disconnect();
+  }, [tab]);
+
+  function onScroll() {
+    if (jumping.current) return;
+    const el = track.current;
+    const i = Math.round(el.scrollLeft / el.clientWidth);
+    if (i !== tab) setTab(i);
+  }
+  function go(i) {
+    const el = track.current;
+    // Ignore the scroll events of a tapped jump so the tabs in between don't flash.
+    clearTimeout(jumping.current);
+    jumping.current = setTimeout(() => { jumping.current = null; }, 600);
+    el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+    setTab(i);
+  }
+
+  return (
+    <>
+      <div className="lpg-tabs" role="tablist" aria-label="Progress views" ref={chips}>
+        {tabs.map((t, i) => (
+          <button key={t} role="tab" aria-selected={tab === i} className={tab === i ? "on" : ""} onClick={() => go(i)}>{t}</button>
+        ))}
+      </div>
+      <div className="lpg-track" ref={track} onScroll={onScroll} style={{ height }}>
+        {children}
+      </div>
+    </>
   );
 }
 

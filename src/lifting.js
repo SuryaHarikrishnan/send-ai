@@ -344,3 +344,26 @@ export function mainLifts(stats, count = 4) {
   const rest = weighted.filter(e => !picked.includes(e)).sort((a, b) => b.sessions.length - a.sessions.length);
   return [...picked, ...rest].slice(0, count);
 }
+
+// Combined estimated max of the headline lifts over time: one point per session that
+// moved any of them, starting once every one of them has been logged.
+// Uses squat + bench + deadlift when all three are logged, else the main lifts.
+export function strengthHistory(stats) {
+  const sbd = ["back squat", "bench press", "deadlift"].map(k => stats[k]);
+  const lifts = sbd.every(e => e && e.weighted) ? sbd : mainLifts(stats);
+  const events = lifts.flatMap(e => e.sessions.map(s => ({ key: e.key, t: new Date(s.date).getTime(), v: s.value })))
+    .sort((a, b) => a.t - b.t);
+  const best = {};
+  const points = [];
+  for (const ev of events) {
+    best[ev.key] = Math.max(best[ev.key] || 0, ev.v);
+    if (Object.keys(best).length < lifts.length) continue;
+    const v = Object.values(best).reduce((a, x) => a + x, 0);
+    const prev = points[points.length - 1];
+    if (prev && sameDay(prev.t, ev.t)) prev.v = v;
+    else points.push({ t: ev.t, v });
+  }
+  points.forEach((p, i) => { p.pr = i > 0 && p.v > points[i - 1].v; });
+  return { lifts, sbd: lifts === sbd, points };
+}
+const sameDay = (a, b) => new Date(a).toDateString() === new Date(b).toDateString();
