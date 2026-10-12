@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "./supabase";
 import TrendChart, { Sparkline } from "./TrendChart";
+import { Consistency, MainLifts, MuscleBalance, TrainingWeeks } from "./LiftCharts";
 import { DAY_MS, MUSCLE_NAMES, exerciseStats, totalVolume, workoutsError } from "./lifting";
 import "./Lift.css";
 
@@ -92,6 +93,11 @@ export default function LiftProgress({ user, focus, onFocus, onNavigate }) {
             <div className="lift-card lp-tile"><b>{prsThisMonth}</b><span>PRs in 30 days</span></div>
             <div className="lift-card lp-tile"><b>{bigNumber(liftedThisMonth)}</b><span>lb lifted in 30 days</span></div>
           </section>
+
+          <TrainingWeeks workouts={workouts} />
+          <MainLifts stats={stats} onFocus={onFocus} />
+          <MuscleBalance workouts={workouts} />
+          <Consistency workouts={workouts} />
 
           {recentPrs.length > 0 && (
             <section className="lift-card lp-prs">

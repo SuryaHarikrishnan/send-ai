@@ -294,3 +294,53 @@ export const formatDuration = (min) => {
   const h = Math.floor(n / 60), m = n % 60;
   return h ? (m ? `${h} h ${m} min` : `${h} h`) : `${m} min`;
 };
+
+// Totals for each of the last `weeks` weeks (Monday start), oldest first; the last entry is this week.
+export function weeklyTotals(workouts, weeks = 12, now = new Date()) {
+  const cur = weekStart(now).getTime();
+  const out = Array.from({ length: weeks }, (_, i) => ({ start: new Date(cur - (weeks - 1 - i) * 7 * DAY), workouts: 0, sets: 0, volume: 0 }));
+  for (const w of workouts) {
+    const i = weeks - 1 - Math.round((cur - weekStart(w.performed_at).getTime()) / (7 * DAY));
+    if (i < 0 || i >= weeks) continue;
+    out[i].workouts++;
+    out[i].sets += totalSets(w);
+    out[i].volume += totalVolume(w);
+  }
+  return out;
+}
+
+// Average sets per week for each muscle group over the last `weeks` full weeks plus this one.
+// A set counts for the group of the exercise's main muscle.
+export function groupSetsPerWeek(workouts, weeks = 4, now = new Date()) {
+  const since = weekStart(now).getTime() - weeks * 7 * DAY;
+  const out = Object.fromEntries(Object.keys(GROUPS).map(g => [g, 0]));
+  for (const w of workouts) {
+    if (new Date(w.performed_at).getTime() < since) continue;
+    for (const ex of w.exercises || []) {
+      const info = findExercise(ex.name);
+      const g = info && groupOf(info);
+      if (g) out[g] += (ex.sets || []).length;
+    }
+  }
+  for (const g in out) out[g] = Math.round((out[g] / weeks) * 10) / 10;
+  return out;
+}
+
+// Sets logged on each calendar day, keyed by local date string.
+export function setsByDay(workouts) {
+  const out = {};
+  for (const w of workouts) {
+    const k = new Date(w.performed_at).toDateString();
+    out[k] = (out[k] || 0) + totalSets(w);
+  }
+  return out;
+}
+
+// The lifts to headline: the big four if logged, topped up with the most-logged weighted lifts.
+const BIG = ["back squat", "bench press", "deadlift", "overhead press"];
+export function mainLifts(stats, count = 4) {
+  const weighted = Object.values(stats).filter(e => e.weighted);
+  const picked = BIG.map(k => stats[k]).filter(e => e && e.weighted);
+  const rest = weighted.filter(e => !picked.includes(e)).sort((a, b) => b.sessions.length - a.sessions.length);
+  return [...picked, ...rest].slice(0, count);
+}

@@ -380,3 +380,52 @@
 .dp-item.on { font-weight: 600; }
 .dp-unit { width: 52px; padding-left: 8px; font-size: 17px; font-weight: 600; }
 .lift .wl-discard { display: block; margin: 4px auto 0; padding: 12px 16px; background: none; border: 0; color: var(--mut); font-size: 14px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+/* progress charts */
+.lc-weeks, .lc-main, .lc-mb, .lc-cal { display: flex; flex-direction: column; gap: 12px; }
+.lc-read { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.lc-read > div { display: flex; flex-direction: column; gap: 2px; }
+.lc-read small, .lc-total small { font-size: 12px; font-weight: 600; color: var(--mut); }
+.lc-read b { font-family: 'Bricolage Grotesque', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.lc-read .lc-avg { align-items: flex-end; }
+.lc-read .lc-avg b { font-size: 17px; color: var(--mut); }
+.lc-bars { position: relative; display: grid; grid-template-columns: repeat(12, 1fr); gap: 6px; height: 150px; padding-bottom: 20px; }
+.lc-avgline { position: absolute; left: 0; right: 0; border-top: 2px dashed rgba(255, 255, 255, 0.45); margin-bottom: 20px; pointer-events: none; z-index: 1; }
+.lc-col { display: flex; flex-direction: column; align-items: stretch; background: none; border: 0; padding: 0; min-width: 0; height: 100%; position: relative; }
+.lc-bar { flex: 1; display: flex; align-items: flex-end; }
+.lc-bar i { display: block; width: 100%; border-radius: 6px 6px 3px 3px; background: rgba(140, 200, 255, 0.45); transition: height 0.35s ease, background 0.2s; }
+.lc-col.now .lc-bar i { background: repeating-linear-gradient(135deg, rgba(140, 200, 255, 0.5) 0 4px, rgba(140, 200, 255, 0.25) 4px 8px); }
+.lc-col.on .lc-bar i { background: var(--sky); }
+.lc-l { position: absolute; bottom: -20px; left: 0; font-size: 11px; font-weight: 600; color: var(--mut); white-space: nowrap; }
+.lc-note { font-size: 12px; color: var(--mut); line-height: 1.5; }
+.lc-note strong { color: #fff; }
+
+.lc-total { display: flex; flex-direction: column; gap: 2px; padding-bottom: 4px; }
+.lc-total b { font-family: 'Bricolage Grotesque', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.lc-total b span, .lp-hero b span { font-size: 16px; color: var(--mut); }
+.lc-main .lp-row { grid-template-columns: 1fr 72px auto; }
+.lc-main .lp-row:first-of-type { border-top: 0; }
+.lc-total + .lp-row { border-top: 1px solid var(--card-line) !important; }
+.lp-row-val small.up { color: #7ee0a8; font-weight: 700; }
+.lp-row-val small.down { color: #ffb4a8; font-weight: 700; }
+
+.lc-mb-list { display: flex; flex-direction: column; gap: 10px; }
+.lc-mb-row { display: grid; grid-template-columns: 76px 1fr 34px; align-items: center; gap: 10px; font-size: 14px; }
+.lc-mb-name { font-weight: 600; }
+.lc-mb-row b { text-align: right; font-variant-numeric: tabular-nums; }
+.lc-mb-track { position: relative; height: 12px; border-radius: 99px; background: var(--faint); overflow: hidden; }
+.lc-mb-band { position: absolute; top: 0; bottom: 0; background: rgba(255, 255, 255, 0.12); border-left: 1px solid rgba(255, 255, 255, 0.35); border-right: 1px solid rgba(255, 255, 255, 0.35); }
+.lc-mb-track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: var(--sky); transition: width 0.35s ease; }
+.lc-mb-row.low .lc-mb-track i { background: #ffd27a; }
+
+.lc-grid { display: grid; grid-template-columns: repeat(18, 1fr); gap: 3px; }
+.lc-gcol { display: grid; grid-template-rows: 14px repeat(7, auto); gap: 3px; min-width: 0; }
+.lc-m { font-size: 10px; font-weight: 600; color: var(--mut); white-space: nowrap; overflow: visible; }
+.lc-grid i, .lc-key i { display: block; aspect-ratio: 1; border-radius: 3px; background: var(--faint); }
+.lc-grid i.fut { background: transparent; border: 1px dashed rgba(255, 255, 255, 0.12); }
+.l1 { background: rgba(140, 200, 255, 0.4) !important; }
+.l2 { background: rgba(140, 200, 255, 0.72) !important; }
+.l3 { background: var(--sky) !important; }
+.lc-cal-foot { font-size: 12px; color: var(--mut); font-weight: 600; }
+.lc-key { display: inline-flex; align-items: center; gap: 4px; }
+.lc-key i { width: 11px; }
