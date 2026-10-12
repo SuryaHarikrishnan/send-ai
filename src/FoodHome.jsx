@@ -90,10 +90,10 @@ export default function FoodHome({ user, day, onDay, onAdd }) {
   const left = goals.kcal - Math.round(t.kcal);
   const streak = logStreak(dates);
 
-  async function saveEdit({ unit, amount, meal }) {
+  async function saveEdit({ unit, amount, meal, food }) {
     setSaving(true);
     setSheetError("");
-    const row = logRow(foodFromLog(editing), unit, amount, meal, new Date(editing.eaten_at));
+    const row = logRow(food || foodFromLog(editing), unit, amount, meal, new Date(editing.eaten_at));
     delete row.eaten_at;
     const { data, error } = await supabase.from("food_logs").update(row).eq("id", editing.id).select().single();
     setSaving(false);

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MEALS, PHOTO_LIMIT, amountText, customFood, foodEmoji, mealSingular, nutrition, photoFood } from "./food";
+import { MEALS, PHOTO_LIMIT, amountText, customFood, foodEmoji, hasGrams, mealSingular, nutrition, photoFood, withServingGrams } from "./food";
 
 export const FoodIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21c-4.5 0-7.5-3.8-7.5-8.2 0-3.4 2.3-5.3 4.6-5.3 1.3 0 2.1.5 2.9.5s1.6-.5 2.9-.5c2.3 0 4.6 1.9 4.6 5.3 0 4.4-3 8.2-7.5 8.2zM12 7.5c0-2 1-3.5 3-4" /></svg>
@@ -56,11 +56,16 @@ const stepFor = u => (u?.id === "g" || u?.id === "ml" ? 10 : u?.id === "oz" || u
 const roundFor = (u, v) => (u.id === "g" || u.id === "ml" ? Math.round(v) : isWeightUnit(u) ? Math.round(v * 10) / 10 : Math.max(0.25, Math.round(v * 4) / 4));
 
 // Pick how much of a food, see its calories and macros, then add or save it.
-export function AmountSheet({ food, unit: unit0, amount: amount0, meal: meal0, editing, saving, error, onSave, onDelete, onCancel }) {
-  const [unitId, setUnitId] = useState(unit0 || food.defaultUnit || food.units[0].id);
-  const [amount, setAmount] = useState(String(amount0 ?? food.defaultAmount ?? 1));
+export function AmountSheet({ food: food0, unit: unit0, amount: amount0, meal: meal0, editing, saving, error, onSave, onDelete, onCancel }) {
+  const [unitId, setUnitId] = useState(unit0 || food0.defaultUnit || food0.units[0].id);
+  const [amount, setAmount] = useState(String(amount0 ?? food0.defaultAmount ?? 1));
   const [meal, setMeal] = useState(meal0);
   const [confirm, setConfirm] = useState(false);
+  // Foods that only come "per serving" can be weighed once you say what one serving weighs.
+  const [servingG, setServingG] = useState("");
+  const [weighing, setWeighing] = useState(false);
+  const weighed = Number(servingG) > 0 ? withServingGrams(food0, servingG) : null;
+  const food = weighed || food0;
   const unit = food.units.find(u => u.id === unitId) || food.units[0];
   const n = nutrition(food, unit.id, amount);
   const valid = Number(amount) > 0;
@@ -113,10 +118,22 @@ export function AmountSheet({ food, unit: unit0, amount: amount0, meal: meal0, e
         </div>
       </div>
 
+      {!hasGrams(food0) && food0.perServing && (
+        weighing || weighed ? (
+          <label className="fd-weigh">
+            <span>1 {food0.units[0].label} weighs</span>
+            <input type="number" inputMode="decimal" min="0" value={servingG} onChange={e => setServingG(e.target.value)} placeholder="0" autoFocus aria-label="Grams in one serving" />
+            <span>g</span>
+          </label>
+        ) : (
+          <button className="fd-weigh-btn" onClick={() => setWeighing(true)}>Track in grams</button>
+        )
+      )}
+
       <MealChips meal={meal} onChange={setMeal} />
 
       {error && <p className="wl-error">{error}</p>}
-      <button className="fd-primary" disabled={!valid || saving} onClick={() => onSave({ unit: unit.id, amount: Number(amount), meal })}>
+      <button className="fd-primary" disabled={!valid || saving} onClick={() => onSave({ unit: unit.id, amount: Number(amount), meal, food })}>
         {saving ? "Saving…" : editing ? "Save" : `Add to ${mealSingular(meal)}`}
       </button>
       {editing && (
@@ -141,7 +158,7 @@ export function AmountSheet({ food, unit: unit0, amount: amount0, meal: meal0, e
 
 // Type in a food from its label: calories and macros per serving.
 export function CustomSheet({ initial, meal: meal0, saving, error, onSave, onCancel }) {
-  const [f, setF] = useState({ name: "", brand: "", serving: "", kcal: "", protein: "", carbs: "", fat: "", ...initial });
+  const [f, setF] = useState({ name: "", brand: "", serving: "", grams: "", kcal: "", protein: "", carbs: "", fat: "", ...initial });
   const [meal, setMeal] = useState(meal0);
   const set = k => e => setF(x => ({ ...x, [k]: e.target.value }));
   const fromMacros = Math.round((Number(f.protein) || 0) * 4 + (Number(f.carbs) || 0) * 4 + (Number(f.fat) || 0) * 9);
@@ -153,9 +170,9 @@ export function CustomSheet({ initial, meal: meal0, saving, error, onSave, onCan
   const valid = f.name.trim() && (f.kcal !== "" || fromMacros > 0) && !problem;
 
   return (
-    <Sheet label="Create a food" onCancel={onCancel}>
+    <Sheet label="Manual entry" onCancel={onCancel}>
       <div className="fd-sh-title">
-        <h2>Create a food</h2>
+        <h2>Manual entry</h2>
         <button className="fd-x" onClick={onCancel} aria-label="Close"><Close /></button>
       </div>
       {f.barcode && <p className="fd-sh-note">Barcode {f.barcode} isn't in our food databases yet. Copy the numbers from the label and it'll be in your recent foods next time.</p>}
@@ -163,6 +180,7 @@ export function CustomSheet({ initial, meal: meal0, saving, error, onSave, onCan
         <label className="fd-wide">Name<input value={f.name} onChange={set("name")} placeholder="Chicken burrito bowl" maxLength={80} autoFocus={!f.name} /></label>
         <label>Brand<input value={f.brand} onChange={set("brand")} placeholder="Optional" maxLength={60} /></label>
         <label>Serving<input value={f.serving} onChange={set("serving")} placeholder="bowl, bar, slice" maxLength={30} /></label>
+        <label className="fd-wide">Serving weight (g)<input type="number" inputMode="decimal" min="0" value={f.grams} onChange={set("grams")} placeholder="Optional, lets you log it in grams" /></label>
         <p className="fd-form-h">Per serving</p>
         <label>Calories<input type="number" inputMode="decimal" min="0" value={f.kcal} onChange={set("kcal")} placeholder={fromMacros ? String(fromMacros) : "0"} /></label>
         <label>Protein (g)<input type="number" inputMode="decimal" min="0" value={f.protein} onChange={set("protein")} placeholder="0" /></label>
