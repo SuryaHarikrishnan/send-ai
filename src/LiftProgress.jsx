@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import TrendChart, { Sparkline } from "./TrendChart";
+import { Consistency, MuscleBalance, StrengthOverview, TrainingWeeks } from "./LiftCharts";
 import { DAY_MS, MUSCLE_NAMES, exerciseStats, totalVolume, workoutsError } from "./lifting";
 import "./Lift.css";
 
@@ -87,52 +88,158 @@ export default function LiftProgress({ user, focus, onFocus, onNavigate }) {
         </div>
       ) : (
         <>
-          <section className="lp-tiles">
-            <div className="lift-card lp-tile"><b>{workouts.length}</b><span>Workouts logged</span></div>
-            <div className="lift-card lp-tile"><b>{prsThisMonth}</b><span>PRs in 30 days</span></div>
-            <div className="lift-card lp-tile"><b>{bigNumber(liftedThisMonth)}</b><span>lb lifted in 30 days</span></div>
-          </section>
+          <Pager tabs={TABS}>
+            <div className="lpg-page">
+              <StrengthOverview stats={stats} onFocus={onFocus} />
+              <section className="lp-tiles">
+                <div className="lift-card lp-tile"><b>{workouts.length}</b><span>Workouts logged</span></div>
+                <div className="lift-card lp-tile"><b>{prsThisMonth}</b><span>PRs in 30 days</span></div>
+                <div className="lift-card lp-tile"><b>{bigNumber(liftedThisMonth)}</b><span>lb lifted in 30 days</span></div>
+              </section>
+            </div>
+            <div className="lpg-page"><TrainingWeeks workouts={workouts} /></div>
+            <div className="lpg-page"><MuscleBalance workouts={workouts} /></div>
+            <div className="lpg-page"><Consistency workouts={workouts} /></div>
+            <div className="lpg-page">
+              {recentPrs.length > 0 && (
+                <section className="lift-card lp-prs">
+                  <h2 className="lift-h2">Recent PRs</h2>
+                  {recentPrs.slice(0, 5).map(({ ex: e, p }) => (
+                    <button key={e.key + p.date} className="lp-pr-row" onClick={() => onFocus(e.key)}>
+                      <span className="lp-pr-ic"><Trophy /></span>
+                      <span className="lp-pr-name"><b>{e.name}</b><small>{e.weighted ? `Best set ${setText(p.bestSet)}` : `${reps(p.maxReps)} in a set`}</small></span>
+                      <span className="lp-pr-val"><b>{valueText(e, p.value)}</b><small>{ago(p.date)}</small></span>
+                    </button>
+                  ))}
+                </section>
+              )}
 
-          {recentPrs.length > 0 && (
-            <section className="lift-card lp-prs">
-              <h2 className="lift-h2">Recent PRs</h2>
-              {recentPrs.slice(0, 5).map(({ ex: e, p }) => (
-                <button key={e.key + p.date} className="lp-pr-row" onClick={() => onFocus(e.key)}>
-                  <span className="lp-pr-ic"><Trophy /></span>
-                  <span className="lp-pr-name"><b>{e.name}</b><small>{e.weighted ? `Best set ${setText(p.bestSet)}` : `${reps(p.maxReps)} in a set`}</small></span>
-                  <span className="lp-pr-val"><b>{valueText(e, p.value)}</b><small>{ago(p.date)}</small></span>
-                </button>
-              ))}
-            </section>
-          )}
-
-          <div className="lift-row lift-list-head">
-            <h2 className="lift-h2">All lifts</h2>
-            <span className="lift-sub">{Object.keys(stats).length} exercises</span>
-          </div>
-          {Object.keys(stats).length > 6 && (
-            <input className="lp-search" type="search" placeholder="Search your lifts" value={query} onChange={e => setQuery(e.target.value)} aria-label="Search your lifts" />
-          )}
-          <div className="lift-card lp-list">
-            {list.map(e => (
-              <button key={e.key} className="lp-row" onClick={() => onFocus(e.key)}>
-                <span className="lp-row-name">
-                  <b>{e.name}</b>
-                  <small>{ago(e.last.date)} · {setText(e.last.bestSet)}</small>
-                </span>
-                <Sparkline values={e.sessions.slice(-12).map(s => s.value)} />
-                <span className="lp-row-val">
-                  <b>{valueText(e, e.best.value.value)}</b>
-                  <small>{e.weighted ? "best est. max" : "best set"}</small>
-                </span>
-              </button>
-            ))}
-            {!list.length && <p className="lift-sub lp-none">No lifts match "{query}".</p>}
-          </div>
-          <p className="lp-foot">Estimated max is what you could lift once, worked out from your best set (Epley formula, sets of 12 reps or fewer).</p>
+              <div className="lift-row lift-list-head">
+                <h2 className="lift-h2">All lifts</h2>
+                <span className="lift-sub">{Object.keys(stats).length} exercises</span>
+              </div>
+              {Object.keys(stats).length > 6 && (
+                <input className="lp-search" type="search" placeholder="Search your lifts" value={query} onChange={e => setQuery(e.target.value)} aria-label="Search your lifts" />
+              )}
+              <div className="lift-card lp-list">
+                {list.map(e => (
+                  <button key={e.key} className="lp-row" onClick={() => onFocus(e.key)}>
+                    <span className="lp-row-name">
+                      <b>{e.name}</b>
+                      <small>{ago(e.last.date)} · {setText(e.last.bestSet)}</small>
+                    </span>
+                    <Sparkline values={e.sessions.slice(-12).map(s => s.value)} />
+                    <span className="lp-row-val">
+                      <b>{valueText(e, e.best.value.value)}</b>
+                      <small>{e.weighted ? "best est. max" : "best set"}</small>
+                    </span>
+                  </button>
+                ))}
+                {!list.length && <p className="lift-sub lp-none">No lifts match "{query}".</p>}
+              </div>
+              <p className="lp-foot">Estimated max is what you could lift once, worked out from your best set (Epley formula, sets of 12 reps or fewer).</p>
+            </div>
+          </Pager>
         </>
       )}
     </div>
+  );
+}
+
+const TABS = ["Strength", "Training", "Muscles", "Consistency", "All lifts"];
+// Remembered while the app is open, so coming back from a lift opens the same tab.
+let lastTab = 0;
+
+// Swipeable pages under a sideways scroll wheel of their names. The name in the
+// middle of the wheel is the page in view; the others shrink and fade with distance.
+// Swiping the pages turns the wheel, and spinning the wheel moves the pages.
+// The pager takes the height of the page in view.
+function Pager({ tabs, children }) {
+  const track = useRef(null);
+  const wheel = useRef(null);
+  const driver = useRef("track");
+  const settle = useRef(null);
+  const [tab, setTab] = useState(lastTab);
+  const [height, setHeight] = useState(undefined);
+
+  // Wheel scroll position that centers a fractional page index.
+  function wheelLeftFor(frac) {
+    const items = wheel.current.children;
+    const c = i => items[i].offsetLeft + items[i].offsetWidth / 2;
+    const lo = Math.max(0, Math.min(items.length - 1, Math.floor(frac)));
+    const hi = Math.min(items.length - 1, lo + 1);
+    return c(lo) + (c(hi) - c(lo)) * (frac - lo) - wheel.current.clientWidth / 2;
+  }
+  // Size and fade each name by its distance from the middle of the wheel.
+  function paint() {
+    const w = wheel.current;
+    const mid = w.scrollLeft + w.clientWidth / 2;
+    for (const el of w.children) {
+      const d = Math.min(2, Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid) / 110);
+      el.style.transform = `scale(${1 - d * 0.16})`;
+      el.style.opacity = String(1 - d * 0.32);
+    }
+  }
+
+  useLayoutEffect(() => {
+    track.current.scrollLeft = lastTab * track.current.clientWidth;
+    wheel.current.scrollLeft = wheelLeftFor(lastTab);
+    paint();
+  }, []);
+
+  useEffect(() => {
+    lastTab = tab;
+    const page = track.current.children[tab];
+    const ro = new ResizeObserver(() => setHeight(page.offsetHeight));
+    ro.observe(page);
+    return () => ro.disconnect();
+  }, [tab]);
+
+  function onTrackScroll() {
+    const el = track.current;
+    const frac = el.scrollLeft / el.clientWidth;
+    if (driver.current !== "wheel") wheel.current.scrollLeft = wheelLeftFor(frac);
+    const i = Math.round(frac);
+    if (i !== tab) setTab(i);
+  }
+  function onWheelScroll() {
+    paint();
+    if (driver.current !== "wheel") return;
+    // Once the wheel stops on a name, bring that page in.
+    clearTimeout(settle.current);
+    settle.current = setTimeout(() => {
+      const w = wheel.current;
+      const mid = w.scrollLeft + w.clientWidth / 2;
+      let best = 0;
+      [...w.children].forEach((el, i) => {
+        const d = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid);
+        if (d < Math.abs(w.children[best].offsetLeft + w.children[best].offsetWidth / 2 - mid)) best = i;
+      });
+      go(best);
+    }, 140);
+  }
+  function go(i) {
+    driver.current = "track";
+    wheel.current.scrollTo({ left: wheelLeftFor(i), behavior: "smooth" });
+    track.current.scrollTo({ left: i * track.current.clientWidth, behavior: "smooth" });
+  }
+
+  return (
+    <>
+      <div className="lpg-wheel-wrap">
+        <div className="lpg-wheel" role="tablist" aria-label="Progress views" ref={wheel} onScroll={onWheelScroll}
+          onPointerDown={() => { driver.current = "wheel"; }} onTouchStart={() => { driver.current = "wheel"; }}>
+          {tabs.map((t, i) => (
+            <button key={t} role="tab" aria-selected={tab === i} className={tab === i ? "on" : ""} onClick={() => go(i)}>{t}</button>
+          ))}
+        </div>
+        <i className="lpg-notch" aria-hidden="true" />
+      </div>
+      <div className="lpg-track" ref={track} onScroll={onTrackScroll} style={{ height }}
+        onPointerDown={() => { driver.current = "track"; }} onTouchStart={() => { driver.current = "track"; }}>
+        {children}
+      </div>
+    </>
   );
 }
 
