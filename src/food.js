@@ -83,6 +83,8 @@ const G = { id: "g", label: "g", g: 1 };
 const OZ = { id: "oz", label: "oz", g: 28.35 };
 const ML = { id: "ml", label: "ml", g: 1 };
 const FLOZ = { id: "floz", label: "fl oz", g: 29.57 };
+// Every food can be weighed. Drinks count 1 g as 1 ml, close enough for milk, juice and the like.
+const weightUnits = liquid => (liquid ? [ML, G, FLOZ] : [G, OZ]);
 const isWeight = u => ["g", "oz", "ml", "floz"].includes(u.id);
 
 const FRACTIONS = { 0.25: "¼", 0.5: "½", 0.75: "¾", 0.33: "⅓", 0.67: "⅔" };
@@ -260,7 +262,7 @@ const COMMON = [
 export const COMMON_GROUPS = ["Fruit", "Veg", "Protein", "Grains", "Dairy", "Fats & nuts", "Snacks", "Drinks"];
 
 export const COMMON_FOODS = COMMON.map(([name, group, kcal, protein, carbs, fat, label, g, plural, q]) => {
-  const liquid = group === "Drinks";
+  const liquid = group === "Drinks" || /^milk/i.test(name);
   return {
     name,
     brand: "",
@@ -269,7 +271,7 @@ export const COMMON_FOODS = COMMON.map(([name, group, kcal, protein, carbs, fat,
     group,
     per100: { kcal, protein, carbs, fat },
     perServing: null,
-    units: [{ id: "unit", label, plural, g }, liquid ? ML : G, liquid ? FLOZ : OZ],
+    units: [{ id: "unit", label, plural, g }, ...weightUnits(liquid)],
     defaultUnit: "unit",
     defaultAmount: q || 1,
   };
@@ -307,7 +309,7 @@ export function fromOFF(p) {
     const hint = (p.serving_size || "").replace(/\s+/g, " ").trim();
     units.push({ id: "serving", label: "serving", plural: "servings", g: sq, hint: hint || `${r1(sq)} ${liquid ? "ml" : "g"}` });
   }
-  units.push(liquid ? ML : G, liquid ? FLOZ : OZ);
+  units.push(...weightUnits(liquid));
   return {
     name,
     brand,
@@ -361,7 +363,7 @@ function fromUSDA(f) {
       const size = `${r1(f.servingG)} ${u}`;
       units.push({ id: "serving", label: "serving", plural: "servings", g: f.servingG, hint: f.servingText ? `${f.servingText} (${size})` : size });
     }
-    units.push(f.liquid ? ML : G, f.liquid ? FLOZ : OZ);
+    units.push(...weightUnits(f.liquid));
   }
   const round = n => n && { kcal: r1(n.kcal), protein: r1(n.protein), carbs: r1(n.carbs), fat: r1(n.fat) };
   return {
@@ -375,7 +377,39 @@ function fromUSDA(f) {
     units,
     defaultUnit: units[0].id,
     defaultAmount: units[0].id === "serving" ? 1 : 100,
+    fsid: f.fsid || "",
   };
+}
+
+// FatSecret search only gives "per 1 sandwich". Its food details add each serving's weight,
+// so the food can also be logged in grams.
+export async function fatsecretDetail(food, signal) {
+  if (!food.fsid || hasGrams(food)) return null;
+  const res = await fetch(`/api/foods?fsid=${encodeURIComponent(food.fsid)}`, { signal });
+  if (!res.ok) return null;
+  const d = (await res.json()).food;
+  if (!d || !d.servings?.length) return null;
+  const main = d.servings.find(s => s.g > 0);
+  if (!main) return null;
+  const f = main.g / 100;
+  const per100 = { kcal: r1(main.kcal / f), protein: r1(main.protein / f), carbs: r1(main.carbs / f), fat: r1(main.fat / f) };
+  const servingUnits = d.servings.filter(s => s.g > 0).slice(0, 4).map((s, i) => {
+    const one = /^1\s+(.+)$/.exec(s.description);
+    return { id: i ? `s${i}` : "serving", label: one ? one[1] : s.description, g: s.g, hint: `${r1(s.g)} ${s.liquid ? "ml" : "g"}` };
+  });
+  return { ...food, per100, units: [...servingUnits, ...weightUnits(main.liquid)], defaultUnit: "serving", defaultAmount: 1 };
+}
+
+export const hasGrams = food => (food.units || []).some(u => u.id === "g" || u.id === "ml");
+
+// Turn a per-serving food into one that can be weighed, once you know what one serving weighs.
+export function withServingGrams(food, grams) {
+  const g = Number(grams);
+  if (!(g > 0) || !food.perServing) return food;
+  const s = food.perServing;
+  const per100 = { kcal: r1((s.kcal / g) * 100), protein: r1((s.protein / g) * 100), carbs: r1((s.carbs / g) * 100), fat: r1((s.fat / g) * 100) };
+  const units = food.units.map(u => (u.id === "serving" ? { ...u, g, hint: `${r1(g)} g` } : u));
+  return { ...food, per100, units: [...units, G, OZ] };
 }
 
 async function fetchUSDA(params, signal) {
@@ -430,8 +464,8 @@ export async function searchFoods(q, signal) {
 }
 
 // A food you type in yourself, with calories and macros per serving.
-export function customFood({ name, brand, barcode, serving, kcal, protein, carbs, fat }) {
-  return {
+export function customFood({ name, brand, barcode, serving, grams, kcal, protein, carbs, fat }) {
+  return withServingGrams({
     name: name.trim(),
     brand: (brand || "").trim(),
     barcode: barcode || "",
@@ -442,7 +476,7 @@ export function customFood({ name, brand, barcode, serving, kcal, protein, carbs
     units: [{ id: "serving", label: (serving || "").trim() || "serving", plural: (serving || "").trim() ? undefined : "servings", g: null }],
     defaultUnit: "serving",
     defaultAmount: 1,
-  };
+  }, grams);
 }
 
 /* ---------- emoji icons for every food ---------- */

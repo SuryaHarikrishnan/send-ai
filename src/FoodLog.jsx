@@ -3,7 +3,7 @@ import { supabase } from "./supabase";
 import BarcodeScanner from "./BarcodeScanner";
 import { track } from "./tracking";
 import { AmountSheet, CustomSheet, PhotoSheet, PhotoSourceSheet, Thumb } from "./FoodSheets";
-import { COMMON_FOODS, COMMON_GROUPS, DAY_MS, MEALS, amountText, dayLabel, eatenAt, MEAL_NAMES, foodsError, logRow, lookupBarcode, mealForNow, mealSingular, nutrition, recentFoods, scanPhoto, searchFoods, shrinkPhoto } from "./food";
+import { COMMON_FOODS, COMMON_GROUPS, DAY_MS, MEALS, amountText, dayLabel, eatenAt, fatsecretDetail, hasGrams, MEAL_NAMES, foodsError, logRow, lookupBarcode, mealForNow, mealSingular, nutrition, recentFoods, scanPhoto, searchFoods, shrinkPhoto } from "./food";
 
 const ScanIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M8 9v6M11 9v6M14 9v6M17 9v6" /></svg>
@@ -93,6 +93,18 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
         setHistory(data || []);
       });
   }, [user]);
+
+  // FatSecret search results only carry a per-serving line; fetch the serving
+  // weights so the food can be tracked in grams too.
+  const pickedFood = picked?.food;
+  useEffect(() => {
+    if (!pickedFood || pickedFood.source !== "fatsecret" || !pickedFood.fsid || hasGrams(pickedFood)) return;
+    const ctl = new AbortController();
+    fatsecretDetail(pickedFood, ctl.signal)
+      .then(food => { if (food) setPicked(p => (p && p.food === pickedFood ? { ...p, food } : p)); })
+      .catch(() => {});
+    return () => ctl.abort();
+  }, [pickedFood]);
 
   // Open Food Facts search, after a short pause in typing.
   const q = query.trim();
@@ -279,6 +291,13 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
         ))}
       </div>
 
+      {!q && (
+        <button className="fl-manual" onClick={() => { setSheetError(""); setCustom({ name: "" }); }}>
+          <PlusIcon />
+          <span><b>Manual entry</b><small>Type in the calories, macros and grams yourself</small></span>
+        </button>
+      )}
+
       {histError && (
         <div className="lift-card lift-setup">
           <strong>{histError.title}</strong>
@@ -351,7 +370,7 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
           food={picked.food} unit={picked.unit} amount={picked.amount} meal={meal}
           saving={saving} error={sheetError}
           onCancel={() => setPicked(null)}
-          onSave={async ({ unit, amount, meal: m }) => { if (await addLog(picked.food, unit, amount, m)) setPicked(null); }}
+          onSave={async ({ unit, amount, meal: m, food }) => { if (await addLog(food || picked.food, unit, amount, m)) setPicked(null); }}
         />
       )}
       {custom && (

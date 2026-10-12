@@ -387,3 +387,12 @@
 .fph-src span { display: flex; flex-direction: column; }
 .fph-src b { font-size: 17px; }
 .fph-src small { font-size: 14px; color: var(--mut); }
+
+.fd-weigh { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; font-size: 15px; font-weight: 600; color: var(--mut); }
+.fd-sheet .fd-weigh input { text-align: center; font-weight: 700; }
+.fd-weigh-btn { align-self: flex-start; border: 1px dashed rgba(255, 255, 255, 0.35); background: transparent; border-radius: 12px; padding: 8px 14px; font-size: 14px !important; font-weight: 700 !important; }
+.fl-manual { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(255, 255, 255, 0.08); color: #fff; font: inherit; text-align: left; cursor: pointer; }
+.fl-manual svg { width: 22px; height: 22px; flex: none; }
+.fl-manual b { font-size: 15px; }
+.fl-manual small { display: block; font-size: 13px; color: var(--mut); }
+.fl-manual:active { transform: scale(0.98); }

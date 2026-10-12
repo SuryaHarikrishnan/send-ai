@@ -102,6 +102,7 @@ function fromFatSecret(f) {
   return {
     code: "",
     src: "fatsecret",
+    fsid: String(f.food_id || ""),
     name: f.food_name,
     brand: f.brand_name || "",
     per100: hundred ? nums : null,
@@ -125,10 +126,49 @@ async function searchFatSecret(q) {
   return list.map(fromFatSecret).filter(Boolean);
 }
 
+// One FatSecret food with every serving and its weight, so it can be logged in grams.
+async function fatsecretFood(id) {
+  const url = signedUrl({ method: "food.get.v4", format: "json", food_id: id });
+  if (!url) return null;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`FatSecret ${r.status}`);
+  const j = await r.json();
+  if (j.error) throw new Error(`FatSecret: ${j.error.message || j.error.code}`);
+  const list = j.food?.servings?.serving ? [].concat(j.food.servings.serving) : [];
+  const servings = list.map(s => {
+    const unit = String(s.metric_serving_unit || "").toLowerCase();
+    const amount = Number(s.metric_serving_amount) || 0;
+    const g = unit === "g" || unit === "ml" ? amount : unit === "oz" ? amount * 28.35 : 0;
+    return {
+      description: String(s.serving_description || "serving"),
+      g,
+      liquid: unit === "ml",
+      kcal: Number(s.calories) || 0,
+      protein: Number(s.protein) || 0,
+      carbs: Number(s.carbohydrate) || 0,
+      fat: Number(s.fat) || 0,
+      isDefault: s.is_default === "1",
+    };
+  });
+  // The default serving first, since search results describe that one.
+  servings.sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
+  return { id, servings };
+}
+
 export default async function handler(req, res) {
   if (req.method !== "GET") return res.status(405).end();
   const q = String(req.query.q || "").trim().slice(0, 80);
   const upc = String(req.query.upc || "").replace(/\D/g, "").slice(0, 14);
+  const fsid = String(req.query.fsid || "").replace(/\D/g, "").slice(0, 20);
+  if (fsid) {
+    try {
+      const food = await fatsecretFood(fsid);
+      res.setHeader("Cache-Control", "public, s-maxage=86400, stale-while-revalidate=604800");
+      return res.status(200).json({ food });
+    } catch (e) {
+      return res.status(502).json({ error: e.message || "FatSecret lookup failed." });
+    }
+  }
   if (!q && !upc) return res.status(400).json({ error: "Give q or upc." });
 
   try {
