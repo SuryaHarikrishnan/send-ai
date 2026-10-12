@@ -430,25 +430,16 @@
 .lc-key { display: inline-flex; align-items: center; gap: 4px; }
 .lc-key i { width: 11px; }
 
-/* progress pager */
-.lpg-track { display: flex; align-items: flex-start; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; margin: 0 -16px; transition: height 0.25s ease; }
-.lpg-track::-webkit-scrollbar { display: none; }
-.lpg-page { flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always; padding: 0 16px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.lpg-page .tc svg { touch-action: pan-y; }
-
-
-.lpg-wheel-wrap { position: relative; margin: -4px -16px 0; }
-.lpg-wheel {
-  position: relative;
-  display: flex; align-items: center; gap: 4px; overflow-x: auto; scrollbar-width: none;
-  scroll-snap-type: x mandatory; padding: 6px 50% 14px; overscroll-behavior-x: contain;
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
-}
-.lpg-wheel::-webkit-scrollbar { display: none; }
-.lpg-wheel button {
-  flex: none; scroll-snap-align: center; border: 0; background: none; padding: 4px 12px;
-  font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px !important; font-weight: 800; letter-spacing: -0.4px;
-  color: #fff !important; white-space: nowrap; transform-origin: center; will-change: transform, opacity;
-}
-.lpg-notch { position: absolute; left: 50%; bottom: 4px; width: 22px; height: 4px; margin-left: -11px; border-radius: 99px; background: var(--sky); pointer-events: none; }
+/* progress carousel */
+.lpc { display: flex; flex-direction: column; gap: 10px; }
+.lpc-track { display: flex; align-items: stretch; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; margin: 0 -16px; }
+.lpc-track::-webkit-scrollbar { display: none; }
+.lpc-slide { flex: 0 0 100%; scroll-snap-align: start; scroll-snap-stop: always; padding: 0 16px; display: flex; min-width: 0; }
+.lpc-slide > .lift-card { flex: 1; min-width: 0; }
+.lpc-slide .tc svg { touch-action: pan-y; }
+.lpc-dots { display: flex; justify-content: center; align-items: center; gap: 2px; }
+.lpc-dots button { width: 22px; height: 22px; border: 0; padding: 0; background: none; display: grid; place-items: center; }
+.lpc-dots button::after { content: ""; width: 7px; height: 7px; border-radius: 99px; background: rgba(255, 255, 255, 0.3); transition: width 0.2s, background 0.2s; }
+.lpc-dots button.on::after { width: 20px; background: #fff; }
+.lpc-dots button.on { width: 32px; }
+.lc-empty { display: flex; flex-direction: column; gap: 8px; }

@@ -64,53 +64,67 @@ export function TrainingWeeks({ workouts }) {
   );
 }
 
-// Overall strength from the first log to now: the combined estimated max of the
-// headline lifts, then each lift's change since it was first logged.
-export function StrengthOverview({ stats, onFocus }) {
+// Overall strength from the first log to now: the combined estimated max of the headline lifts.
+export function StrengthChart({ stats }) {
   const { lifts, sbd, points } = strengthHistory(stats);
-  if (!lifts.length) return null;
+  if (!lifts.length) return (
+    <section className="lift-card lc-empty">
+      <h2 className="lift-h2">Strength</h2>
+      <p className="lc-note">Log a lift with weight, like squat, bench or deadlift, and your strength over time shows up here.</p>
+    </section>
+  );
   const first = points[0], last = points[points.length - 1];
   const change = first && last ? last.v - first.v : 0;
   const label = sbd ? "Squat + bench + deadlift" : lifts.map(e => e.name).join(" + ");
 
   return (
-    <>
-      <section className="lift-card lp-chart" data-shot="strength-overall">
-        <div className="lp-hero">
-          <small>{label}</small>
-          <b>{last ? last.v.toLocaleString() : "–"}<span> lb</span></b>
-          {points.length > 1 && (
-            <em className={change > 0 ? "up" : change < 0 ? "down" : ""}>
-              {change > 0 ? "▲ " : change < 0 ? "▼ " : ""}{change === 0 ? "No change" : `${Math.abs(change).toLocaleString()} lb`} since {shortDate(first.t)}
-            </em>
-          )}
-        </div>
-        {points.length > 0 && <TrendChart points={points.map(p => ({ ...p, detail: p.pr ? "New best total" : "" }))} unit="lb" label="Strength total" />}
-        {points.length < 2 && <p className="lift-sub lp-center">Log {lifts.map(e => e.name.toLowerCase()).join(", ")} a few times to see your strength climb.</p>}
-        <p className="lc-note">Estimated one-rep maxes added up, using your best set so far for each lift.</p>
-      </section>
+    <section className="lift-card lp-chart" data-shot="strength-overall">
+      <div className="lp-hero">
+        <small>{label}</small>
+        <b>{last ? last.v.toLocaleString() : "–"}<span> lb</span></b>
+        {points.length > 1 && (
+          <em className={change > 0 ? "up" : change < 0 ? "down" : ""}>
+            {change > 0 ? "▲ " : change < 0 ? "▼ " : ""}{change === 0 ? "No change" : `${Math.abs(change).toLocaleString()} lb`} since {shortDate(first.t)}
+          </em>
+        )}
+      </div>
+      {points.length > 0 && <TrendChart points={points.map(p => ({ ...p, detail: p.pr ? "New best total" : "" }))} unit="lb" label="Strength total" />}
+      {points.length < 2 && <p className="lift-sub lp-center">Log {lifts.map(e => e.name.toLowerCase()).join(", ")} a few times to see your strength climb.</p>}
+      <p className="lc-note">Estimated one-rep maxes added up, using your best set so far for each lift.</p>
+    </section>
+  );
+}
 
-      <section className="lift-card lc-main" data-shot="main-lifts">
-        <div className="lift-row">
-          <h2 className="lift-h2">Your main lifts</h2>
-          <span className="lift-sub">Since you started</span>
-        </div>
-        {lifts.map(e => {
-          const best = Math.max(...e.sessions.map(s => s.value));
-          const diff = best - e.sessions[0].value;
-          return (
-            <button key={e.key} className="lp-row" onClick={() => onFocus(e.key)}>
-              <span className="lp-row-name"><b>{e.name}</b><small>{e.sessions.length} sessions · {e.sessions[0].value} lb at the start</small></span>
-              <Sparkline values={e.sessions.map(s => s.value)} />
-              <span className="lp-row-val">
-                <b>{best.toLocaleString()} lb</b>
-                {e.sessions.length > 1 && <small className={diff > 0 ? "up" : ""}>{diff > 0 ? `▲ ${diff} lb` : "No change"}</small>}
-              </span>
-            </button>
-          );
-        })}
-      </section>
-    </>
+// Each headline lift's best estimated max and how far it has come since its first log.
+export function MainLiftsSince({ stats, onFocus }) {
+  const { lifts } = strengthHistory(stats);
+  if (!lifts.length) return (
+    <section className="lift-card lc-empty">
+      <h2 className="lift-h2">Your main lifts</h2>
+      <p className="lc-note">Your main lifts and how far each has come show up here once you log them.</p>
+    </section>
+  );
+  return (
+    <section className="lift-card lc-main" data-shot="main-lifts">
+      <div className="lift-row">
+        <h2 className="lift-h2">Your main lifts</h2>
+        <span className="lift-sub">Since you started</span>
+      </div>
+      {lifts.map(e => {
+        const best = Math.max(...e.sessions.map(s => s.value));
+        const diff = best - e.sessions[0].value;
+        return (
+          <button key={e.key} className="lp-row" onClick={() => onFocus(e.key)}>
+            <span className="lp-row-name"><b>{e.name}</b><small>{e.sessions.length} sessions · {e.sessions[0].value} lb at the start</small></span>
+            <Sparkline values={e.sessions.map(s => s.value)} />
+            <span className="lp-row-val">
+              <b>{best.toLocaleString()} lb</b>
+              {e.sessions.length > 1 && <small className={diff > 0 ? "up" : ""}>{diff > 0 ? `▲ ${diff} lb` : "No change"}</small>}
+            </span>
+          </button>
+        );
+      })}
+    </section>
   );
 }
 
@@ -118,7 +132,12 @@ export function StrengthOverview({ stats, onFocus }) {
 export function MuscleBalance({ workouts }) {
   const groups = Object.entries(groupSetsPerWeek(workouts, 4));
   const max = Math.max(...groups.map(([, v]) => v));
-  if (!max) return null;
+  if (!max) return (
+    <section className="lift-card lc-empty">
+      <h2 className="lift-h2">Muscle balance</h2>
+      <p className="lc-note">The muscles you've trained in the last 4 weeks show up here.</p>
+    </section>
+  );
   const low = groups.reduce((a, g) => (g[1] < a[1] ? g : a), groups[0]);
   const fmt = v => `${Number.isInteger(v) ? v : v.toFixed(1)}`;
   const scale = v => `${(v / Math.max(max, 24)) * 100}%`;
