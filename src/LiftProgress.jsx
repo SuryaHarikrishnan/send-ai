@@ -150,17 +150,41 @@ const TABS = ["Strength", "Training", "Muscles", "Consistency", "All lifts"];
 // Remembered while the app is open, so coming back from a lift opens the same tab.
 let lastTab = 0;
 
-// Swipeable pages with a row of tabs. The pager takes the height of the page in view.
+// Swipeable pages under a sideways scroll wheel of their names. The name in the
+// middle of the wheel is the page in view; the others shrink and fade with distance.
+// Swiping the pages turns the wheel, and spinning the wheel moves the pages.
+// The pager takes the height of the page in view.
 function Pager({ tabs, children }) {
   const track = useRef(null);
-  const chips = useRef(null);
+  const wheel = useRef(null);
+  const driver = useRef("track");
+  const settle = useRef(null);
   const [tab, setTab] = useState(lastTab);
   const [height, setHeight] = useState(undefined);
-  const jumping = useRef(null);
+
+  // Wheel scroll position that centers a fractional page index.
+  function wheelLeftFor(frac) {
+    const items = wheel.current.children;
+    const c = i => items[i].offsetLeft + items[i].offsetWidth / 2;
+    const lo = Math.max(0, Math.min(items.length - 1, Math.floor(frac)));
+    const hi = Math.min(items.length - 1, lo + 1);
+    return c(lo) + (c(hi) - c(lo)) * (frac - lo) - wheel.current.clientWidth / 2;
+  }
+  // Size and fade each name by its distance from the middle of the wheel.
+  function paint() {
+    const w = wheel.current;
+    const mid = w.scrollLeft + w.clientWidth / 2;
+    for (const el of w.children) {
+      const d = Math.min(2, Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid) / 110);
+      el.style.transform = `scale(${1 - d * 0.16})`;
+      el.style.opacity = String(1 - d * 0.32);
+    }
+  }
 
   useLayoutEffect(() => {
-    const el = track.current;
-    el.scrollLeft = lastTab * el.clientWidth;
+    track.current.scrollLeft = lastTab * track.current.clientWidth;
+    wheel.current.scrollLeft = wheelLeftFor(lastTab);
+    paint();
   }, []);
 
   useEffect(() => {
@@ -168,33 +192,51 @@ function Pager({ tabs, children }) {
     const page = track.current.children[tab];
     const ro = new ResizeObserver(() => setHeight(page.offsetHeight));
     ro.observe(page);
-    chips.current.children[tab]?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
     return () => ro.disconnect();
   }, [tab]);
 
-  function onScroll() {
-    if (jumping.current) return;
+  function onTrackScroll() {
     const el = track.current;
-    const i = Math.round(el.scrollLeft / el.clientWidth);
+    const frac = el.scrollLeft / el.clientWidth;
+    if (driver.current !== "wheel") wheel.current.scrollLeft = wheelLeftFor(frac);
+    const i = Math.round(frac);
     if (i !== tab) setTab(i);
   }
+  function onWheelScroll() {
+    paint();
+    if (driver.current !== "wheel") return;
+    // Once the wheel stops on a name, bring that page in.
+    clearTimeout(settle.current);
+    settle.current = setTimeout(() => {
+      const w = wheel.current;
+      const mid = w.scrollLeft + w.clientWidth / 2;
+      let best = 0;
+      [...w.children].forEach((el, i) => {
+        const d = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid);
+        if (d < Math.abs(w.children[best].offsetLeft + w.children[best].offsetWidth / 2 - mid)) best = i;
+      });
+      go(best);
+    }, 140);
+  }
   function go(i) {
-    const el = track.current;
-    // Ignore the scroll events of a tapped jump so the tabs in between don't flash.
-    clearTimeout(jumping.current);
-    jumping.current = setTimeout(() => { jumping.current = null; }, 600);
-    el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
-    setTab(i);
+    driver.current = "track";
+    wheel.current.scrollTo({ left: wheelLeftFor(i), behavior: "smooth" });
+    track.current.scrollTo({ left: i * track.current.clientWidth, behavior: "smooth" });
   }
 
   return (
     <>
-      <div className="lpg-tabs" role="tablist" aria-label="Progress views" ref={chips}>
-        {tabs.map((t, i) => (
-          <button key={t} role="tab" aria-selected={tab === i} className={tab === i ? "on" : ""} onClick={() => go(i)}>{t}</button>
-        ))}
+      <div className="lpg-wheel-wrap">
+        <div className="lpg-wheel" role="tablist" aria-label="Progress views" ref={wheel} onScroll={onWheelScroll}
+          onPointerDown={() => { driver.current = "wheel"; }} onTouchStart={() => { driver.current = "wheel"; }}>
+          {tabs.map((t, i) => (
+            <button key={t} role="tab" aria-selected={tab === i} className={tab === i ? "on" : ""} onClick={() => go(i)}>{t}</button>
+          ))}
+        </div>
+        <i className="lpg-notch" aria-hidden="true" />
       </div>
-      <div className="lpg-track" ref={track} onScroll={onScroll} style={{ height }}>
+      <div className="lpg-track" ref={track} onScroll={onTrackScroll} style={{ height }}
+        onPointerDown={() => { driver.current = "track"; }} onTouchStart={() => { driver.current = "track"; }}>
         {children}
       </div>
     </>
