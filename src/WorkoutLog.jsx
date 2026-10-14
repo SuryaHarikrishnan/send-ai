@@ -5,10 +5,8 @@ import DurationPicker from "./DurationPicker";
 import { track } from "./tracking";
 import { MUSCLE_NAMES, WORKOUT_NAMES, findExercise, formatDuration, setSummary, workoutsError } from "./lifting";
 
-const todayISO = () => {
-  const d = new Date();
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-};
+const localISO = d => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const todayISO = () => localISO(new Date());
 const newSet = (prev) => ({ reps: prev?.reps ?? "", weight: prev?.weight ?? "" });
 
 function readRest() {
@@ -84,8 +82,18 @@ function RestTimer({ rest, onChange, onDone }) {
   );
 }
 
-export default function WorkoutLog({ user, onNavigate }) {
-  const [draft] = useState(() => readDraft(user));
+// An already logged workout, in the shape the form edits.
+const fromWorkout = w => ({
+  title: w.title,
+  date: localISO(new Date(w.performed_at)),
+  duration: w.duration_min ? String(w.duration_min) : "",
+  exercises: (w.exercises || []).map(e => ({ name: e.name, sets: e.sets.map(s => ({ reps: s.reps, weight: s.weight })) })),
+});
+
+// With `editing`, the form changes that logged workout instead of adding a new one,
+// and leaves any half-logged new workout on the phone alone.
+export default function WorkoutLog({ user, editing, onNavigate }) {
+  const [draft] = useState(() => (editing ? fromWorkout(editing) : readDraft(user)));
   const [title, setTitle] = useState(draft?.title ?? "Push");
   const [date, setDate] = useState(() => (draft?.date && draft.date <= todayISO() ? draft.date : todayISO()));
   const [duration, setDuration] = useState(draft?.duration ?? "");
@@ -99,19 +107,20 @@ export default function WorkoutLog({ user, onNavigate }) {
   useEffect(() => {
     supabase
       .from("workouts")
-      .select("title, exercises, performed_at")
+      .select("id, title, exercises, performed_at")
       .eq("user_id", user.id)
       .order("performed_at", { ascending: false })
       .limit(40)
-      .then(({ data }) => setHistory(data || []));
-  }, [user]);
+      .then(({ data }) => setHistory((data || []).filter(w => w.id !== editing?.id)));
+  }, [user, editing]);
 
   useEffect(() => {
+    if (editing) return;
     try {
       if (exercises.length) localStorage.setItem(draftKey(user), JSON.stringify({ title, date, duration, exercises, rest }));
       else localStorage.removeItem(draftKey(user));
     } catch { /* storage blocked */ }
-  }, [user, title, date, duration, exercises, rest]);
+  }, [user, editing, title, date, duration, exercises, rest]);
 
   function discard() {
     if (!window.confirm("Discard this workout? What you've entered will be lost.")) return;
@@ -197,18 +206,27 @@ export default function WorkoutLog({ user, onNavigate }) {
     setSaving(true);
     setError("");
     const isToday = date === todayISO();
-    const performed = isToday ? new Date() : new Date(`${date}T12:00:00`);
-    const { error: err } = await supabase.from("workouts").insert({
-      user_id: user.id,
+    // An edited workout keeps its original time unless its day changed.
+    const keepTime = editing && date === localISO(new Date(editing.performed_at));
+    const performed = keepTime ? new Date(editing.performed_at) : isToday ? new Date() : new Date(`${date}T12:00:00`);
+    const row = {
       title: title.trim() || "Workout",
       performed_at: performed.toISOString(),
       duration_min: Number(duration) || null,
       exercises: cleaned,
-    });
+    };
+    const { error: err } = editing
+      ? await supabase.from("workouts").update(row).eq("id", editing.id)
+      : await supabase.from("workouts").insert({ user_id: user.id, ...row });
     setSaving(false);
     if (err) {
       const e = workoutsError(err);
       setError(e.title === "Couldn't load workouts." ? `Couldn't save the workout: ${err.message}` : `${e.title} ${e.detail}`);
+      return;
+    }
+    if (editing) {
+      track("workout_edited", { title: row.title, exercises: cleaned.length });
+      onNavigate("home");
       return;
     }
     clearDraft(user);
@@ -220,8 +238,11 @@ export default function WorkoutLog({ user, onNavigate }) {
     <div className="lift">
       <header className="lift-head">
         <div>
-          <p className="lift-date">{draft?.exercises?.length && exercises.length ? "Picking up where you left off" : "New workout"}</p>
-          <h1 className="lift-title">Log workout</h1>
+          <p className="lift-date">
+            {editing ? new Date(editing.performed_at).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })
+              : draft?.exercises?.length && exercises.length ? "Picking up where you left off" : "New workout"}
+          </p>
+          <h1 className="lift-title">{editing ? "Edit workout" : "Log workout"}</h1>
         </div>
       </header>
 
@@ -247,7 +268,7 @@ export default function WorkoutLog({ user, onNavigate }) {
             onDone={min => { setDuration(min ? String(min) : ""); setPickingDur(false); }}
           />
         )}
-        {last && exercises.length === 0 && (
+        {last && !editing && exercises.length === 0 && (
           <button className="wl-repeat" onClick={repeatLast}>
             Repeat last {last.title} · {last.exercises.length} exercises
           </button>
@@ -300,9 +321,11 @@ export default function WorkoutLog({ user, onNavigate }) {
 
       {error && <p className="wl-error">{error}</p>}
       <button className="lift-start wl-save" onClick={save} disabled={saving || !exercises.length}>
-        {saving ? "Saving..." : "Save workout"}
+        {saving ? "Saving..." : editing ? "Save changes" : "Save workout"}
       </button>
-      {exercises.length > 0 && <button className="wl-discard" onClick={discard}>Discard workout</button>}
+      {editing
+        ? <button className="wl-discard" onClick={() => onNavigate("home")}>Cancel, keep it as it was</button>
+        : exercises.length > 0 && <button className="wl-discard" onClick={discard}>Discard workout</button>}
       {rest && <div className="wl-rest-space" />}
       {rest && <RestTimer rest={rest} onChange={adjustRest} onDone={() => setRest(null)} />}
     </div>

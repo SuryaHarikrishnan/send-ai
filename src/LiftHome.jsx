@@ -33,7 +33,7 @@ const Dumbbell = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6.5 6.5v11M3.5 9v6M17.5 6.5v11M20.5 9v6M6.5 12h11" /></svg>
 );
 
-export default function LiftHome({ user, onNavigate, onOpenExercise }) {
+export default function LiftHome({ user, onNavigate, onEdit, onOpenExercise }) {
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -227,7 +227,10 @@ export default function LiftHome({ user, onNavigate, onOpenExercise }) {
                 <button onClick={() => setConfirmDelete(null)}>Keep</button>
               </span>
             ) : (
-              <button className="lift-del" onClick={() => setConfirmDelete(w.id)}>Delete</button>
+              <span className="lift-wo-acts">
+                <button className="lift-del" onClick={() => onEdit(w)}>Edit</button>
+                <button className="lift-del" onClick={() => setConfirmDelete(w.id)}>Delete</button>
+              </span>
             )}
           </div>
         </article>
