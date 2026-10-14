@@ -99,8 +99,10 @@ export default function Dashboard({ user }) {
   const setFoodDay = d => setFoodPick(d.toDateString() === new Date().toDateString() ? null : d);
   const [foodMeal, setFoodMeal] = useState(null);
   const [owner, setOwner] = useState(false);
+  // A logged workout being changed; the log form opens filled in with it.
+  const [editWorkout, setEditWorkout] = useState(null);
 
-  const go = t => { setTab(t === "workout" ? "log" : t); setFocus(null); if (t === "log") setFoodMeal(null); };
+  const go = t => { setTab(t === "workout" ? "log" : t); setFocus(null); setEditWorkout(null); if (t === "log") setFoodMeal(null); };
   useEffect(() => { window.scrollTo(0, 0); }, [tab, sport]);
   // Only owners (public.app_owners) get a Stats row; the stats themselves are checked again on the server.
   useEffect(() => {
@@ -149,9 +151,9 @@ export default function Dashboard({ user }) {
       </header>
 
       <main className="dash-content">
-        {lifting && tab === "home" && <LiftHome user={user} onNavigate={go} onOpenExercise={k => { setFocus(k); setTab("progress"); }} />}
+        {lifting && tab === "home" && <LiftHome user={user} onNavigate={go} onEdit={w => { setEditWorkout(w); setTab("log"); }} onOpenExercise={k => { setFocus(k); setTab("progress"); }} />}
         {lifting && tab === "progress" && <LiftProgress user={user} focus={focus} onFocus={setFocus} onNavigate={go} />}
-        {lifting && tab === "log" && <WorkoutLog user={user} onNavigate={go} />}
+        {lifting && tab === "log" && <WorkoutLog key={editWorkout?.id || "new"} user={user} editing={editWorkout} onNavigate={go} />}
         {food && tab === "home" && <FoodHome user={user} day={foodDay} onDay={setFoodDay} onAdd={m => { setTab("log"); setFoodMeal(m); }} />}
         {food && tab === "progress" && <FoodProgress user={user} />}
         {food && tab === "log" && <FoodLog key={`${foodDay.toDateString()}-${foodMeal}`} user={user} day={foodDay} meal={foodMeal} onDone={() => go("home")} />}

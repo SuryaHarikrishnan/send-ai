@@ -170,6 +170,8 @@
 .lift-tot > span { font-size: 12px; font-weight: 600; background: rgba(0, 20, 60, 0.35); border-radius: 8px; padding: 4px 9px; }
 .lift-del { margin-left: auto; background: none; border: 0; font-size: 12px !important; color: var(--mut) !important; padding: 4px; }
 .lift-del:hover { color: #fff !important; }
+.lift-tot .lift-wo-acts { margin-left: auto; display: flex; gap: 2px; background: none; padding: 0; }
+.lift-wo-acts .lift-del { margin-left: 0; padding: 6px 10px; }
 .lift-tot .lift-del-ask { margin-left: auto; display: flex; gap: 8px; align-items: center; background: none; padding: 0; color: var(--mut); }
 .lift-del-ask button { border: 1px solid var(--card-line); background: var(--faint); border-radius: 8px; padding: 3px 9px; font-size: 12px !important; }
 
