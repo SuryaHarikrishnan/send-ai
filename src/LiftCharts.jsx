@@ -168,40 +168,64 @@ export function MuscleBalance({ workouts }) {
   );
 }
 
-// Calendar of training days, last 18 weeks, Monday at the top.
+const CAL_RANGES = [["2W", 2, "2 weeks"], ["1M", 5, "month"], ["6M", 26, "6 months"], ["1Y", 52, "year"]];
+const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
+
+// Calendar of training days: white if you logged a workout that day, blank if not.
+// Short ranges read like a calendar (a row per week); long ones are a column per week.
 export function Consistency({ workouts }) {
-  const WEEKS = 18;
+  const [range, setRange] = useState("2W");
+  const [, weeks, rangeName] = CAL_RANGES.find(r => r[0] === range);
   const byDay = setsByDay(workouts);
-  const first = new Date(weekStart(new Date()).getTime() - (WEEKS - 1) * 7 * DAY_MS);
+  const first = new Date(weekStart(new Date()).getTime() - (weeks - 1) * 7 * DAY_MS);
   const today = new Date().setHours(0, 0, 0, 0);
-  const cols = Array.from({ length: WEEKS }, (_, c) =>
+  const grid = Array.from({ length: weeks }, (_, w) =>
     Array.from({ length: 7 }, (_, r) => {
       const d = new Date(first);
-      d.setDate(first.getDate() + c * 7 + r);
-      const n = byDay[d.toDateString()] || 0;
-      return { d, n, future: d.getTime() > today, level: n === 0 ? 0 : n < 12 ? 1 : n < 20 ? 2 : 3 };
+      d.setDate(first.getDate() + w * 7 + r);
+      return { d, on: (byDay[d.toDateString()] || 0) > 0, future: d.getTime() > today, today: d.getTime() === today };
     }));
-  const days = cols.flat().filter(c => c.n > 0).length;
-  const activeWeeks = cols.filter(col => col.some(c => c.n > 0)).length;
+  const days = grid.flat().filter(c => c.on).length;
+  const activeWeeks = grid.filter(wk => wk.some(c => c.on)).length;
+  const short = weeks <= 5;
+  const cls = c => `${c.on ? "on" : ""}${c.future ? " fut" : ""}${c.today ? " now" : ""}`;
+  const tip = c => `${shortDate(c.d)}${c.on ? ", trained" : ""}`;
+  // Month names over the first week of each month, skipped when too close to the last one to fit.
+  let lastLabel = -9;
+  const monthLabels = grid.map((col, w) => {
+    if (w > 0 && col[0].d.getMonth() === grid[w - 1][0].d.getMonth()) return "";
+    if (w - lastLabel < (weeks > 30 ? 8 : 3)) return "";
+    lastLabel = w;
+    return col[0].d.toLocaleDateString(undefined, { month: "short" });
+  });
 
   return (
     <section className="lift-card lc-cal" data-shot="consistency">
       <div className="lift-row">
         <h2 className="lift-h2">Consistency</h2>
-        <span className="lift-sub">{days} days in {WEEKS} weeks</span>
+        <div className="lift-toggle" role="group" aria-label="Time range">
+          {CAL_RANGES.map(([r]) => (
+            <button key={r} className={range === r ? "on" : ""} aria-pressed={range === r} onClick={() => setRange(r)}>{r}</button>
+          ))}
+        </div>
       </div>
-      <div className="lc-grid" role="img" aria-label={`Trained ${days} days and ${activeWeeks} of the last ${WEEKS} weeks`}>
-        {cols.map((col, c) => (
-          <div key={c} className="lc-gcol">
-            <span className="lc-m">{c === 0 || col[0].d.getMonth() !== cols[c - 1][0].d.getMonth() ? col[0].d.toLocaleDateString(undefined, { month: "short" }) : ""}</span>
-            {col.map((cell, r) => <i key={r} className={`l${cell.level}${cell.future ? " fut" : ""}`} title={cell.n ? `${shortDate(cell.d)}: ${cell.n} sets` : undefined} />)}
-          </div>
-        ))}
-      </div>
-      <div className="lift-row lc-cal-foot">
-        <span>Trained {activeWeeks} of {WEEKS} weeks</span>
-        <span className="lc-key">Fewer sets<i className="l1" /><i className="l2" /><i className="l3" />More</span>
-      </div>
+      <p className="lc-cal-sum"><b>{days}</b> day{days === 1 ? "" : "s"} trained in the last {rangeName}</p>
+      {short ? (
+        <div className="lc-month" role="img" aria-label={`Trained ${days} days in the last ${rangeName}`}>
+          {DAY_LETTERS.map((l, i) => <span key={i} className="lc-dl">{l}</span>)}
+          {grid.flat().map(c => <i key={c.d.toDateString()} className={cls(c)} title={tip(c)}>{c.d.getDate()}</i>)}
+        </div>
+      ) : (
+        <div className="lc-grid" style={{ gridTemplateColumns: `repeat(${weeks}, minmax(0, 1fr))`, gap: weeks > 30 ? 1 : 2 }} role="img" aria-label={`Trained ${days} days and ${activeWeeks} of the last ${weeks} weeks`}>
+          {grid.map((col, w) => (
+            <div key={w} className="lc-gcol">
+              <span className="lc-m">{monthLabels[w]}</span>
+              {col.map(c => <i key={c.d.toDateString()} className={cls(c)} title={tip(c)} />)}
+            </div>
+          ))}
+        </div>
+      )}
+      <p className="lc-cal-foot">Trained {activeWeeks} of {weeks} weeks</p>
     </section>
   );
 }
