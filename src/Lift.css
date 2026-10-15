@@ -432,11 +432,12 @@
 .lc-grid { display: grid; grid-template-columns: repeat(18, 1fr); gap: 3px; }
 .lc-gcol { display: grid; grid-template-rows: 14px repeat(7, auto); gap: 3px; min-width: 0; }
 .lc-m { font-size: 10px; font-weight: 600; color: var(--mut); white-space: nowrap; overflow: visible; }
-.lc-grid i, .lc-key i { display: block; aspect-ratio: 1; border-radius: 3px; background: var(--faint); }
+.lc-grid i, .lc-key i { display: block; aspect-ratio: 1; border-radius: 3px; background: rgba(255, 255, 255, 0.07); }
 .lc-grid i.fut { background: transparent; border: 1px dashed rgba(255, 255, 255, 0.12); }
-.l1 { background: rgba(140, 200, 255, 0.4) !important; }
-.l2 { background: rgba(140, 200, 255, 0.72) !important; }
-.l3 { background: var(--sky) !important; }
+/* Trained days are solid and bright against the dim empty days; more sets, brighter. */
+.l1 { background: #6fb8ff !important; }
+.l2 { background: #a6d6ff !important; }
+.l3 { background: #ffffff !important; box-shadow: 0 0 6px rgba(166, 214, 255, 0.7); }
 .lc-cal-foot { font-size: 12px; color: var(--mut); font-weight: 600; }
 .lc-key { display: inline-flex; align-items: center; gap: 4px; }
 .lc-key i { width: 11px; }
