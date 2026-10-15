@@ -429,17 +429,21 @@
 .lc-mb-track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: var(--sky); transition: width 0.35s ease; }
 .lc-mb-row.low .lc-mb-track i { background: #ffd27a; }
 
-.lc-grid { display: grid; grid-template-columns: repeat(18, 1fr); gap: 3px; }
-.lc-gcol { display: grid; grid-template-rows: 14px repeat(7, auto); gap: 3px; min-width: 0; }
-.lc-m { font-size: 10px; font-weight: 600; color: var(--mut); white-space: nowrap; overflow: visible; }
-.lc-grid i, .lc-key i { display: block; aspect-ratio: 1; border-radius: 3px; background: var(--faint); }
-.lc-grid i.fut { background: transparent; border: 1px dashed rgba(255, 255, 255, 0.12); }
-.l1 { background: rgba(140, 200, 255, 0.4) !important; }
-.l2 { background: rgba(140, 200, 255, 0.72) !important; }
-.l3 { background: var(--sky) !important; }
+.lc-cal-sum { font-size: 14px; color: var(--mut); margin-top: -4px; }
+.lc-cal-sum b { color: #fff; font-size: 16px; }
+.lc-month { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.lc-dl { text-align: center; font-size: 11px; font-weight: 700; color: var(--mut); }
+.lc-month i { display: grid; place-items: center; aspect-ratio: 1; border-radius: 10px; font-style: normal; font-size: 13px; font-weight: 700; color: var(--mut); background: rgba(255, 255, 255, 0.06); }
+.lc-month i.on { background: #fff; color: var(--navy); }
+.lc-month i.now { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55); }
+.lc-month i.fut { background: transparent; color: rgba(255, 255, 255, 0.3); }
+.lc-grid { display: grid; gap: 2px; }
+.lc-gcol { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 14px repeat(7, auto); gap: inherit; min-width: 0; }
+.lc-m { width: 0; font-size: 10px; font-weight: 600; color: var(--mut); white-space: nowrap; overflow: visible; }
+.lc-grid i { display: block; aspect-ratio: 1; border-radius: 2px; background: rgba(255, 255, 255, 0.07); }
+.lc-grid i.on { background: #fff; }
+.lc-grid i.fut { background: transparent; }
 .lc-cal-foot { font-size: 12px; color: var(--mut); font-weight: 600; }
-.lc-key { display: inline-flex; align-items: center; gap: 4px; }
-.lc-key i { width: 11px; }
 
 /* progress carousel */
 .lpc { display: flex; flex-direction: column; gap: 10px; }
