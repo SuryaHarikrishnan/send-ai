@@ -65,6 +65,14 @@
 .lift-dc svg { width: 18px; height: 18px; }
 .lift-day.today:not(.done) .lift-dc { box-shadow: inset 0 0 0 2px #fff; color: var(--ink); }
 .lift-day.sel .lift-dc { box-shadow: 0 0 0 3px #0b3f8f, 0 0 0 5px var(--sky); }
+.lift-day.sel .lift-dn { color: var(--ink); }
+.lift-day:disabled { opacity: 0.45; }
+.lift-weeknav { display: flex; align-items: center; justify-content: space-between; margin-bottom: -4px; }
+.lift-weeknav span { font-size: 13px; font-weight: 700; color: var(--mut); }
+.lift-weeknav button { width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(0, 20, 60, 0.35); display: grid; place-items: center; }
+.lift-weeknav button:disabled { opacity: 0.3; }
+.lift-weeknav svg { width: 16px; height: 16px; }
+.lift-days { touch-action: pan-y; }
 .lift-bar { height: 6px; border-radius: 3px; background: rgba(0, 20, 60, 0.35); overflow: hidden; }
 .lift-bar i { display: block; height: 100%; background: var(--sky); border-radius: 3px; transition: width 0.4s ease; }
 
@@ -151,6 +159,7 @@
 
 /* workout cards */
 .lift-list-head { margin-top: 4px; }
+.lift-today { border: 1px solid var(--card-line); background: var(--faint); border-radius: 99px; padding: 7px 14px; font-size: 13px !important; font-weight: 600; }
 .lift-empty { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; font-size: 14px; color: var(--mut); line-height: 1.5; }
 .lift-wo { display: flex; flex-direction: column; gap: 12px; }
 .lift-wo.sel { border-color: #fff; }

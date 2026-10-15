@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import BodyMap from "./BodyMap";
 import { MUSCLE_NAMES, muscleSets, prFlags, setSummary, totalSets, totalVolume, weekStart, weekStreak, workoutsError } from "./lifting";
@@ -11,12 +11,19 @@ function readGoal() {
 }
 
 const sameDay = (a, b) => new Date(a).toDateString() === new Date(b).toDateString();
-function whenLabel(d) {
-  const days = Math.round((new Date().setHours(0, 0, 0, 0) - new Date(d).setHours(0, 0, 0, 0)) / DAY);
+const midnight = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+// Adding days by date, not by 24 h, so daylight saving changes don't skip a day.
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+function dayPhrase(d) {
+  const label = dayLabel(d);
+  return label === "Today" || label === "Yesterday" ? label.toLowerCase() : `on ${new Date(d).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`;
+}
+const shortDate = d => new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+function dayLabel(d) {
+  const days = Math.round((midnight(new Date()) - midnight(d)) / DAY);
   if (days === 0) return "Today";
   if (days === 1) return "Yesterday";
-  if (days < 7) return new Date(d).toLocaleDateString(undefined, { weekday: "long" });
-  return new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return new Date(d).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
 }
 function greeting() {
   const h = new Date().getHours();
@@ -29,6 +36,10 @@ const Check = () => (
 const Flame = () => (
   <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2c.9 3.3 4.8 5.4 4.8 10.8a4.8 4.8 0 0 1-9.6 0c0-2.3 1-3.9 2.2-5 .2 1.5.9 2.6 2 3.1-.4-2.9.1-5.9.6-8.9z" /></svg>
 );
+const Chevron = ({ left }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d={left ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7"} /></svg>
+);
+const MAX_WEEKS_BACK = 52;
 const Dumbbell = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6.5 6.5v11M3.5 9v6M17.5 6.5v11M20.5 9v6M6.5 12h11" /></svg>
 );
@@ -38,8 +49,12 @@ export default function LiftHome({ user, onNavigate, onEdit, onOpenExercise }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [goal, setGoal] = useState(readGoal);
-  const [selectedId, setSelectedId] = useState(null);
+  // The day whose workouts are listed, and how many weeks back the strip is showing.
+  const [day, setDay] = useState(() => midnight(new Date()));
+  const [weekBack, setWeekBack] = useState(0);
+  const [mapDay, setMapDay] = useState(false);
   const [muscle, setMuscle] = useState(null);
+  const swipe = useRef(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   useEffect(() => {
@@ -65,31 +80,52 @@ export default function LiftHome({ user, onNavigate, onEdit, onOpenExercise }) {
 
   async function remove(id) {
     const { error } = await supabase.from("workouts").delete().eq("id", id);
-    if (!error) {
-      setWorkouts(ws => ws.filter(w => w.id !== id));
-      if (selectedId === id) setSelectedId(null);
-    }
+    if (!error) setWorkouts(ws => ws.filter(w => w.id !== id));
     setConfirmDelete(null);
   }
 
-  const startMs = weekStart(new Date()).getTime();
-  const start = new Date(startMs);
-  const thisWeek = workouts.filter(w => new Date(w.performed_at).getTime() >= startMs);
+  const start = addDays(weekStart(new Date()), -7 * weekBack);
+  const end = addDays(start, 7);
+  const inWeek = workouts.filter(w => { const t = new Date(w.performed_at); return t >= start && t < end; });
   const streak = weekStreak(workouts, goal);
   const prs = prFlags(workouts);
-  const selected = workouts.find(w => w.id === selectedId) || null;
-  const mode = selected ? "workout" : "week";
-  const sets = muscleSets(selected ? [selected] : thisWeek);
+  const dayWorkouts = workouts.filter(w => sameDay(w.performed_at, day));
+  const showDay = mapDay && dayWorkouts.length > 0;
+  const mode = showDay ? "workout" : "week";
+  const sets = muscleSets(showDay ? dayWorkouts : inWeek);
   const ranked = Object.entries(sets).sort((a, b) => b[1] - a[1]).slice(0, 5);
-  const weekSetCount = thisWeek.reduce((a, w) => a + totalSets(w), 0);
+  const weekSetCount = inWeek.reduce((a, w) => a + totalSets(w), 0);
+  const weekName = weekBack === 0 ? "This week" : weekBack === 1 ? "Last week" : `${shortDate(start)} – ${shortDate(addDays(start, 6))}`;
 
   if (loading) return <div className="coming-soon">Loading...</div>;
 
   const days = DAY_LETTERS.map((letter, i) => {
-    const date = new Date(start.getTime() + i * DAY);
-    const w = workouts.find(x => sameDay(x.performed_at, date));
-    return { letter, date, w, today: sameDay(date, new Date()), future: date > new Date() };
+    const date = addDays(start, i);
+    const done = workouts.some(x => sameDay(x.performed_at, date));
+    return { letter, date, done, today: sameDay(date, new Date()), future: date > new Date() };
   });
+
+  function pickDay(d) {
+    setDay(d);
+    setMapDay(workouts.some(w => sameDay(w.performed_at, d)));
+    setMuscle(null);
+  }
+  // Moving a week keeps the same weekday selected (today, at most).
+  function moveWeek(delta) {
+    const next = Math.min(MAX_WEEKS_BACK, Math.max(0, weekBack + delta));
+    if (next === weekBack) return;
+    setWeekBack(next);
+    const d = addDays(day, -7 * (next - weekBack));
+    pickDay(d > new Date() ? midnight(new Date()) : d);
+  }
+  const onTouchStart = e => { swipe.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
+  const onTouchEnd = e => {
+    if (!swipe.current) return;
+    const dx = e.changedTouches[0].clientX - swipe.current.x;
+    const dy = e.changedTouches[0].clientY - swipe.current.y;
+    swipe.current = null;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) moveWeek(dx > 0 ? 1 : -1);
+  };
 
   return (
     <div className="lift">
@@ -114,7 +150,7 @@ export default function LiftHome({ user, onNavigate, onEdit, onOpenExercise }) {
       <section className="lift-card lift-week">
         <div className="lift-row">
           <div className="lift-goal">
-            <b>{thisWeek.length}</b> of
+            <b>{inWeek.length}</b> of
             <span className="lift-stepper">
               <button aria-label="Lower weekly goal" onClick={() => changeGoal(goal - 1)}>−</button>
               <b>{goal}</b>
@@ -127,42 +163,48 @@ export default function LiftHome({ user, onNavigate, onEdit, onOpenExercise }) {
             <span>{streak} week streak<small>{goal} workouts a week</small></span>
           </div>
         </div>
-        <div className="lift-days">
+        <div className="lift-weeknav">
+          <button aria-label="Previous week" disabled={weekBack >= MAX_WEEKS_BACK} onClick={() => moveWeek(1)}><Chevron left /></button>
+          <span>{weekName}</span>
+          <button aria-label="Next week" disabled={weekBack === 0} onClick={() => moveWeek(-1)}><Chevron /></button>
+        </div>
+        <div className="lift-days" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
           {days.map(d => (
             <button
-              key={d.letter + d.date.getDate()}
-              className={`lift-day${d.w ? " done" : ""}${d.today ? " today" : ""}${d.w && d.w.id === selectedId ? " sel" : ""}`}
-              disabled={!d.w}
-              aria-label={d.w ? `${d.w.title} on ${d.date.toDateString()}` : d.date.toDateString()}
-              onClick={() => setSelectedId(d.w.id === selectedId ? null : d.w.id)}
+              key={d.date.toDateString()}
+              className={`lift-day${d.done ? " done" : ""}${d.today ? " today" : ""}${sameDay(d.date, day) ? " sel" : ""}`}
+              disabled={d.future}
+              aria-pressed={sameDay(d.date, day)}
+              aria-label={`${d.date.toDateString()}${d.done ? ", workout logged" : ""}`}
+              onClick={() => pickDay(d.date)}
             >
               <span className="lift-dn">{d.today ? "Today" : d.letter}</span>
-              <span className="lift-dc">{d.w ? <Check /> : d.date.getDate()}</span>
+              <span className="lift-dc">{d.done ? <Check /> : d.date.getDate()}</span>
             </button>
           ))}
         </div>
-        <div className="lift-bar"><i style={{ width: `${Math.min(1, thisWeek.length / goal) * 100}%` }} /></div>
+        <div className="lift-bar"><i style={{ width: `${Math.min(1, inWeek.length / goal) * 100}%` }} /></div>
       </section>
 
       <section className="lift-card lift-body">
         <div className="lift-row">
           <div>
-            <h2 className="lift-h2">{selected ? `${selected.title}, ${whenLabel(selected.performed_at).toLowerCase()}` : "Muscles this week"}</h2>
+            <h2 className="lift-h2">{showDay ? `Muscles ${dayPhrase(day)}` : weekBack < 2 ? `Muscles ${weekName.toLowerCase()}` : `Muscles, ${weekName}`}</h2>
             <p className="lift-sub">
-              {selected
-                ? `${totalSets(selected)} sets${selected.duration_min ? ` · ${selected.duration_min} min` : ""}`
-                : `${weekSetCount} sets across ${thisWeek.length} workout${thisWeek.length === 1 ? "" : "s"}`}
+              {showDay
+                ? `${dayWorkouts.reduce((a, w) => a + totalSets(w), 0)} sets · ${dayWorkouts.map(w => w.title).join(", ")}`
+                : `${weekSetCount} sets across ${inWeek.length} workout${inWeek.length === 1 ? "" : "s"}`}
             </p>
           </div>
           <div className="lift-toggle">
-            <button className={!selected ? "on" : ""} onClick={() => setSelectedId(null)}>Week</button>
-            <button className={selected ? "on" : ""} disabled={!workouts.length} onClick={() => workouts[0] && setSelectedId(workouts[0].id)}>Last</button>
+            <button className={!showDay ? "on" : ""} onClick={() => setMapDay(false)}>Week</button>
+            <button className={showDay ? "on" : ""} disabled={!dayWorkouts.length} onClick={() => setMapDay(true)}>Day</button>
           </div>
         </div>
         <BodyMap sets={sets} mode={mode} selected={muscle} onSelect={m => setMuscle(m === muscle ? null : m)} />
         <p className="lift-tip">
           {muscle ? (
-            <>{MUSCLE_NAMES[muscle]} <span>· {sets[muscle] || 0} sets {selected ? "in this workout" : "this week"}</span></>
+            <>{MUSCLE_NAMES[muscle]} <span>· {sets[muscle] || 0} sets {showDay ? dayPhrase(day) : weekBack === 0 ? "this week" : "that week"}</span></>
           ) : (
             <span>Tap a muscle</span>
           )}
@@ -177,17 +219,20 @@ export default function LiftHome({ user, onNavigate, onEdit, onOpenExercise }) {
             {ranked.map(([k, v]) => (
               <div className="lift-vr" key={k}>
                 <span>{MUSCLE_NAMES[k]}</span>
-                <span className="lift-tr"><i style={{ width: `${Math.min(v / 20, 1) * 100}%` }} />{!selected && <em />}</span>
+                <span className="lift-tr"><i style={{ width: `${Math.min(v / 20, 1) * 100}%` }} />{!showDay && <em />}</span>
                 <span>{v} sets</span>
               </div>
             ))}
-            {!selected && <p className="lift-vnote"><i />10–20 sets a week is a common target for growth</p>}
+            {!showDay && <p className="lift-vnote"><i />10–20 sets a week is a common target for growth</p>}
           </div>
         )}
       </section>
 
       <div className="lift-row lift-list-head">
-        <h2 className="lift-h2">Workouts</h2>
+        <h2 className="lift-h2">{dayLabel(day)}</h2>
+        {!sameDay(day, new Date()) && (
+          <button className="lift-today" onClick={() => { setWeekBack(0); pickDay(midnight(new Date())); }}>Back to today</button>
+        )}
       </div>
 
       {workouts.length === 0 && !loadError && (
@@ -197,16 +242,29 @@ export default function LiftHome({ user, onNavigate, onEdit, onOpenExercise }) {
         </div>
       )}
 
-      {workouts.slice(0, 15).map(w => (
-        <article key={w.id} className={`lift-card lift-wo${w.id === selectedId ? " sel" : ""}`}>
-          <button className="lift-wo-top" onClick={() => setSelectedId(w.id === selectedId ? null : w.id)}>
+      {workouts.length > 0 && dayWorkouts.length === 0 && (
+        <div className="lift-card lift-empty">
+          {sameDay(day, new Date()) ? (
+            <>
+              <p>Nothing logged today yet.</p>
+              <button className="lift-start" onClick={() => onNavigate("log")}>Log workout</button>
+            </>
+          ) : (
+            <p>Rest day. Nothing logged on {new Date(day).toLocaleDateString(undefined, { weekday: "long" })}. Tap a day with a check to see that workout.</p>
+          )}
+        </div>
+      )}
+
+      {dayWorkouts.map(w => (
+        <article key={w.id} className="lift-card lift-wo">
+          <div className="lift-wo-top">
             <span className="lift-ic"><Dumbbell /></span>
             <span className="lift-wo-name">
               <b>{w.title}</b>
-              <small>{whenLabel(w.performed_at)}{w.duration_min ? ` · ${w.duration_min} min` : ""}</small>
+              <small>{(w.exercises || []).length} exercise{(w.exercises || []).length === 1 ? "" : "s"}{w.duration_min ? ` · ${w.duration_min} min` : ""}</small>
             </span>
             <span className="lift-mini"><BodyMap sets={muscleSets([w])} mode="workout" small /></span>
-          </button>
+          </div>
           <div className="lift-ex">
             {(w.exercises || []).map((ex, i) => (
               <div key={i}>
