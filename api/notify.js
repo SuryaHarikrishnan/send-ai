@@ -2,15 +2,18 @@
 // Sends the day's reminders. Called every hour by .github/workflows/reminders.yml with
 // CRON_SECRET as a Bearer header. Each run picks out the people whose reminder hour it is
 // (in their own time zone), checks what they've logged, and sends at most one reminder a day.
-// Needs CRON_SECRET, SUPABASE_SERVICE_ROLE_KEY (reads everyone's settings and workout dates),
+// Needs CRON_SECRET, SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SECRET_KEY (reads everyone's settings and workout dates),
 // VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY.
 import { SUPABASE_URL, pushReady, sendPush } from "./_push.js";
 import { isDue, localParts, pickReminder } from "./_reminders.js";
 
 const DAY = 86400000;
 
+// Either name works: SUPABASE_SECRET_KEY is what Supabase's own Vercel integration sets.
+const serviceKey = () => process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+
 function admin(path, options = {}) {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key = serviceKey();
   // Older service_role keys are JWTs and go in Authorization too; newer sb_secret_ keys only in apikey.
   const auth = key.startsWith("eyJ") ? { Authorization: `Bearer ${key}` } : {};
   return fetch(`${SUPABASE_URL}${path}`, {
@@ -30,7 +33,7 @@ const times = (table, column, userId, since) =>
 export default async function handler(req, res) {
   const secret = process.env.CRON_SECRET;
   if (!secret || req.headers.authorization !== `Bearer ${secret}`) return res.status(401).end();
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !pushReady()) {
+  if (!serviceKey() || !pushReady()) {
     return res.status(503).json({ error: "Set SUPABASE_SERVICE_ROLE_KEY, VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in Vercel." });
   }
 
