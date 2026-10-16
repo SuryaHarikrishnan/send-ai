@@ -1,5 +1,6 @@
 -- Run once in the Supabase dashboard: SQL Editor > New query > paste > Run.
--- Safe to run more than once. Adds push notification settings and the phones/browsers
+-- Safe to run more than once (run it again after updates to pick up new columns).
+-- Adds push notification settings and the phones/browsers
 -- that receive them. /api/notify (run every hour) reads these to send reminders.
 
 -- 1. One row per person: which reminders they want and when. Reminders go to every
@@ -80,6 +81,14 @@ end;
 $$;
 revoke all on function public.save_push_subscription(text, text, text) from public, anon;
 grant execute on function public.save_push_subscription(text, text, text) to authenticated;
+
+-- 3. Food reminders (added later; running this whole file again adds them).
+alter table public.notify_settings add column if not exists food_meals text[] not null default '{breakfast,lunch,dinner}';
+alter table public.notify_settings add column if not exists food_eod boolean not null default true;
+-- The daily calorie goal from Food Home, so the evening check knows what "under" means.
+alter table public.notify_settings add column if not exists kcal_goal integer not null default 2000;
+-- Which food reminders already went out today: { "date": "2026-10-16", "sent": ["lunch", "evening"] }.
+alter table public.notify_settings add column if not exists food_sent jsonb;
 
 -- Make the API notice the new tables right away.
 notify pgrst, 'reload schema';

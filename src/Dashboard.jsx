@@ -179,7 +179,7 @@ export default function Dashboard({ user }) {
             </div>
             <div className="you-list">
               {owner && <button onClick={() => go("stats")}><span>App stats<small>Users, activity and visitors</small></span>{I.chevron()}</button>}
-              <button onClick={() => go("notify")}><span>Notifications<small>Workout reminders and streak alerts</small></span>{I.chevron()}</button>
+              <button onClick={() => go("notify")}><span>Notifications<small>Workout, meal and streak reminders</small></span>{I.chevron()}</button>
               <button onClick={() => setPicking(true)}><span>Sport<small>{SPORT_NAMES[sport]}</small></span>{I.chevron()}</button>
               <button onClick={() => go("coach")}><span>AI coach<small>Ask questions about your training</small></span>{I.chevron()}</button>
               <button onClick={() => go("news")}><span>News<small>Climbing headlines</small></span>{I.chevron()}</button>

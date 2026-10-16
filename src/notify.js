@@ -2,8 +2,9 @@
 // The reminders themselves are sent by /api/notify (see supabase/notifications.sql).
 import { supabase } from "./supabase";
 import { isInstalled } from "./install";
+import { readGoals } from "./food";
 
-export const DEFAULT_SETTINGS = { daily: true, days: [0, 1, 2, 3, 4, 5, 6], hour: 18, streak: true, comeback: true };
+export const DEFAULT_SETTINGS = { daily: true, days: [0, 1, 2, 3, 4, 5, 6], hour: 18, streak: true, comeback: true, food_meals: ["breakfast", "lunch", "dinner"], food_eod: true };
 
 const timeZone = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch { return "UTC"; } };
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
@@ -53,7 +54,8 @@ export async function saveSettings(userId, settings) {
   const row = {
     user_id: userId,
     daily: settings.daily, days: settings.days, hour: settings.hour, streak: settings.streak, comeback: settings.comeback,
-    week_goal: weeklyGoal(), tz: timeZone(), updated_at: new Date().toISOString(),
+    food_meals: settings.food_meals, food_eod: settings.food_eod,
+    week_goal: weeklyGoal(), kcal_goal: readGoals().kcal, tz: timeZone(), updated_at: new Date().toISOString(),
   };
   const { error } = await supabase.from("notify_settings").upsert(row);
   if (error) throw new Error(setupError(error));
@@ -105,8 +107,9 @@ export async function sendTest() {
   if (!r.ok) throw new Error(body.error || "Couldn't send a test right now.");
 }
 
-// Keeps the server's copy of the weekly goal (Lifting Home) and time zone in step, so streak
-// alerts match what the app shows and reminders arrive at the right local time.
+// Keeps the server's copy of the weekly goal (Lifting Home), calorie goal (Food Home) and time
+// zone in step, so streak and calorie alerts match what the app shows and reminders arrive at
+// the right local time.
 export function syncReminderInfo(userId, goal = weeklyGoal()) {
-  supabase.from("notify_settings").update({ week_goal: goal, tz: timeZone() }).eq("user_id", userId).then(() => {}, () => {});
+  supabase.from("notify_settings").update({ week_goal: goal, kcal_goal: readGoals().kcal, tz: timeZone() }).eq("user_id", userId).then(() => {}, () => {});
 }
