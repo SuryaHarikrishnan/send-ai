@@ -126,3 +126,27 @@
 .start-install { display: inline-flex; align-items: center; gap: 8px; margin-top: 1rem; font: 600 15px 'Figtree', sans-serif; color: #fff; background: rgba(140, 200, 255, 0.1); border: 1px solid rgba(140, 200, 255, 0.4); border-radius: 99px; padding: 10px 16px 10px 12px; cursor: pointer; }
 .start-install:hover { background: rgba(140, 200, 255, 0.18); }
 .start-install svg { width: 20px; height: 20px; color: #8cc8ff; }
+
+/* Notifications (You > Notifications) */
+.notify-title { margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; letter-spacing: -0.5px; }
+.notify-lead { margin: 4px 0 0; font-size: 15px; color: rgba(255, 255, 255, 0.74); line-height: 1.4; }
+.notify-group { display: flex; flex-direction: column; gap: 8px; }
+.notify-group h2 { margin: 0 0 0 4px; font: 700 13px 'Figtree', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: rgba(255, 255, 255, 0.6); }
+.you-list > .notify-row { cursor: default; }
+.notify-card { background: rgba(255, 255, 255, 0.09); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 24px; padding: 18px; display: flex; flex-direction: column; gap: 6px; }
+.notify-card b { font-size: 16px; }
+.notify-card p { margin: 0; font-size: 14px; line-height: 1.45; color: rgba(255, 255, 255, 0.78); }
+.notify-btn { align-self: flex-start; margin-top: 8px; font: 700 15px 'Figtree', sans-serif; color: #0a2f6b; background: #fff; border: 0; border-radius: 99px; padding: 10px 18px; cursor: pointer; }
+.switch { position: relative; flex: none; width: 52px; height: 32px; border-radius: 99px; border: 0; padding: 0; background: rgba(255, 255, 255, 0.22); cursor: pointer; transition: background 0.2s; }
+.switch i { position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25); transition: transform 0.2s; }
+.switch.on { background: #aad7ff; }
+.switch.on i { transform: translateX(20px); }
+.switch:disabled { opacity: 0.5; cursor: default; }
+.you-list > .notify-days { display: flex; justify-content: space-between; gap: 6px; border-top: 0; padding: 0 0 14px; cursor: default; }
+.notify-days button { flex: 1; max-width: 44px; aspect-ratio: 1; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.3); background: transparent; color: rgba(255, 255, 255, 0.8); font: 700 14px 'Figtree', sans-serif; cursor: pointer; padding: 0; }
+.notify-days button.on { background: #fff; border-color: #fff; color: #0a2f6b; }
+.notify-time { font: 600 15px 'Figtree', sans-serif; color: #fff; background: rgba(255, 255, 255, 0.14); border: 0; border-radius: 12px; padding: 9px 12px; cursor: pointer; color-scheme: dark; }
+.notify-note { margin: 2px 0 0 4px; font-size: 13px; color: rgba(255, 255, 255, 0.6); }
+.notify-msg { margin: 0; font-size: 14px; text-align: center; color: #ffb4a8; }
+.notify-msg.ok { color: #aad7ff; }
+.you-signout:disabled { opacity: 0.5; cursor: default; }

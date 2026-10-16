@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import BodyMap from "./BodyMap";
+import { syncReminderInfo } from "./notify";
 import { MUSCLE_NAMES, muscleSets, prFlags, setSummary, totalSets, totalVolume, weekStart, weekStreak, workoutsError } from "./lifting";
 
 const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
@@ -76,6 +77,7 @@ export default function LiftHome({ user, onNavigate, onEdit, onOpenExercise }) {
     const g = Math.min(7, Math.max(1, n));
     setGoal(g);
     try { localStorage.setItem("send.weeklyGoal", String(g)); } catch { /* storage blocked */ }
+    syncReminderInfo(user.id, g);
   }
 
   async function remove(id) {
