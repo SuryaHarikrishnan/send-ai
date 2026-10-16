@@ -11,6 +11,8 @@ import FoodHome from "./FoodHome";
 import FoodLog from "./FoodLog";
 import FoodProgress from "./FoodProgress";
 import OwnerStats from "./OwnerStats";
+import NotifySettings from "./NotifySettings";
+import { forgetDevice, syncReminderInfo } from "./notify";
 import "./Food.css";
 import "./Nav.css";
 import { forget, track } from "./tracking";
@@ -105,6 +107,8 @@ export default function Dashboard({ user }) {
   const go = t => { setTab(t === "workout" ? "log" : t); setFocus(null); setEditWorkout(null); if (t === "log") setFoodMeal(null); };
   useEffect(() => { window.scrollTo(0, 0); }, [tab, sport]);
   // Only owners (public.app_owners) get a Stats row; the stats themselves are checked again on the server.
+  // Keeps reminder time zone and weekly goal current for people who turned notifications on.
+  useEffect(() => { syncReminderInfo(user.id); }, [user.id]);
   useEffect(() => {
     supabase.rpc("is_owner").then(({ data }) => setOwner(data === true), () => {});
   }, [user.id]);
@@ -126,7 +130,7 @@ export default function Dashboard({ user }) {
   const lifting = sport === "lifting";
   const food = sport === "food";
   const climbing = sport === "climbing";
-  const youTab = ["you", "coach", "news", "stats"].includes(tab);
+  const youTab = ["you", "coach", "news", "stats", "notify"].includes(tab);
   const meta = user.user_metadata || {};
   const TABS = [
     ["home", "Home", I.home],
@@ -163,6 +167,7 @@ export default function Dashboard({ user }) {
         {tab === "coach" && <><button className="you-back" onClick={() => go("you")}>‹ You</button><AICoach user={user} /></>}
         {tab === "news" && <><button className="you-back" onClick={() => go("you")}>‹ You</button><News /></>}
         {tab === "stats" && owner && <><button className="you-back" onClick={() => go("you")}>‹ You</button><OwnerStats /></>}
+        {tab === "notify" && <><button className="you-back" onClick={() => go("you")}>‹ You</button><NotifySettings user={user} onInstallHelp={() => setInstallHelp(true)} /></>}
         {tab === "you" && (
           <div className="you">
             <div className="you-head">
@@ -174,13 +179,14 @@ export default function Dashboard({ user }) {
             </div>
             <div className="you-list">
               {owner && <button onClick={() => go("stats")}><span>App stats<small>Users, activity and visitors</small></span>{I.chevron()}</button>}
+              <button onClick={() => go("notify")}><span>Notifications<small>Workout reminders and streak alerts</small></span>{I.chevron()}</button>
               <button onClick={() => setPicking(true)}><span>Sport<small>{SPORT_NAMES[sport]}</small></span>{I.chevron()}</button>
               <button onClick={() => go("coach")}><span>AI coach<small>Ask questions about your training</small></span>{I.chevron()}</button>
               <button onClick={() => go("news")}><span>News<small>Climbing headlines</small></span>{I.chevron()}</button>
               {!isInstalled() && <button onClick={() => setInstallHelp(true)}><span>Add to Home Screen<small>Open SendIt like an app</small></span>{I.chevron()}</button>}
               <a href="/privacy.html"><span>Privacy</span>{I.chevron()}</a>
             </div>
-            <button className="you-signout" onClick={() => { track("signed_out"); forget(); supabase.auth.signOut(); }}>Sign out</button>
+            <button className="you-signout" onClick={async () => { track("signed_out"); forget(); await forgetDevice(); supabase.auth.signOut(); }}>Sign out</button>
           </div>
         )}
       </main>
