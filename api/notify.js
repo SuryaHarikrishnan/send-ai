@@ -1,11 +1,12 @@
 /* global process */
 // Sends the day's reminders. Called every hour by .github/workflows/reminders.yml with
 // CRON_SECRET as a Bearer header. Each run picks out the people whose reminder hour it is
-// (in their own time zone), checks what they've logged, and sends at most one reminder a day.
-// Needs CRON_SECRET, SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SECRET_KEY (reads everyone's settings and workout dates),
+// (in their own time zone), checks what they've logged, and sends at most one workout reminder
+// a day, plus food reminders (each meal check and the evening calorie check at most once a day).
+// Needs CRON_SECRET, SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SECRET_KEY (reads everyone's settings, workout dates and food totals),
 // VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY.
 import { SUPABASE_URL, pushReady, sendPush } from "./_push.js";
-import { isDue, localParts, pickReminder } from "./_reminders.js";
+import { isDue, isFoodDue, localParts, markFoodSent, pickFoodReminders, pickReminder } from "./_reminders.js";
 
 const DAY = 86400000;
 
@@ -42,38 +43,58 @@ export default async function handler(req, res) {
   try {
     const settings = await admin("/rest/v1/notify_settings?select=*");
     out.checked = settings.length;
-    const due = settings.filter(s => isDue(s, now));
+    const due = settings
+      .map(s => ({ s, workout: isDue(s, now), food: isFoodDue(s, now) }))
+      .filter(d => d.workout || d.food);
     out.due = due.length;
     if (!due.length) return res.status(200).json(out);
 
-    const ids = due.map(s => s.user_id).join(",");
+    const ids = due.map(d => d.s.user_id).join(",");
     const subs = await admin(`/rest/v1/push_subscriptions?select=id,user_id,endpoint,p256dh,auth&user_id=in.(${ids})`);
 
-    for (const s of due) {
-      const mine = subs.filter(x => x.user_id === s.user_id);
-      if (!mine.length) continue;
-      const [workouts, climbs] = await Promise.all([
-        times("workouts", "performed_at", s.user_id, new Date(now - 400 * DAY).toISOString()),
-        times("climbs", "created_at", s.user_id, new Date(now - 40 * DAY).toISOString()),
-      ]);
-      const reminder = pickReminder(s, { workouts, other: climbs }, now);
-      if (!reminder) continue;
-
+    // Sends one reminder to all of someone's devices; true if at least one got it.
+    const deliver = async (mine, reminder) => {
       const results = await Promise.all(mine.map(async sub => {
-        const result = await sendPush(sub, { title: reminder.title, body: reminder.body, tag: "reminder" });
+        const result = await sendPush(sub, { title: reminder.title, body: reminder.body, tag: reminder.kind });
         if (result === "gone") {
           await admin(`/rest/v1/push_subscriptions?id=eq.${sub.id}`, { method: "DELETE" }).catch(() => {});
           out.removed++;
         }
         return result;
       }));
-      if (results.includes("sent")) {
-        out.sent++;
-        out.kinds[reminder.kind] = (out.kinds[reminder.kind] || 0) + 1;
-        await admin(`/rest/v1/notify_settings?user_id=eq.${s.user_id}`, {
-          method: "PATCH",
-          body: JSON.stringify({ last_sent: localParts(now, s.tz || "UTC").date }),
-        }).catch(err => console.error(err));
+      if (!results.includes("sent")) return false;
+      out.sent++;
+      out.kinds[reminder.kind] = (out.kinds[reminder.kind] || 0) + 1;
+      return true;
+    };
+
+    for (const { s, workout, food } of due) {
+      const mine = subs.filter(x => x.user_id === s.user_id);
+      if (!mine.length) continue;
+      const patch = {};
+
+      if (workout) {
+        const [workouts, climbs] = await Promise.all([
+          times("workouts", "performed_at", s.user_id, new Date(now - 400 * DAY).toISOString()),
+          times("climbs", "created_at", s.user_id, new Date(now - 40 * DAY).toISOString()),
+        ]);
+        const reminder = pickReminder(s, { workouts, other: climbs }, now);
+        if (reminder && (await deliver(mine, reminder))) patch.last_sent = localParts(now, s.tz || "UTC").date;
+      }
+
+      if (food) {
+        const since = new Date(now - 15 * DAY).toISOString();
+        const logs = await admin(`/rest/v1/food_logs?select=eaten_at,meal,kcal&user_id=eq.${s.user_id}&eaten_at=gte.${since}&limit=1000`).catch(() => null);
+        const sentKeys = [];
+        for (const reminder of pickFoodReminders(s, logs || [], now)) {
+          if (await deliver(mine, reminder)) sentKeys.push(reminder.key);
+        }
+        if (sentKeys.length) patch.food_sent = markFoodSent(s, sentKeys, now);
+      }
+
+      if (Object.keys(patch).length) {
+        await admin(`/rest/v1/notify_settings?user_id=eq.${s.user_id}`, { method: "PATCH", body: JSON.stringify(patch) })
+          .catch(err => console.error(err));
       }
     }
     return res.status(200).json(out);

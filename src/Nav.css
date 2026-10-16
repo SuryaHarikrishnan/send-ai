@@ -150,3 +150,7 @@
 .notify-msg { margin: 0; font-size: 14px; text-align: center; color: #ffb4a8; }
 .notify-msg.ok { color: #aad7ff; }
 .you-signout:disabled { opacity: 0.5; cursor: default; }
+.you-list > .notify-meals { display: flex; gap: 8px; border-top: 0; padding: 0 0 14px; cursor: default; }
+.notify-meals button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 9px 4px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.3); background: transparent; color: rgba(255, 255, 255, 0.85); font: 700 14px 'Figtree', sans-serif; cursor: pointer; }
+.notify-meals button small { margin: 0; font-size: 12px; font-weight: 600; color: inherit; opacity: 0.75; }
+.notify-meals button.on { background: #fff; border-color: #fff; color: #0a2f6b; }

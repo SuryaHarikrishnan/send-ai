@@ -1,4 +1,4 @@
-// Which reminder (if any) someone should get right now. Shared by /api/notify and its tests.
+// Which workout reminder (if any) someone should get right now, and which food reminders. Shared by /api/notify and its tests.
 // Files starting with "_" in api/ are helpers, not endpoints.
 //
 // Everything happens in the person's own time zone. At most one reminder a day, sent in the
@@ -122,4 +122,79 @@ export function pickReminder(settings, { workouts = [], other = [] }, now = new 
   }
 
   return null;
+}
+
+/* ---------- food ---------- */
+// Food reminders have their own limit, separate from the workout reminder: each meal
+// reminder and the evening check go out at most once a day.
+
+// When each meal reminder goes out (local hour), if that meal still has nothing logged.
+export const MEAL_CHECKS = { breakfast: 10, lunch: 14, dinner: 20 };
+const MEAL_WORDS = { breakfast: "breakfast", lunch: "lunch", dinner: "dinner" };
+export const EVENING_CHECK = 21;
+const FOOD_WINDOW_HOURS = 2;
+
+const inWindow = (hour, start) => hour >= start && hour < start + FOOD_WINDOW_HOURS;
+const sentToday = (settings, date) => (settings.food_sent?.date === date ? settings.food_sent.sent || [] : []);
+
+// Could any food reminder be due this hour? Cheap check before loading the food log.
+export function isFoodDue(settings, now = new Date()) {
+  const p = localParts(now, settings.tz || "UTC");
+  const meals = (settings.food_meals || []).filter(m => MEAL_CHECKS[m] !== undefined && inWindow(p.hour, MEAL_CHECKS[m]));
+  return meals.length > 0 || (settings.food_eod !== false && inWindow(p.hour, EVENING_CHECK));
+}
+
+// logs: { eaten_at, meal, kcal } for roughly the last two weeks. Returns the reminders due
+// now that haven't gone out today, each with a `key` to record once sent.
+// Only people who logged food in the last 14 days get any, so lifters who never track food aren't nagged.
+export function pickFoodReminders(settings, logs, now = new Date()) {
+  const tz = settings.tz || "UTC";
+  const today = localParts(now, tz);
+  const recent = logs.filter(l => today.day - localParts(l.eaten_at, tz).day <= 14);
+  if (!recent.length) return [];
+  const todays = recent.filter(l => localParts(l.eaten_at, tz).day === today.day);
+  const done = sentToday(settings, today.date);
+  const out = [];
+
+  // Only the most recent meal window applies, so a late run doesn't send breakfast and lunch together.
+  const meal = (settings.food_meals || [])
+    .filter(m => MEAL_CHECKS[m] !== undefined && inWindow(today.hour, MEAL_CHECKS[m]))
+    .sort((a, b) => MEAL_CHECKS[b] - MEAL_CHECKS[a])[0];
+  if (meal && !done.includes(meal) && !todays.some(l => l.meal === meal)) {
+    out.push({
+      kind: "meal", key: meal,
+      title: `No ${MEAL_WORDS[meal]} logged yet`,
+      body: pick([
+        `Had ${MEAL_WORDS[meal]}? Log it now while you still remember.`,
+        `Add your ${MEAL_WORDS[meal]} in a few taps to keep today's numbers right.`,
+      ], today.day),
+    });
+  }
+
+  // One food notification per run: if a meal reminder is going out, the evening check waits an hour.
+  if (!out.length && settings.food_eod !== false && inWindow(today.hour, EVENING_CHECK) && !done.includes("evening") && todays.length) {
+    const goal = Number(settings.kcal_goal) || 2000;
+    const eaten = Math.round(todays.reduce((a, l) => a + (Number(l.kcal) || 0), 0));
+    const gap = goal - eaten;
+    if (gap >= goal * 0.25) {
+      out.push({
+        kind: "food_under", key: "evening",
+        title: `${gap.toLocaleString("en-US")} cals under today`,
+        body: `You're at ${eaten.toLocaleString("en-US")} of ${goal.toLocaleString("en-US")}. Missed logging something, or still time for a meal?`,
+      });
+    } else if (-gap >= goal * 0.15) {
+      out.push({
+        kind: "food_over", key: "evening",
+        title: `${(-gap).toLocaleString("en-US")} cals over today`,
+        body: `You're at ${eaten.toLocaleString("en-US")} of ${goal.toLocaleString("en-US")}. One day won't undo your progress. Back on plan tomorrow.`,
+      });
+    }
+  }
+  return out;
+}
+
+// The new food_sent value after sending reminders with these keys.
+export function markFoodSent(settings, keys, now = new Date()) {
+  const date = localParts(now, settings.tz || "UTC").date;
+  return { date, sent: [...new Set([...sentToday(settings, date), ...keys])] };
 }

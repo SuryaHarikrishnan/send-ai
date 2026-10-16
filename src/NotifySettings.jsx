@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS, currentSubscription, loadSettings, permission, pushSu
 import { track } from "./tracking";
 
 const WEEK = [[1, "M", "Monday"], [2, "T", "Tuesday"], [3, "W", "Wednesday"], [4, "T", "Thursday"], [5, "F", "Friday"], [6, "S", "Saturday"], [0, "S", "Sunday"]];
+const FOOD_MEALS = [["breakfast", "Breakfast", "10 AM"], ["lunch", "Lunch", "2 PM"], ["dinner", "Dinner", "8 PM"]];
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 5);
 const hourLabel = h => `${h % 12 || 12}:00 ${h < 12 ? "AM" : "PM"}`;
 
@@ -78,11 +79,13 @@ export default function NotifySettings({ user, onInstallHelp }) {
     change({ days, daily: days.length > 0 && settings.daily });
   };
 
+  const toggleMeal = m => change({ food_meals: settings.food_meals.includes(m) ? settings.food_meals.filter(x => x !== m) : [...settings.food_meals, m] });
+
   return (
     <div className="you notify">
       <div>
         <h1 className="notify-title">Notifications</h1>
-        <p className="notify-lead">A nudge to train, and a heads-up before your weekly streak breaks.</p>
+        <p className="notify-lead">Nudges to train and log your meals, and a heads-up before your weekly streak breaks.</p>
       </div>
 
       {support === "install" && (
@@ -118,7 +121,7 @@ export default function NotifySettings({ user, onInstallHelp }) {
           {on && (
             <>
               <div className="notify-group">
-                <h2>Reminders</h2>
+                <h2>Workouts</h2>
                 <div className="you-list">
                   <div className="notify-row">
                     <span>Daily reminder<small>On days you haven't logged anything yet</small></span>
@@ -139,20 +142,41 @@ export default function NotifySettings({ user, onInstallHelp }) {
                     <span>Missed workouts<small>After 3, 7, 14 and 30 days without training</small></span>
                     <Switch on={settings.comeback} label="Missed workouts" onChange={v => change({ comeback: v })} />
                   </div>
-                </div>
-              </div>
-
-              <div className="notify-group">
-                <h2>Time</h2>
-                <div className="you-list">
                   <label className="notify-row">
-                    <span>Send reminders at<small>Your local time</small></span>
+                    <span>Reminder time<small>Your local time</small></span>
                     <select className="notify-time" value={settings.hour} onChange={e => change({ hour: Number(e.target.value) })}>
                       {HOURS.map(h => <option key={h} value={h}>{hourLabel(h)}</option>)}
                     </select>
                   </label>
                 </div>
-                <p className="notify-note">At most one notification a day.</p>
+                <p className="notify-note">At most one workout reminder a day.</p>
+              </div>
+
+              <div className="notify-group">
+                <h2>Food</h2>
+                <div className="you-list">
+                  <div className="notify-row">
+                    <span>Meal reminders<small>If a meal is still empty by its time</small></span>
+                    <Switch on={settings.food_meals.length > 0} label="Meal reminders" onChange={v => change({ food_meals: v ? DEFAULT_SETTINGS.food_meals : [] })} />
+                  </div>
+                  {settings.food_meals.length > 0 && (
+                    <div className="notify-meals" role="group" aria-label="Meals to remind about">
+                      {FOOD_MEALS.map(([m, name, time]) => {
+                        const on = settings.food_meals.includes(m);
+                        return (
+                          <button key={m} type="button" aria-pressed={on} className={on ? "on" : ""} onClick={() => toggleMeal(m)}>
+                            {name}<small>{time}</small>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div className="notify-row">
+                    <span>Evening calorie check<small>At 9 PM, if you're far off your goal</small></span>
+                    <Switch on={settings.food_eod} label="Evening calorie check" onChange={v => change({ food_eod: v })} />
+                  </div>
+                </div>
+                <p className="notify-note">Only sent if you've logged food in the last two weeks. These don't count toward the workout limit.</p>
               </div>
 
               <button className="you-signout" disabled={busy} onClick={test}>Send a test notification</button>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import { AmountSheet, GoalsSheet } from "./FoodSheets";
 import { Gauge } from "./FoodCharts";
+import { syncReminderInfo } from "./notify";
 import { DAY_MS, MEALS, MEAL_SPLIT, amountText, dayKey, foodFromLog, foodsError, logRow, logStreak, readGoals, saveGoals, startOfDay, totals } from "./food";
 
 const Chevron = ({ left }) => (
@@ -201,7 +202,7 @@ export default function FoodHome({ user, day, onDay, onAdd }) {
         <GoalsSheet
           goals={goals}
           onCancel={() => setGoalsOpen(false)}
-          onSave={g => { setGoals(g); saveGoals(g); setGoalsOpen(false); }}
+          onSave={g => { setGoals(g); saveGoals(g); syncReminderInfo(user.id); setGoalsOpen(false); }}
         />
       )}
     </div>
