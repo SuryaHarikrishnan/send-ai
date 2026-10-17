@@ -1,6 +1,7 @@
 name: Reminders
 
-# Every hour, ask the live site to send any reminders that are due.
+# Every hour, ask the live site to send any reminders that are due. GitHub often runs
+# scheduled jobs hours late, so supabase/reminders-cron.sql is the main timer; this is a backup.
 # Needs the repository secret CRON_SECRET (Settings > Secrets and variables > Actions),
 # set to the same value as CRON_SECRET in Vercel.
 on:
