@@ -396,3 +396,11 @@
 .fl-manual b { font-size: 15px; }
 .fl-manual small { display: block; font-size: 13px; color: var(--mut); }
 .fl-manual:active { transform: scale(0.98); }
+.fph-note { display: flex; flex-direction: column; gap: 8px; }
+.fph-note > span { font-size: 12px; font-weight: 600; color: var(--mut); }
+.fph-note textarea { width: 100%; box-sizing: border-box; resize: none; padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.16); background: rgba(0, 20, 60, 0.35); color: #fff; font: inherit; font-size: 16px; line-height: 1.35; }
+.fph-note textarea::placeholder { color: var(--mut); }
+.fph-note .fd-weigh-btn:disabled { opacity: 0.45; }
+.fph-said { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 14px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.06); text-align: left; }
+.fph-said span { flex: 1; font-size: 15px !important; font-style: italic; font-weight: 600 !important; }
+.fph-said small { font-size: 13px; color: var(--mut); font-weight: 700; }

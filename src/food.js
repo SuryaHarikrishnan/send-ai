@@ -141,6 +141,7 @@ export function foodFromLog(l) {
     barcode: l.barcode || "",
     source: l.source,
     image: f.image || "",
+    note: f.note || "",
     per100: f.per100 || null,
     perServing: f.perServing || null,
     units: f.units && f.units.length ? f.units : [{ id: l.unit, label: l.unit, g: null }],
@@ -165,7 +166,7 @@ export function logRow(food, unitId, amount, meal, when) {
     protein_g: n.protein,
     carbs_g: n.carbs,
     fat_g: n.fat,
-    food: { per100: food.per100 || null, perServing: food.perServing || null, units: food.units, image: food.image || null },
+    food: { per100: food.per100 || null, perServing: food.perServing || null, units: food.units, image: food.image || null, ...(food.note ? { note: food.note } : {}) },
   };
 }
 
@@ -512,8 +513,6 @@ export function foodEmoji(food) {
 
 /* ---------- meal photos (AI estimate through /api/food-photo) ---------- */
 
-export const PHOTO_LIMIT = 3;
-
 // Shrink a camera photo to at most 1024 px on its long side, as base64 JPEG.
 export async function shrinkPhoto(file, max = 1024) {
   const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
@@ -530,19 +529,20 @@ export async function shrinkPhoto(file, max = 1024) {
   return btoa(bin);
 }
 
-export async function scanPhoto(image, token) {
+export async function scanPhoto(image, token, note = "") {
   const res = await fetch("/api/food-photo", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ image }),
+    body: JSON.stringify({ image, note }),
   });
   const j = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error(j.error || `Photo logging didn't answer (${res.status}).`), { remaining: j.remaining, reason: j.reason });
+  if (!res.ok) throw Object.assign(new Error(j.error || `Photo logging didn't answer (${res.status}).`), { reason: j.reason });
   return j;
 }
 
 // One item the AI found, as a food that logs in "portions" and can be re-weighed in grams later.
-export function photoFood(item) {
+// The person's description of the photo, if they gave one, stays with the food.
+export function photoFood(item, note = "") {
   const per = { kcal: item.kcal, protein: item.protein, carbs: item.carbs, fat: item.fat };
   const g = item.grams > 0 ? item.grams : null;
   const portion = { id: "serving", label: "portion", plural: "portions", g, hint: item.portion + (g ? ` (${Math.round(g)} g)` : "") };
@@ -557,5 +557,6 @@ export function photoFood(item) {
     units: g ? [portion, G, OZ] : [portion],
     defaultUnit: "serving",
     defaultAmount: 1,
+    note,
   };
 }

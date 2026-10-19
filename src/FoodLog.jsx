@@ -74,7 +74,8 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
   const [toast, setToast] = useState("");
   const [quickDone, setQuickDone] = useState([]);
   const [more, setMore] = useState({ key: "" });
-  const [photo, setPhoto] = useState(null); // { url, status: loading|done|error, items, error, remaining }
+  const [photo, setPhoto] = useState(null); // { url, image, note, status: loading|done|error, items, error }
+  const [photoNote, setPhotoNote] = useState("");
   const cameraInput = useRef(null);
   const libraryInput = useRef(null);
   const [photoMenu, setPhotoMenu] = useState(false);
@@ -198,19 +199,32 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
     if (photo?.url) URL.revokeObjectURL(photo.url);
     const url = URL.createObjectURL(file);
     setSheetError("");
-    setPhoto({ url, status: "loading" });
+    setPhoto({ url, note: photoNote, status: "loading" });
+    let image;
     try {
-      const [image, { data }] = await Promise.all([shrinkPhoto(file), supabase.auth.getSession()]);
-      const out = await scanPhoto(image, data.session?.access_token || "");
-      track("meal_photo_scanned", { items: out.items.length, remaining: out.remaining });
-      setPhoto(p => (p?.url === url ? { url, status: "done", items: out.items, model: out.model, remaining: out.remaining } : p));
+      image = await shrinkPhoto(file);
+    } catch {
+      setPhoto(p => (p?.url === url ? { ...p, status: "error", error: "Couldn't open that photo. Try another one." } : p));
+      return;
+    }
+    checkPhoto(url, image, photoNote);
+  }
+  // Sends the photo, with the person's description if any. Also used to re-check with a new description.
+  async function checkPhoto(url, image, note) {
+    setPhoto(p => (p?.url === url ? { url, image, note, status: "loading" } : p));
+    try {
+      const { data } = await supabase.auth.getSession();
+      const out = await scanPhoto(image, data.session?.access_token || "", note);
+      track("meal_photo_scanned", { items: out.items.length, described: !!note });
+      setPhoto(p => (p?.url === url ? { ...p, status: "done", items: out.items, model: out.model } : p));
     } catch (err) {
-      setPhoto(p => (p?.url === url ? { url, status: "error", error: err.message || "Couldn't read that photo.", reason: err.reason, remaining: err.remaining } : p));
+      setPhoto(p => (p?.url === url ? { ...p, status: "error", error: err.message || "Couldn't read that photo.", reason: err.reason } : p));
     }
   }
   function closePhoto() {
     if (photo?.url) URL.revokeObjectURL(photo.url);
     setPhoto(null);
+    setPhotoNote("");
   }
   async function addPhotoItems(list, m) {
     setSaving(true);
@@ -380,11 +394,12 @@ export default function FoodLog({ user, day, meal: meal0, onDone }) {
           onSave={async (food, m) => { if (await addLog(food, "serving", 1, m)) { setCustom(null); setQuery(""); } }}
         />
       )}
-      {photoMenu && <PhotoSourceSheet onPick={pickPhoto} onCancel={() => setPhotoMenu(false)} />}
+      {photoMenu && <PhotoSourceSheet note={photoNote} onNote={setPhotoNote} onPick={pickPhoto} onCancel={() => setPhotoMenu(false)} />}
       {photo && (
         <PhotoSheet
           key={photo.url} photo={photo} meal={meal} saving={saving} error={sheetError}
-          onSave={addPhotoItems} onRetake={() => { closePhoto(); setPhotoMenu(true); }} onCancel={closePhoto}
+          onSave={addPhotoItems} onRetake={() => { const note = photo.note || ""; closePhoto(); setPhotoNote(note); setPhotoMenu(true); }} onCancel={closePhoto}
+          onRecheck={note => checkPhoto(photo.url, photo.image, note)}
         />
       )}
       {scanning && (

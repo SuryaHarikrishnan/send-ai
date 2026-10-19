@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MEALS, PHOTO_LIMIT, amountText, customFood, foodEmoji, hasGrams, mealSingular, nutrition, photoFood, withServingGrams } from "./food";
+import { MEALS, amountText, customFood, foodEmoji, hasGrams, mealSingular, nutrition, photoFood, withServingGrams } from "./food";
 
 export const FoodIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21c-4.5 0-7.5-3.8-7.5-8.2 0-3.4 2.3-5.3 4.6-5.3 1.3 0 2.1.5 2.9.5s1.6-.5 2.9-.5c2.3 0 4.6 1.9 4.6 5.3 0 4.4-3 8.2-7.5 8.2zM12 7.5c0-2 1-3.5 3-4" /></svg>
@@ -151,7 +151,7 @@ export function AmountSheet({ food: food0, unit: unit0, amount: amount0, meal: m
       {food.source === "fatsecret" && <p className="fd-src"><a href="https://www.fatsecret.com" target="_blank" rel="noreferrer">Powered by fatsecret</a></p>}
       {food.source === "usda" && <p className="fd-src">Nutrition from USDA FoodData Central{food.barcode ? ` · ${food.barcode}` : ""}</p>}
       {food.source === "common" && <p className="fd-src">Typical values for this food</p>}
-      {food.source === "photo" && <p className="fd-src">AI estimate from a meal photo</p>}
+      {food.source === "photo" && <p className="fd-src">AI estimate from a meal photo{food.note ? ` · “${food.note}”` : ""}</p>}
     </Sheet>
   );
 }
@@ -250,17 +250,19 @@ export function GoalsSheet({ goals, onSave, onCancel }) {
 const SIZES = [[0.5, "½"], [1, "1×"], [1.5, "1½"], [2, "2×"]];
 
 // What the AI saw in a meal photo. Untick what's wrong, resize portions, then add them all.
-export function PhotoSheet({ photo, meal: meal0, saving, error, onSave, onRetake, onCancel }) {
+export function PhotoSheet({ photo, meal: meal0, saving, error, onSave, onRetake, onRecheck, onCancel }) {
   const [meal, setMeal] = useState(meal0);
   const [picks, setPicks] = useState({}); // index -> { off, size }
-  const foods = (photo.items || []).map(photoFood);
+  const foods = (photo.items || []).map(i => photoFood(i, photo.note || ""));
+  const [note, setNote] = useState(photo.note || "");
+  const [editing, setEditing] = useState(false);
+  const recheck = () => { setEditing(false); setPicks({}); onRecheck(note.trim()); };
   const chosen = foods.map((f, i) => ({ food: f, size: picks[i]?.size ?? 1, on: !picks[i]?.off })).filter(x => x.on);
   const total = chosen.reduce((t, x) => {
     const n = nutrition(x.food, "serving", x.size);
     return { kcal: t.kcal + n.kcal, protein: t.protein + n.protein, carbs: t.carbs + n.carbs, fat: t.fat + n.fat };
   }, { kcal: 0, protein: 0, carbs: 0, fat: 0 });
   const set = (i, v) => setPicks(p => ({ ...p, [i]: { ...p[i], ...v } }));
-  const left = photo.remaining ?? null;
 
   return (
     <Sheet label="Meal photo" onCancel={onCancel}>
@@ -274,18 +276,29 @@ export function PhotoSheet({ photo, meal: meal0, saving, error, onSave, onRetake
       </div>
 
       {photo.status === "loading" && <p className="fph-msg">Looking at your food…</p>}
+      {photo.status !== "loading" && photo.image && (editing || !photo.note ? (
+        <div className="fph-note">
+          <textarea rows={2} maxLength={200} value={note} onChange={e => setNote(e.target.value)}
+            placeholder="Describe it to help the AI, like &quot;grilled chicken, no dressing, half portion&quot;" aria-label="Describe your meal" />
+          <button className="fd-weigh-btn" disabled={!note.trim() || note.trim() === photo.note} onClick={recheck}>Check again with this</button>
+        </div>
+      ) : (
+        <button className="fph-said" onClick={() => setEditing(true)} aria-label="Edit your description">
+          <span>“{photo.note}”</span><small>Edit</small>
+        </button>
+      ))}
 
       {photo.status === "error" && (
         <>
           <p className="fph-msg">{photo.error}</p>
           {photo.reason && <p className="fd-src">Details: {photo.reason}</p>}
-          {photo.remaining !== 0 && <button className="fd-primary" onClick={onRetake}>Try another photo</button>}
+          <button className="fd-primary" onClick={onRetake}>Try another photo</button>
         </>
       )}
 
       {photo.status === "done" && foods.length === 0 && (
         <>
-          <p className="fph-msg">Couldn't spot any food in that photo. It didn't count toward your daily photos.</p>
+          <p className="fph-msg">Couldn't spot any food in that photo. Describe it above and check again, or try another photo.</p>
           {photo.model && <p className="fd-src">Checked by {photo.model}</p>}
           <button className="fd-primary" onClick={onRetake}>Try another photo</button>
         </>
@@ -331,7 +344,7 @@ export function PhotoSheet({ photo, meal: meal0, saving, error, onSave, onRetake
           <button className="fd-primary" disabled={!chosen.length || saving} onClick={() => onSave(chosen.map(x => ({ food: x.food, amount: x.size })), meal)}>
             {saving ? "Saving…" : `Add ${chosen.length} ${chosen.length === 1 ? "item" : "items"} to ${mealSingular(meal)}`}
           </button>
-          <p className="fd-src">AI estimate, so check portions before adding.{left != null ? ` ${left} of ${PHOTO_LIMIT} photos left today.` : ""}</p>
+          <p className="fd-src">AI estimate, so check portions before adding.</p>
         </>
       )}
     </Sheet>
@@ -339,7 +352,7 @@ export function PhotoSheet({ photo, meal: meal0, saving, error, onSave, onRetake
 }
 
 // Where the meal photo comes from: take one now or pick one already in the library.
-export function PhotoSourceSheet({ onPick, onCancel }) {
+export function PhotoSourceSheet({ note, onNote, onPick, onCancel }) {
   return (
     <Sheet label="Add a meal photo" onCancel={onCancel}>
       <div className="fd-sh-title">
@@ -356,7 +369,12 @@ export function PhotoSourceSheet({ onPick, onCancel }) {
           <span><b>Upload a photo</b><small>Pick one from your photos</small></span>
         </button>
       </div>
-      <p className="fd-src">3 meal photos a day. A photo with no food in it doesn't count.</p>
+      <label className="fph-note">
+        <span>Description (optional)</span>
+        <textarea rows={2} maxLength={200} value={note} onChange={e => onNote(e.target.value)}
+          placeholder="Like &quot;grilled chicken, no dressing, half portion&quot;" />
+      </label>
+      <p className="fd-src">The AI reads your description along with the photo.</p>
     </Sheet>
   );
 }
