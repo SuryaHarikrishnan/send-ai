@@ -90,6 +90,15 @@ alter table public.notify_settings add column if not exists kcal_goal integer no
 -- Which food reminders already went out today: { "date": "2026-10-16", "sent": ["lunch", "evening"] }.
 alter table public.notify_settings add column if not exists food_sent jsonb;
 
+-- 4. The hourly job (/api/notify) signs in with the service key. Newer Supabase projects
+--    don't give that role table access automatically, so grant what the job reads and writes.
+grant select, update on public.notify_settings to service_role;
+grant select, delete on public.push_subscriptions to service_role;
+grant select on public.workouts, public.food_logs to service_role;
+do $$ begin
+  if to_regclass('public.climbs') is not null then grant select on public.climbs to service_role; end if;
+end $$;
+
 -- Make the API notice the new tables right away.
 notify pgrst, 'reload schema';
 
