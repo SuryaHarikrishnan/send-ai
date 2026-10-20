@@ -142,7 +142,7 @@ export default function FoodHome({ user, day, onDay, onAdd }) {
         </div>
         <div className="fd-budget-mid">
           <div className="fd-side"><span>Food</span><b>{Math.round(t.kcal).toLocaleString()}</b></div>
-          <Gauge value={t.kcal} goal={goals.kcal} size={140} stroke={13} top={Math.abs(left).toLocaleString()} bottom={left >= 0 ? "Under" : "Over"} />
+          <Gauge value={t.kcal} goal={goals.kcal} size={150} stroke={13} top={Math.abs(left).toLocaleString()} bottom={left >= 0 ? "Cal under" : "Cal over"} />
           <div className="fd-side"><span>Streak</span><b>{streak}<small> {streak === 1 ? "day" : "days"}</small></b></div>
         </div>
         <div className="fd-macros">

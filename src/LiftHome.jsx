@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import BodyMap from "./BodyMap";
 import { syncReminderInfo } from "./notify";
+import Ring from "./Ring";
 import { MUSCLE_NAMES, muscleSets, prFlags, setSummary, totalSets, totalVolume, weekStart, weekStreak, workoutsError } from "./lifting";
 
 const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
@@ -150,19 +151,25 @@ export default function LiftHome({ user, onNavigate, onEdit, onOpenExercise }) {
       )}
 
       <section className="lift-card lift-week">
-        <div className="lift-row">
-          <div className="lift-goal">
-            <b>{inWeek.length}</b> of
-            <span className="lift-stepper">
-              <button aria-label="Lower weekly goal" onClick={() => changeGoal(goal - 1)}>−</button>
-              <b>{goal}</b>
-              <button aria-label="Raise weekly goal" onClick={() => changeGoal(goal + 1)}>+</button>
-            </span>
-            workouts
-          </div>
-          <div className={streak ? "lift-streak" : "lift-streak off"}>
-            <span className="lift-flame"><Flame /></span>
-            <span>{streak} week streak<small>{goal} workouts a week</small></span>
+        <div className="lift-week-top">
+          <Ring
+            value={inWeek.length} goal={goal} size={148} color="var(--sky)"
+            top={<>{inWeek.length}<span className="ring-of">/{goal}</span></>} bottom="Workouts"
+            label={`${inWeek.length} of ${goal} workouts`}
+          />
+          <div className="lift-week-side">
+            <div className={streak ? "lift-streak" : "lift-streak off"}>
+              <span className="lift-flame"><Flame /></span>
+              <span>{streak} week streak<small>{goal} workouts a week</small></span>
+            </div>
+            <div className="lift-goal">
+              Weekly goal
+              <span className="lift-stepper">
+                <button aria-label="Lower weekly goal" onClick={() => changeGoal(goal - 1)}>−</button>
+                <b>{goal}</b>
+                <button aria-label="Raise weekly goal" onClick={() => changeGoal(goal + 1)}>+</button>
+              </span>
+            </div>
           </div>
         </div>
         <div className="lift-weeknav">
@@ -185,7 +192,6 @@ export default function LiftHome({ user, onNavigate, onEdit, onOpenExercise }) {
             </button>
           ))}
         </div>
-        <div className="lift-bar"><i style={{ width: `${Math.min(1, inWeek.length / goal) * 100}%` }} /></div>
       </section>
 
       <section className="lift-card lift-body">

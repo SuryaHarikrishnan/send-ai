@@ -40,13 +40,13 @@ const I = {
   progress: on => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="3" width="18" height="18" rx="5" fill={on ? "currentColor" : "none"} />
-      <path d="M7.5 15l3-3.5 2.5 2 3.5-4.5" stroke={on ? "#0a2f6b" : "currentColor"} strokeWidth={on ? 2.4 : 2} />
+      <path d="M7.5 15l3-3.5 2.5 2 3.5-4.5" stroke={on ? "#081619" : "currentColor"} strokeWidth={on ? 2.4 : 2} />
     </svg>
   ),
-  log: on => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <rect x="3" y="3" width="18" height="18" rx="5.5" fill={on ? "currentColor" : "none"} />
-      <path d="M12 8v8M8 12h8" stroke={on ? "#0a2f6b" : "currentColor"} strokeWidth={on ? 2.4 : 2} />
+  // sits in the white circle in the middle of the tab bar
+  log: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round">
+      <path d="M12 5v14M5 12h14" />
     </svg>
   ),
   lifting: on => (
