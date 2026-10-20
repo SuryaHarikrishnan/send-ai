@@ -3,13 +3,10 @@ import { supabase } from "./supabase";
 import { AmountSheet, GoalsSheet } from "./FoodSheets";
 import { Gauge } from "./FoodCharts";
 import { syncReminderInfo } from "./notify";
-import { DAY_MS, MEALS, MEAL_SPLIT, amountText, dayKey, foodFromLog, foodsError, logRow, logStreak, readGoals, saveGoals, startOfDay, totals } from "./food";
+import { DAY_MS, MEALS, amountText, dayKey, foodFromLog, foodsError, logRow, logStreak, readGoals, saveGoals, startOfDay, totals, weekStart } from "./food";
 
 const Chevron = ({ left }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d={left ? "M15 5l-7 7 7 7" : "M9 5l7 7-7 7"} /></svg>
-);
-const Calendar = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3.5" y="5" width="17" height="15.5" rx="3" /><path d="M8 3v4M16 3v4M3.5 10h17" /><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01" strokeWidth="2.6" /></svg>
 );
 const Gear = () => (
   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.6a.5.5 0 0 0 .1-.6l-1.9-3.3a.5.5 0 0 0-.6-.2l-2.4 1a7.3 7.3 0 0 0-1.7-1l-.4-2.6a.5.5 0 0 0-.5-.4h-3.8a.5.5 0 0 0-.5.4l-.4 2.6a7.3 7.3 0 0 0-1.7 1l-2.4-1a.5.5 0 0 0-.6.2L2.5 8.8a.5.5 0 0 0 .1.6l2 1.6a7.5 7.5 0 0 0 0 2l-2 1.6a.5.5 0 0 0-.1.6l1.9 3.3c.1.2.4.3.6.2l2.4-1c.5.4 1.1.7 1.7 1l.4 2.6c0 .2.3.4.5.4h3.8c.2 0 .5-.2.5-.4l.4-2.6c.6-.3 1.2-.6 1.7-1l2.4 1c.2.1.5 0 .6-.2l1.9-3.3a.5.5 0 0 0-.1-.6zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z" /></svg>
@@ -17,29 +14,26 @@ const Gear = () => (
 const Flame = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M12 3c.8 3 4.5 5 4.5 10a4.5 4.5 0 0 1-9 0c0-2.2 1-3.7 2.1-4.7.2 1.4.8 2.4 1.9 2.9-.4-2.7.1-5.4.5-8.2z" /></svg>
 );
-const Target = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r="1" fill="currentColor" /></svg>
-);
 
 const isoDay = d => {
   const x = new Date(d);
   return new Date(x.getTime() - x.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 };
 
-// Macro bar with a tick at the goal, like a fuel gauge with headroom.
-function MacroCol({ label, tone, value, goal }) {
-  const scale = goal * 1.28;
+// A macro's progress toward its goal: "118 / 160 g" over a bar.
+function MacroBar({ label, tone, value, goal }) {
   return (
-    <div className="fm">
-      <span className="fm-l">{label}</span>
-      <span className="fm-bar">
-        <i className={`ft-${tone}`} style={{ width: `${Math.min(100, (value / scale) * 100)}%` }} />
-        <em style={{ left: `${(goal / scale) * 100}%` }} />
-      </span>
-      <span className="fm-v"><b>{Math.round(value)}</b> / {goal}g</span>
+    <div className="fh-macro">
+      <span className="fh-macro-top"><span>{label}</span><span>{Math.round(value)} / {goal} g</span></span>
+      <span className="fh-macro-bar"><i className={`ft-${tone}`} style={{ width: `${Math.min(100, goal > 0 ? (value / goal) * 100 : 0)}%` }} /></span>
     </div>
   );
 }
+
+const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
+const Plus = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+);
 
 export default function FoodHome({ user, day, onDay, onAdd }) {
   const [logs, setLogs] = useState([]);
@@ -51,6 +45,8 @@ export default function FoodHome({ user, day, onDay, onAdd }) {
   const [saving, setSaving] = useState(false);
   const [sheetError, setSheetError] = useState("");
   const [goalsOpen, setGoalsOpen] = useState(false);
+  const [week, setWeek] = useState([]);
+  const [open, setOpen] = useState(null);
 
   const dayMs = startOfDay(day).getTime();
   const today = startOfDay(new Date());
@@ -86,6 +82,18 @@ export default function FoodHome({ user, day, onDay, onAdd }) {
       .then(({ data }) => setDates((data || []).map(r => r.eaten_at)));
   }, [user, logs.length]);
 
+  // Calories for each day of the shown day's week.
+  const weekMs = weekStart(day).getTime();
+  useEffect(() => {
+    supabase
+      .from("food_logs")
+      .select("kcal, eaten_at")
+      .eq("user_id", user.id)
+      .gte("eaten_at", new Date(weekMs).toISOString())
+      .lt("eaten_at", new Date(weekMs + 8 * DAY_MS).toISOString())
+      .then(({ data }) => setWeek(data || []));
+  }, [user, weekMs, logs]);
+
   const dayLogs = logs.filter(l => dayKey(l.eaten_at) === dayKey(day));
   const t = totals(dayLogs);
   const left = goals.kcal - Math.round(t.kcal);
@@ -113,20 +121,33 @@ export default function FoodHome({ user, day, onDay, onAdd }) {
 
   const shift = n => onDay(new Date(dayMs + n * DAY_MS + 3 * 3600000));
 
+  const weekDays = DAY_LETTERS.map((label, i) => {
+    const d = new Date(weekMs + i * DAY_MS + 3 * 3600000);
+    const kcal = week.filter(r => dayKey(r.eaten_at) === dayKey(d)).reduce((a, r) => a + (Number(r.kcal) || 0), 0);
+    return { label, kcal, sel: dayKey(d) === dayKey(day), future: startOfDay(d) > today };
+  });
+  const logged = weekDays.filter(d => d.kcal > 0);
+  const avg = logged.length ? Math.round(logged.reduce((a, d) => a + d.kcal, 0) / logged.length) : 0;
+  const barMax = Math.max(goals.kcal * 1.15, ...weekDays.map(d => d.kcal)) || 1;
+  const dm = new Date(day).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+  const head = isToday ? `Today, ${dm}` : dayMs === today.getTime() - DAY_MS ? `Yesterday, ${dm}` : `${new Date(day).toLocaleDateString(undefined, { weekday: "short" })}, ${dm}`;
+
   return (
     <div className="lift fd">
-      <div className="fd-date">
-        <button onClick={() => shift(-1)} aria-label="Previous day"><Chevron left /></button>
-        <label className="fd-date-mid">
-          <Calendar />
-          <span>{isToday ? "Today" : new Date(day).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</span>
-          <input
-            type="date" aria-label="Pick a day" value={isoDay(day)} max={isoDay(today)}
-            onChange={e => e.target.value && onDay(new Date(`${e.target.value}T12:00:00`))}
-          />
-        </label>
-        <button onClick={() => shift(1)} disabled={isToday} aria-label="Next day"><Chevron /></button>
-      </div>
+      <header className="lh-head">
+        <div className="lh-date">
+          <button onClick={() => shift(-1)} aria-label="Previous day"><Chevron left /></button>
+          <label className="fh-pick">
+            <h1>{head}</h1>
+            <input
+              type="date" aria-label="Pick a day" value={isoDay(day)} max={isoDay(today)}
+              onChange={e => e.target.value && onDay(new Date(`${e.target.value}T12:00:00`))}
+            />
+          </label>
+          <button onClick={() => shift(1)} disabled={isToday} aria-label="Next day"><Chevron /></button>
+        </div>
+        <span className="fh-streak"><Flame />{streak} day streak</span>
+      </header>
 
       {loadError && (
         <div className="lift-card lift-setup">
@@ -135,61 +156,64 @@ export default function FoodHome({ user, day, onDay, onAdd }) {
         </div>
       )}
 
-      <section className="lift-card fd-budget">
-        <div className="lift-row">
-          <h2 className="fd-budget-h">Budget: {goals.kcal.toLocaleString()} cals</h2>
-          <button className="fd-gear" onClick={() => setGoalsOpen(true)} aria-label="Edit goals"><Gear /></button>
-        </div>
-        <div className="fd-budget-mid">
-          <div className="fd-side"><span>Food</span><b>{Math.round(t.kcal).toLocaleString()}</b></div>
-          <Gauge value={t.kcal} goal={goals.kcal} size={150} stroke={13} top={Math.abs(left).toLocaleString()} bottom={left >= 0 ? "Cal under" : "Cal over"} />
-          <div className="fd-side"><span>Streak</span><b>{streak}<small> {streak === 1 ? "day" : "days"}</small></b></div>
-        </div>
-        <div className="fd-macros">
-          <MacroCol label="Protein" tone="p" value={loaded ? t.protein : 0} goal={goals.protein} />
-          <MacroCol label="Carbs" tone="c" value={loaded ? t.carbs : 0} goal={goals.carbs} />
-          <MacroCol label="Fat" tone="f" value={loaded ? t.fat : 0} goal={goals.fat} />
+      <section className="fh-rings">
+        <Gauge value={t.kcal} goal={goals.kcal} size={176} stroke={13} top={Math.abs(left).toLocaleString()} bottom={left >= 0 ? "Cal left" : "Cal over"} note={`${Math.round(t.kcal).toLocaleString()} of ${goals.kcal.toLocaleString()} eaten`} />
+        <div className="fh-macros">
+          <MacroBar label="Protein" tone="p" value={loaded ? t.protein : 0} goal={goals.protein} />
+          <MacroBar label="Carbs" tone="c" value={loaded ? t.carbs : 0} goal={goals.carbs} />
+          <MacroBar label="Fat" tone="f" value={loaded ? t.fat : 0} goal={goals.fat} />
+          <button className="fh-goals" onClick={() => setGoalsOpen(true)}><Gear />Goals</button>
         </div>
       </section>
 
-      {MEALS.map(([meal, name]) => {
-        const items = dayLogs.filter(l => l.meal === meal);
-        const mt = totals(items);
-        const split = MEAL_SPLIT[meal];
-        const sug = { kcal: Math.round(goals.kcal * split), protein: Math.round(goals.protein * split), carbs: Math.round(goals.carbs * split), fat: Math.round(goals.fat * split) };
-        return (
-          <section key={meal} className="lift-card fd-meal">
-            <h2 className="lift-h2">{name}</h2>
-            <div className="fd-meal-lines">
-              {items.length ? (
-                <>
-                  <p><Flame /><span><b>{Math.round(mt.kcal).toLocaleString()}</b> of {sug.kcal.toLocaleString()} calories suggested</span></p>
-                  <p><Target /><span>{Math.round(mt.protein)}g protein · {Math.round(mt.carbs)}g carbs · {Math.round(mt.fat)}g fat</span></p>
-                </>
-              ) : (
-                <>
-                  <p><Flame /><span>{sug.kcal.toLocaleString()} calories suggested</span></p>
-                  <p><Target /><span>{sug.protein}g protein · {sug.carbs}g carbs · {sug.fat}g fat</span></p>
-                </>
+      <section className="lift-card fh-week">
+        <div className="lift-row">
+          <h2 className="lift-h2">Calories <span className="fh-dim">{weekMs === weekStart(today).getTime() ? "this week" : "that week"}</span></h2>
+          <span className="fh-avg">avg <b>{avg.toLocaleString()}</b></span>
+        </div>
+        <div className="fh-bars" role="img" aria-label={`Calories each day, goal ${goals.kcal.toLocaleString()}, average ${avg.toLocaleString()}`}>
+          <em style={{ bottom: `${(goals.kcal / barMax) * 100}%` }} />
+          {weekDays.map((d, i) => (
+            <i key={i} className={`${d.sel ? "sel" : ""}${d.kcal > goals.kcal ? " over" : ""}`} style={{ height: `${(d.kcal / barMax) * 100}%` }} />
+          ))}
+        </div>
+        <div className="fh-letters">
+          {weekDays.map((d, i) => <span key={i} className={d.sel ? "sel" : ""}>{d.label}</span>)}
+        </div>
+      </section>
+
+      <section className="lift-card fh-meals">
+        {MEALS.map(([meal, name]) => {
+          const items = dayLogs.filter(l => l.meal === meal);
+          const kcal = Math.round(totals(items).kcal);
+          const shown = open === meal;
+          return (
+            <div key={meal} className="fh-meal">
+              <div className="fh-meal-row">
+                <button className="fh-meal-main" disabled={!items.length} aria-expanded={items.length ? shown : undefined} onClick={() => setOpen(shown ? null : meal)}>
+                  <b>{name}</b>
+                  <small>{items.length ? items.map(l => l.name).join(", ") : "Nothing yet"}</small>
+                </button>
+                {items.length > 0 && <span className="fh-kcal">{kcal.toLocaleString()} <small>cal</small></span>}
+                <button className="fh-add" onClick={() => onAdd(meal)} aria-label={`Add food to ${name}`}><Plus /></button>
+              </div>
+              {shown && (
+                <div className="fd-entries">
+                  {items.map(l => (
+                    <button key={l.id} className="fd-entry" onClick={() => { setSheetError(""); setEditing(l); }}>
+                      <span className="fd-entry-name">
+                        <b>{l.name}</b>
+                        <small>{[l.brand, amountText(foodFromLog(l), l.unit, l.amount)].filter(Boolean).join(" · ")}</small>
+                      </span>
+                      <span className="fd-entry-cal">{Math.round(l.kcal).toLocaleString()}<small> cal</small></span>
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
-            {items.length > 0 && (
-              <div className="fd-entries">
-                {items.map(l => (
-                  <button key={l.id} className="fd-entry" onClick={() => { setSheetError(""); setEditing(l); }}>
-                    <span className="fd-entry-name">
-                      <b>{l.name}</b>
-                      <small>{[l.brand, amountText(foodFromLog(l), l.unit, l.amount)].filter(Boolean).join(" · ")}</small>
-                    </span>
-                    <span className="fd-entry-cal">{Math.round(l.kcal).toLocaleString()}<small> cal</small></span>
-                  </button>
-                ))}
-              </div>
-            )}
-            <button className="fd-addfood" onClick={() => onAdd(meal)}>Add Food</button>
-          </section>
-        );
-      })}
+          );
+        })}
+      </section>
 
       {editing && (
         <AmountSheet

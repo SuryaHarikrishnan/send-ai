@@ -3,8 +3,8 @@ import Ring from "./Ring";
 
 // Fills with value / goal; turns red-ish past the goal.
 const TONES = { kcal: "var(--ft-k)", p: "var(--ft-p)", c: "var(--ft-c)", f: "var(--ft-f)" };
-export function Gauge({ value, goal, size = 150, stroke = 14, tone = "kcal", top, bottom }) {
-  return <Ring value={value} goal={goal} size={size} stroke={Math.round(stroke * 0.55)} color={TONES[tone]} over={goal > 0 && value > goal} top={top} bottom={bottom} />;
+export function Gauge({ value, goal, size = 150, stroke = 14, tone = "kcal", top, bottom, note }) {
+  return <Ring value={value} goal={goal} size={size} stroke={Math.round(stroke * 0.55)} color={TONES[tone]} over={goal > 0 && value > goal} top={top} bottom={bottom} note={note} />;
 }
 
 // Seven bars for a week. A tick on each bar marks the goal.
