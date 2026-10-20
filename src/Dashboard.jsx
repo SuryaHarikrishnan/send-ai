@@ -142,6 +142,17 @@ export default function Dashboard({ user }) {
     <div className="dash-root has-tabbar">
       <div className="grain" />
 
+      <header className="topbar">
+        <div className="logo">
+          <img className="logo-mark" src="/logo.png" width="28" height="28" alt="" />
+          <span className="wordmark">SENDIT</span>
+        </div>
+        <button className="topbar-sport" onClick={() => setPicking(true)} aria-label={`Sport: ${SPORT_NAMES[sport]}. Change sport`}>
+          {I[sport](false)}
+          {SPORT_NAMES[sport]}
+          <svg className="topbar-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+        </button>
+      </header>
 
       <main className="dash-content">
         {lifting && tab === "home" && <LiftHome user={user} onNavigate={go} onEdit={w => { setEditWorkout(w); setTab("log"); }} onOpenExercise={k => { setFocus(k); setTab("progress"); }} />}
@@ -186,10 +197,10 @@ export default function Dashboard({ user }) {
             {icon(tab === id)}
           </button>
         ))}
-        <button className={picking ? "on" : ""} aria-label={`Sport: ${SPORT_NAMES[sport]}. Change sport`} aria-haspopup="dialog" onClick={() => setPicking(true)}>
+        <button className={picking ? "on" : ""} aria-label="Change sport" aria-haspopup="dialog" onClick={() => setPicking(true)}>
           <span className="tabbar-sport">
-            {SPORT_NAMES[sport]}
-            <svg className="tabbar-caret" viewBox="0 0 12 8" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 2l4 4 4-4" /></svg>
+            {I[sport](picking)}
+            <svg className="tabbar-caret" viewBox="0 0 12 8" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M2 6.5l4-4 4 4" /></svg>
           </span>
         </button>
         <button className={youTab ? "on" : ""} aria-label="You" aria-current={youTab ? "page" : undefined} onClick={() => go("you")}>
