@@ -1,29 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import Ring from "./Ring";
 
-// 270° gauge, open at the bottom. Fills with value / goal.
-export function Gauge({ value, goal, size = 150, stroke = 14, tone = "kcal", top, bottom }) {
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  const arc = c * 0.75;
-  const pct = goal > 0 ? value / goal : 0;
-  const over = pct > 1;
-  const fill = arc * Math.min(1, Math.max(0, pct));
-  return (
-    <span className={`fg fg-${tone}${over ? " over" : ""}`} style={{ width: size, height: size }}>
-      <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} aria-hidden="true">
-        <g transform={`rotate(135 ${size / 2} ${size / 2})`}>
-          <circle cx={size / 2} cy={size / 2} r={r} className="fg-track" strokeWidth={stroke} strokeDasharray={`${arc} ${c}`} />
-          {fill > 0 && (
-            <circle cx={size / 2} cy={size / 2} r={r} className="fg-fill" strokeWidth={stroke} strokeDasharray={`${fill} ${c}`} />
-          )}
-        </g>
-      </svg>
-      <span className="fg-in">
-        <b>{top}</b>
-        <small>{bottom}</small>
-      </span>
-    </span>
-  );
+// Fills with value / goal; turns red-ish past the goal.
+const TONES = { kcal: "var(--ft-k)", p: "var(--ft-p)", c: "var(--ft-c)", f: "var(--ft-f)" };
+export function Gauge({ value, goal, size = 150, stroke = 14, tone = "kcal", top, bottom, note }) {
+  return <Ring value={value} goal={goal} size={size} stroke={Math.round(stroke * 0.55)} color={TONES[tone]} over={goal > 0 && value > goal} top={top} bottom={bottom} note={note} />;
 }
 
 // Seven bars for a week. A tick on each bar marks the goal.
