@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./supabase";
+import "./Plan.css";
 import { track } from "./tracking";
 import {
   DAY_CHOICES, GOALS, INTENSITIES, LEVELS, MINUTE_CHOICES,

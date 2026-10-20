@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import BodyMap from "./BodyMap";
 import { syncReminderInfo } from "./notify";
+import "./Plan.css";
 import { loadPlan, nextDayIndex, nextTarget, presetFor, repText } from "./plan";
 import { MUSCLE_NAMES, muscleSets, prFlags, setSummary, totalSets, totalVolume, weekStart, weekStreak, workoutsError } from "./lifting";
 
