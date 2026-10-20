@@ -182,6 +182,30 @@ export default function WorkoutLog({ user, editing, onNavigate }) {
     if (!s.done) startRest();
   }
 
+  // The exercise picker is a full-screen sheet. Several can be added in one go,
+  // and closing it scrolls to the first one added.
+  // While open, `picking` is how many exercises there were when it opened.
+  const [picking, setPicking] = useState(null);
+  const open = picking !== null;
+  function openPicker() {
+    setPicking(exercises.length);
+  }
+  function closePicker() {
+    const at = picking;
+    setPicking(null);
+    requestAnimationFrame(() => document.querySelectorAll("section.wl-ex")[at]?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+  useEffect(() => {
+    if (!open) return;
+    const was = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = e => { if (e.key === "Escape") setPicking(null); };
+    window.addEventListener("keydown", onKey);
+    return () => { document.body.style.overflow = was; window.removeEventListener("keydown", onKey); };
+  }, [open]);
+  const setsTotal = exercises.reduce((a, e) => a + e.sets.length, 0);
+  const setsDone = exercises.reduce((a, e) => a + e.sets.filter(s => s.done).length, 0);
+
   function pickTitle(t) {
     setTitle(t);
     setNamed(true);
@@ -364,17 +388,44 @@ export default function WorkoutLog({ user, editing, onNavigate }) {
         );
       })}
 
-      <ExercisePicker recent={recent} taken={taken} onAdd={addExercise} />
-
-      {error && <p className="wl-error">{error}</p>}
-      <button className="lift-start wl-save" onClick={save} disabled={saving || !exercises.length}>
-        {saving ? "Saving..." : editing ? "Save changes" : "Save workout"}
+      <button className={`wl-add-ex${exercises.length ? "" : " first"}`} onClick={openPicker}>
+        <span aria-hidden="true">+</span>{exercises.length ? "Add exercise" : "Add your first exercise"}
       </button>
+
       {editing
         ? <button className="wl-discard" onClick={() => onNavigate("home")}>Cancel, keep it as it was</button>
         : exercises.length > 0 && <button className="wl-discard" onClick={discard}>Discard workout</button>}
-      {rest && <div className="wl-rest-space" />}
-      {rest && <RestTimer rest={rest} onChange={adjustRest} onDone={() => setRest(null)} />}
+
+      {(exercises.length > 0 || rest) && <div className={`wl-dock-space${rest ? " rest" : ""}`} />}
+      {(exercises.length > 0 || rest) && (
+        <div className="wl-dock">
+          {rest && <RestTimer rest={rest} onChange={adjustRest} onDone={() => setRest(null)} />}
+          {error && <p className="wl-error">{error}</p>}
+          {exercises.length > 0 && (
+            <div className="wl-finish">
+              <span>
+                <b>{name.trim() || "Workout"}</b>
+                <small>{setsDone} of {setsTotal} sets done</small>
+              </span>
+              <button className="lift-start" onClick={save} disabled={saving}>
+                {saving ? "Saving..." : editing ? "Save changes" : "Save workout"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {open && (
+        <div className="wl-picker" role="dialog" aria-modal="true" aria-label="Add exercises">
+          <div className="wl-picker-top">
+            <h2 className="lift-h2">Add exercises</h2>
+            <button className="lift-start" onClick={closePicker}>
+              {exercises.length > picking ? `Done · ${exercises.length - picking} added` : "Done"}
+            </button>
+          </div>
+          <ExercisePicker recent={recent} taken={taken} onAdd={addExercise} />
+        </div>
+      )}
     </div>
   );
 }

@@ -23,9 +23,20 @@ async function openLog(b) {
   await b.expectVisible(b.page.getByRole("heading", { name: "Log workout" }), "Log workout screen opens");
 }
 
+async function openPicker(b) {
+  if (await b.page.locator(".wl-picker").count()) return;
+  await b.tap(b.page.locator(".wl-add-ex"), "Add exercise");
+}
+
+async function closePicker(b) {
+  await b.tap(b.page.locator(".wl-picker-top button"), "Done adding exercises");
+}
+
 async function addExercise(b, search, pick) {
+  await openPicker(b);
   await b.type(b.page.locator("#ep-search"), search, "exercise search");
   await b.tap(b.page.locator(".ep-row", { hasText: pick }).first(), `${pick} in exercise list`);
+  await closePicker(b);
 }
 
 async function fillSets(b, exIndex, sets) {
@@ -72,9 +83,9 @@ export const journeys = {
   async liftRepeatLast(b) {
     await openLog(b);
     await b.tap(b.page.locator(".wl-chips button", { hasText: "Push" }), "Push chip");
-    const repeat = b.page.locator(".wl-repeat");
-    await b.expectVisible(repeat, "'Repeat last Push' shows for a returning lifter");
-    await b.tap(repeat, "Repeat last Push");
+    const repeat = b.page.locator(".wl-repeat", { hasText: "Push" }).first();
+    await b.expectVisible(repeat, "'Repeat Push' shows for a returning lifter");
+    await b.tap(repeat, "Repeat Push");
     const first = b.page.locator("section.wl-ex").first();
     const w0 = Number(await first.getByLabel("Set 1 weight").inputValue().catch(() => 0));
     await b.type(first.getByLabel("Set 1 weight"), String(w0 + 10), "heavier first set");
@@ -195,12 +206,15 @@ export const journeys = {
 
   async liftCustomExercise(b) {
     await openLog(b);
+    await openPicker(b);
     await b.type(b.page.locator("#ep-search"), "Zercher carry", "exercise search");
     await b.tap(b.page.locator(".ep-custom"), "Add \"Zercher carry\" as own exercise");
+    await closePicker(b);
     await fillSets(b, 0, [[1, 185], [1, 185], [1, 185]]);
     await saveWorkout(b);
     await b.expectVisible(b.page.getByText("Zercher carry").first(), "custom exercise shows on Home");
     await openLog(b);
+    await openPicker(b);
     await b.tap(b.page.locator(".ep-chips button", { hasText: "Recent" }), "Recent chip");
     await b.expectVisible(b.page.locator(".ep-row", { hasText: "Zercher carry" }), "custom exercise is in Recent next time");
   },
