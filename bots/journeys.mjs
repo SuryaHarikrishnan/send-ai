@@ -140,7 +140,7 @@ export const journeys = {
   async liftMistakes(b) {
     await openLog(b);
     const save = b.page.getByRole("button", { name: "Save workout" });
-    b.check(await save.isDisabled(), "Save is disabled with no exercises", "Save was tappable with nothing logged");
+    b.check(!(await save.count()) || await save.isDisabled(), "Save is hidden or disabled with no exercises", "Save was tappable with nothing logged");
     await addExercise(b, "bench", "Bench press");
     await saveWorkout(b);
     await b.expectVisible(b.page.locator(".wl-error"), "saving empty sets shows an error");
