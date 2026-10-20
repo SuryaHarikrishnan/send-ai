@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Sparkline } from "./TrendChart";
-import Ring from "./Ring";
+import TrendChart, { Sparkline } from "./TrendChart";
 import { DAY_MS, groupSetsPerWeek, setsByDay, strengthHistory, weekStart, weeklyTotals } from "./lifting";
 
 const bigNumber = n => (n >= 10000 ? `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}k` : Math.round(n).toLocaleString());
@@ -65,56 +64,63 @@ export function TrainingWeeks({ workouts }) {
   );
 }
 
-const RANGE_NAMES = { 91: "3 months", 182: "6 months", 365: "a year" };
-
-// Strength as a ring: the combined estimated max, filling toward the next round hundred.
-export function StrengthRing({ stats, days }) {
+// Overall strength from the first log to now: the combined estimated max of the headline lifts.
+export function StrengthChart({ stats }) {
   const { lifts, sbd, points } = strengthHistory(stats);
-  if (!lifts.length || !points.length) return (
+  if (!lifts.length) return (
     <section className="lift-card lc-empty">
       <h2 className="lift-h2">Strength</h2>
-      <p className="lc-note">Log a lift with weight, like squat, bench or deadlift, and your strength shows up here.</p>
+      <p className="lc-note">Log a lift with weight, like squat, bench or deadlift, and your strength over time shows up here.</p>
     </section>
   );
-  const last = points[points.length - 1];
-  const cutoff = new Date().getTime() - days * DAY_MS;
-  const base = [...points].reverse().find(p => p.t <= cutoff) || points[0];
-  const change = last.v - base.v;
-  const next = (Math.floor(last.v / 100) + 1) * 100;
+  const first = points[0], last = points[points.length - 1];
+  const change = first && last ? last.v - first.v : 0;
   const label = sbd ? "Squat + bench + deadlift" : lifts.map(e => e.name).join(" + ");
+
   return (
-    <section className="lift-card lc-ring">
-      <Ring value={last.v} goal={next} size={140} color="#5ab8ff" top={last.v.toLocaleString()} bottom={sbd ? "Big 3 · lb" : "Total · lb"} label={`${label}: ${last.v} pounds estimated max total`} />
-      <div className="lc-ring-txt">
-        <h2 className="lift-h2">Strength</h2>
-        <p className="lift-sub">{sbd ? "Squat, bench and deadlift" : "Your main lifts"}: estimated max total</p>
+    <section className="lift-card lp-chart" data-shot="strength-overall">
+      <div className="lp-hero">
+        <small>{label}</small>
+        <b>{last ? last.v.toLocaleString() : "–"}<span> lb</span></b>
         {points.length > 1 && (
           <em className={change > 0 ? "up" : change < 0 ? "down" : ""}>
-            {change > 0 ? "▲ " : change < 0 ? "▼ " : ""}{change === 0 ? "No change" : `${Math.abs(change).toLocaleString()} lb`}<small> in {base === points[0] ? "total" : RANGE_NAMES[days]}</small>
+            {change > 0 ? "▲ " : change < 0 ? "▼ " : ""}{change === 0 ? "No change" : `${Math.abs(change).toLocaleString()} lb`} since {shortDate(first.t)}
           </em>
         )}
-        <p className="lc-ring-next">{(next - last.v).toLocaleString()} lb to {next.toLocaleString()}</p>
       </div>
+      {points.length > 0 && <TrendChart points={points.map(p => ({ ...p, detail: p.pr ? "New best total" : "" }))} unit="lb" label="Strength total" />}
+      {points.length < 2 && <p className="lift-sub lp-center">Log {lifts.map(e => e.name.toLowerCase()).join(", ")} a few times to see your strength climb.</p>}
+      <p className="lc-note">Estimated one-rep maxes added up, using your best set so far for each lift.</p>
     </section>
   );
 }
 
-// The headline lifts, each with a trend line over the range and its best estimated max.
-export function MainLiftRows({ stats, days, onFocus }) {
+// Each headline lift's best estimated max and how far it has come since its first log.
+export function MainLiftsSince({ stats, onFocus }) {
   const { lifts } = strengthHistory(stats);
-  if (!lifts.length) return null;
-  const cutoff = new Date().getTime() - days * DAY_MS;
+  if (!lifts.length) return (
+    <section className="lift-card lc-empty">
+      <h2 className="lift-h2">Your main lifts</h2>
+      <p className="lc-note">Your main lifts and how far each has come show up here once you log them.</p>
+    </section>
+  );
   return (
-    <section className="lift-card lc-rows">
+    <section className="lift-card lc-main" data-shot="main-lifts">
+      <div className="lift-row">
+        <h2 className="lift-h2">Your main lifts</h2>
+        <span className="lift-sub">Since you started</span>
+      </div>
       {lifts.map(e => {
-        let inRange = e.sessions.filter(s => new Date(s.date).getTime() >= cutoff);
-        if (!inRange.length) inRange = e.sessions.slice(-1);
         const best = Math.max(...e.sessions.map(s => s.value));
+        const diff = best - e.sessions[0].value;
         return (
-          <button key={e.key} className="lc-row" onClick={() => onFocus(e.key)}>
-            <span className="lc-row-name"><b>{e.name}</b><small>est. max</small></span>
-            <Sparkline values={inRange.map(s => s.value)} />
-            <span className="lc-row-val">{best.toLocaleString()} <small>lb</small></span>
+          <button key={e.key} className="lp-row" onClick={() => onFocus(e.key)}>
+            <span className="lp-row-name"><b>{e.name}</b><small>{e.sessions.length} sessions · {e.sessions[0].value} lb at the start</small></span>
+            <Sparkline values={e.sessions.map(s => s.value)} />
+            <span className="lp-row-val">
+              <b>{best.toLocaleString()} lb</b>
+              {e.sessions.length > 1 && <small className={diff > 0 ? "up" : ""}>{diff > 0 ? `▲ ${diff} lb` : "No change"}</small>}
+            </span>
           </button>
         );
       })}
@@ -168,7 +174,7 @@ const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
 // Calendar of training days: white if you logged a workout that day, blank if not.
 // Short ranges read like a calendar (a row per week); long ones are a column per week.
 export function Consistency({ workouts }) {
-  const [range, setRange] = useState("1M");
+  const [range, setRange] = useState("2W");
   const [, weeks, rangeName] = CAL_RANGES.find(r => r[0] === range);
   const byDay = setsByDay(workouts);
   const first = new Date(weekStart(new Date()).getTime() - (weeks - 1) * 7 * DAY_MS);
