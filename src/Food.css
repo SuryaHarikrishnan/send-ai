@@ -16,12 +16,41 @@
 .fd-dot.f { background: var(--ft-f); }
 
 /* date switcher */
-.lift .fh-pick input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; padding: 0; border: 0; cursor: pointer; }
-.lift .fh-pick input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.fd-date { align-self: center; display: flex; align-items: center; gap: 2px; background: var(--card); border: 1px solid var(--card-line); border-radius: 99px; padding: 4px; }
+.fd-date > button { width: 40px; height: 40px; display: grid; place-items: center; border: 0; background: none; border-radius: 50%; }
+.fd-date > button:disabled { opacity: 0.3; }
+.fd-date > button svg { width: 20px; height: 20px; }
+.fd-date-mid { position: relative; display: flex; align-items: center; gap: 10px; padding: 0 10px; font-size: 18px; font-weight: 600; min-width: 150px; justify-content: center; cursor: pointer; }
+.fd-date-mid svg { width: 24px; height: 24px; }
+.lift .fd-date-mid input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; padding: 0; border: 0; cursor: pointer; }
+.lift .fd-date-mid input::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
 /* budget card */
+.fd-budget { display: flex; flex-direction: column; gap: 14px; padding: 18px; }
+.fd-budget-h { font-size: 19px; font-weight: 700; }
+.fd-gear { width: 36px; height: 36px; display: grid; place-items: center; border: 0; background: none; color: var(--mut) !important; border-radius: 50%; margin: -6px -6px -6px 0; }
+.fd-gear:hover { color: #fff !important; }
+.fd-gear svg { width: 24px; height: 24px; }
+.fd-budget-mid { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
+.fd-side { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.fd-side span { font-size: 16px; font-weight: 500; color: var(--mut); }
+.fd-side b { font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 600; letter-spacing: -0.4px; font-variant-numeric: tabular-nums; }
+.fd-side b small { font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600; color: var(--mut); letter-spacing: 0; }
+.fd-macros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.fm { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
+.fm-l { font-size: 15px; font-weight: 700; }
+.fm-bar { position: relative; width: 100%; height: 10px; border-radius: 5px; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
+.fm-bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; transition: width 0.4s ease; }
+.fm-bar em { position: absolute; top: 0; bottom: 0; width: 3px; margin-left: -1.5px; background: #081619; }
+.fm-v { font-size: 15px; color: var(--mut); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fm-v b { color: #fff; }
 
 /* meal cards */
+.fd-meal { display: flex; flex-direction: column; gap: 10px; padding: 18px; }
+.fd-meal-lines { display: flex; flex-direction: column; gap: 6px; }
+.fd-meal-lines p { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--mut); }
+.fd-meal-lines p b { color: #fff; }
+.fd-meal-lines svg { width: 18px; height: 18px; flex: none; opacity: 0.85; }
 .fd-entries { display: flex; flex-direction: column; border-top: 1px solid var(--card-line); margin-top: 2px; }
 .fd-entry { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: none; border: 0; border-bottom: 1px solid var(--card-line); padding: 11px 0; text-align: left; width: 100%; }
 .fd-entry-name { display: flex; flex-direction: column; min-width: 0; }
@@ -30,6 +59,8 @@
 .fd-entry-cal { font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .fd-entry-cal small { font-weight: 500; color: var(--mut); font-size: 12px; }
 .fd-entry:hover .fd-entry-name b { text-decoration: underline; text-decoration-color: rgba(255, 255, 255, 0.4); text-underline-offset: 3px; }
+.fd-addfood { align-self: flex-end; background: #fff; color: var(--navy) !important; border: 0; border-radius: 99px; padding: 11px 22px; font-weight: 700; font-size: 16px !important; margin-top: 4px; }
+.fd-addfood:active { transform: scale(0.97); }
 
 /* meal chips (log screen + sheets) */
 .fd-meals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; background: rgba(255, 255, 255, 0.06); border-radius: 99px; padding: 4px; }
@@ -156,7 +187,7 @@
 .fwb-bar { position: relative; flex: 1; width: 100%; max-width: 30px; border-radius: 7px; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
 .fwb-fill { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 7px; }
 .fwb-fill.ft-kcal.over { background: var(--ft-over); }
-.fwb-bar em { position: absolute; left: 0; right: 0; height: 3px; margin-bottom: -1.5px; background: rgba(255, 255, 255, 0.55); }
+.fwb-bar em { position: absolute; left: 0; right: 0; height: 3px; margin-bottom: -1.5px; background: #081619; }
 .fwb-stack { position: absolute; inset: 0; display: flex; flex-direction: column-reverse; }
 .fwb-stack i { display: block; }
 .fwb-l { font-size: 13px; color: var(--mut); font-weight: 500; }
@@ -238,6 +269,8 @@
 @keyframes fd-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 400px) {
+  .fd-macros { gap: 12px; }
+  .fm-v { font-size: 13px; }
   .fwb { gap: 5px; }
   .fp-mid { gap: 12px; }
   .fp-foot { grid-template-columns: 112px 1fr; gap: 12px; font-size: 14px; }
@@ -245,7 +278,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .bs-frame.live b, .fl-skel i, .fl-skel b, .fl-skel small, .fl-toast { animation: none; }
-  .fh-macro-bar i, .fh-bars i { transition: none; }
+  .fg-fill, .fm-bar i { transition: none; }
 }
 
 /* add food, laid out like the reference: search bar, tabs, food cards, floating scan */
@@ -346,40 +379,3 @@
 .fl-manual b { font-size: 15px; }
 .fl-manual small { display: block; font-size: 13px; color: var(--mut); }
 .fl-manual:active { transform: scale(0.98); }
-
-/* Food home, mockup layout: calories ring beside the macro bars, a week of calories, one meals card */
-.fh-pick { position: relative; cursor: pointer; }
-.fh-streak { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; color: #ffb37a; white-space: nowrap; }
-.fh-streak svg { width: 16px; height: 16px; }
-.fh-rings { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
-.fh-macros { flex: 1; min-width: 0; max-width: 190px; display: flex; flex-direction: column; gap: 11px; }
-.fh-macro { display: flex; flex-direction: column; gap: 5px; }
-.fh-macro-top { display: flex; justify-content: space-between; gap: 6px; font-size: 13px; }
-.fh-macro-top span:last-child { color: rgba(255, 255, 255, 0.75); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.fh-macro-bar { height: 8px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
-.fh-macro-bar i { display: block; height: 100%; border-radius: 4px; transition: width 0.4s ease; }
-.fh-goals { align-self: flex-start; display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--card-line); background: var(--faint); border-radius: 99px; padding: 5px 11px 5px 8px; font-size: 12px !important; font-weight: 600; }
-.fh-goals svg { width: 14px; height: 14px; }
-.fh-week { display: flex; flex-direction: column; gap: 12px; background: linear-gradient(180deg, rgba(255, 154, 77, 0.10), rgba(255, 255, 255, 0.03)); }
-.fh-dim { font-weight: 400; font-size: 13px; color: var(--mut); }
-.fh-avg { font-size: 13px; color: rgba(255, 255, 255, 0.75); }
-.fh-avg b { font-size: 17px; font-weight: 600; color: #fff; }
-.fh-bars { position: relative; height: 82px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; align-items: end; }
-.fh-bars i { display: block; border-radius: 6px; background: var(--ft-k); opacity: 0.85; min-height: 0; transition: height 0.4s ease; }
-.fh-bars i.sel { opacity: 1; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85); }
-.fh-bars i.over { background: var(--ft-over); }
-.fh-bars em { position: absolute; left: 0; right: 0; border-top: 1px dashed rgba(255, 255, 255, 0.35); pointer-events: none; }
-.fh-letters { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; margin-top: -6px; font-size: 11px; color: var(--mut); text-align: center; }
-.fh-letters .sel { color: #fff; font-weight: 600; }
-.fh-meals { padding-top: 4px; padding-bottom: 4px; display: flex; flex-direction: column; }
-.fh-meal + .fh-meal { border-top: 1px solid var(--card-line); }
-.fh-meal-row { display: flex; align-items: center; gap: 10px; min-height: 58px; }
-.fh-meal-main { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 1px; background: none; border: 0; padding: 8px 0; text-align: left; }
-.fh-meal-main:disabled { cursor: default !important; }
-.fh-meal-main b { font-size: 15px; font-weight: 500; }
-.fh-meal-main small { font-size: 12px; color: var(--mut); max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.fh-kcal { font-size: 15px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.fh-kcal small { font-size: 11px; font-weight: 400; color: var(--mut); }
-.fh-add { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.06); display: grid; place-items: center; padding: 0; }
-.fh-add svg { width: 16px; height: 16px; }
-.fh-meal .fd-entries { padding-bottom: 6px; }

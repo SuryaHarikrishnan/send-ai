@@ -1,12 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { Children, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import TrendChart, { Sparkline } from "./TrendChart";
-import { Consistency, MainLiftRows, MuscleBalance, StrengthRing, TrainingWeeks } from "./LiftCharts";
-import { DAY_MS, MUSCLE_NAMES, exerciseStats, workoutsError } from "./lifting";
+import { Consistency, MainLiftsSince, MuscleBalance, StrengthChart, TrainingWeeks } from "./LiftCharts";
+import { DAY_MS, MUSCLE_NAMES, exerciseStats, totalVolume, workoutsError } from "./lifting";
 import "./Lift.css";
 
 const RANGES = [["3M", 91], ["6M", 182], ["1Y", 365], ["All", Infinity]];
-const PAGE_RANGES = RANGES.slice(0, 3);
 
 const shortDate = d => new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 function ago(d) {
@@ -33,7 +32,6 @@ export default function LiftProgress({ user, focus, onFocus, onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(null);
   const [query, setQuery] = useState("");
-  const [range, setRange] = useState(91);
 
   useEffect(() => {
     supabase
@@ -60,18 +58,19 @@ export default function LiftProgress({ user, focus, onFocus, onNavigate }) {
   const list = Object.values(stats)
     .filter(e => !query.trim() || e.name.toLowerCase().includes(query.trim().toLowerCase()))
     .sort((a, b) => new Date(b.last.date) - new Date(a.last.date));
+  const monthAgo = new Date().getTime() - 30 * DAY_MS;
   const recentPrs = Object.values(stats)
     .flatMap(e => e.prs.map(p => ({ ex: e, p })))
     .sort((a, b) => new Date(b.p.date) - new Date(a.p.date));
+  const prsThisMonth = recentPrs.filter(r => new Date(r.p.date).getTime() >= monthAgo).length;
+  const liftedThisMonth = workouts.filter(w => new Date(w.performed_at).getTime() >= monthAgo).reduce((a, w) => a + totalVolume(w), 0);
 
   return (
     <div className="lift">
       <header className="lift-head">
-        <h1 className="lift-title">Progress</h1>
-        <div className="lp-ranges" role="group" aria-label="Time range">
-          {PAGE_RANGES.map(([r, n]) => (
-            <button key={r} className={range === n ? "on" : ""} aria-pressed={range === n} onClick={() => setRange(n)}>{r}</button>
-          ))}
+        <div>
+          <p className="lift-date">Progress</p>
+          <h1 className="lift-title">Your lifts</h1>
         </div>
       </header>
 
@@ -89,11 +88,19 @@ export default function LiftProgress({ user, focus, onFocus, onNavigate }) {
         </div>
       ) : (
         <>
-          <StrengthRing stats={stats} days={range} />
-          <MainLiftRows stats={stats} days={range} onFocus={onFocus} />
-          <Consistency workouts={workouts} />
-          <TrainingWeeks workouts={workouts} />
-          <MuscleBalance workouts={workouts} />
+          <Carousel labels={SLIDES}>
+            <StrengthChart stats={stats} />
+            <MainLiftsSince stats={stats} onFocus={onFocus} />
+            <TrainingWeeks workouts={workouts} />
+            <MuscleBalance workouts={workouts} />
+            <Consistency workouts={workouts} />
+          </Carousel>
+
+          <section className="lp-tiles">
+            <div className="lift-card lp-tile"><b>{workouts.length}</b><span>Workouts logged</span></div>
+            <div className="lift-card lp-tile"><b>{prsThisMonth}</b><span>PRs in 30 days</span></div>
+            <div className="lift-card lp-tile"><b>{bigNumber(liftedThisMonth)}</b><span>lb lifted in 30 days</span></div>
+          </section>
 
           {recentPrs.length > 0 && (
             <section className="lift-card lp-prs">
@@ -135,6 +142,45 @@ export default function LiftProgress({ user, focus, onFocus, onNavigate }) {
         </>
       )}
     </div>
+  );
+}
+
+const SLIDES = ["Strength", "Main lifts", "Training", "Muscle balance", "Consistency"];
+// Remembered while the app is open, so coming back from a lift shows the same card.
+let lastSlide = 0;
+
+// Analytics cards you swipe through one at a time, with dots underneath.
+// Only this strip moves; everything below it stays put.
+function Carousel({ labels, children }) {
+  const track = useRef(null);
+  const [at, setAt] = useState(lastSlide);
+  const slides = Children.toArray(children);
+
+  useLayoutEffect(() => {
+    track.current.scrollLeft = lastSlide * track.current.clientWidth;
+  }, []);
+  useEffect(() => { lastSlide = at; }, [at]);
+
+  function onScroll() {
+    const el = track.current;
+    const i = Math.round(el.scrollLeft / el.clientWidth);
+    if (i !== at) setAt(i);
+  }
+  const go = i => track.current.scrollTo({ left: i * track.current.clientWidth, behavior: "smooth" });
+
+  return (
+    <section className="lpc" aria-roledescription="carousel" aria-label="Your stats">
+      <div className="lpc-track" ref={track} onScroll={onScroll}>
+        {slides.map((c, i) => (
+          <div key={labels[i]} className="lpc-slide" role="group" aria-roledescription="slide" aria-label={`${labels[i]}, ${i + 1} of ${slides.length}`}>{c}</div>
+        ))}
+      </div>
+      <div className="lpc-dots">
+        {slides.map((_, i) => (
+          <button key={labels[i]} className={at === i ? "on" : ""} aria-label={`Show ${labels[i]}`} aria-current={at === i} onClick={() => go(i)} />
+        ))}
+      </div>
+    </section>
   );
 }
 
