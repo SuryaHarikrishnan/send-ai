@@ -159,7 +159,7 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  if (checking) return <div style={{ background: "#062a63", minHeight: "100vh" }} />;
+  if (checking) return <div style={{ background: "#081619", minHeight: "100vh" }} />;
   if (user && !hasAgreed(user)) {
     return <ConsentGate user={user} auto={agreedBeforeSignIn()} onAgreed={setUser} save={saveAgreement} />;
   }

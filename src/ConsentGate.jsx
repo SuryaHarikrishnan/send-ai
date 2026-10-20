@@ -26,7 +26,7 @@ export default function ConsentGate({ user, auto, onAgreed, save }) {
     if (auto && !tried.current) { tried.current = true; agree(); }
   }, [auto]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (auto && busy && !error) return <div style={{ background: "#062a63", minHeight: "100vh" }} />;
+  if (auto && busy && !error) return <div style={{ background: "#081619", minHeight: "100vh" }} />;
 
   return (
     <div className="root start-root">
