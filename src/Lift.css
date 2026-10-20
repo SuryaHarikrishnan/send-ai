@@ -498,3 +498,8 @@
 .lpc-dots button.on::after { width: 20px; background: #fff; }
 .lpc-dots button.on { width: 32px; }
 .lc-empty { display: flex; flex-direction: column; gap: 8px; }
+
+/* .lift button resets font, so these keep their bold weight explicitly */
+.lift .wl-add-ex, .lift .wl-finish .lift-start, .lift .wl-picker-top .lift-start { font-weight: 700; }
+/* scroll a newly added exercise into view below the top bar */
+.wl-ex { scroll-margin-top: calc(76px + env(safe-area-inset-top)); }
