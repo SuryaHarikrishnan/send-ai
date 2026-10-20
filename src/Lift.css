@@ -200,7 +200,14 @@
 .lift input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; }
 .lift input[type="date"]::-webkit-calendar-picker-indicator { margin: 0; }
 .wl-fields input { height: 44px; }
-.wl-repeat { align-self: flex-start; background: var(--faint); border: 1px dashed rgba(255, 255, 255, 0.4); border-radius: 12px; padding: 10px 14px; font-size: 14px !important; font-weight: 600; }
+.wl-repeats { display: flex; flex-direction: column; gap: 8px; }
+.wl-repeats > p { font-size: 12px; font-weight: 600; color: var(--mut); }
+.wl-repeat { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; text-align: left; background: var(--faint); border: 1px solid var(--card-line); border-radius: 14px; padding: 10px 10px 10px 14px; }
+.wl-repeat > span { display: flex; flex-direction: column; min-width: 0; }
+.wl-repeat b { font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wl-repeat small { font-size: 12px; color: var(--mut); margin-top: 1px; }
+.wl-repeat i { flex: none; font-style: normal; font-size: 13px; font-weight: 700; background: #fff; color: var(--navy); border-radius: 99px; padding: 7px 14px; }
+.wl-repeat:hover { background: rgba(255, 255, 255, 0.16); }
 .wl-ex { display: flex; flex-direction: column; gap: 12px; }
 .wl-sets { display: flex; flex-direction: column; gap: 8px; }
 .wl-set { display: grid; grid-template-columns: 36px 1fr 1fr 32px; gap: 8px; align-items: center; }

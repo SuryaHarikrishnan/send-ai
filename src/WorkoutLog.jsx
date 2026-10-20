@@ -22,6 +22,16 @@ function clearDraft(user) {
   try { localStorage.removeItem(draftKey(user)); } catch { /* storage blocked */ }
 }
 
+// The workout someone most likely does next: whatever followed their latest
+// workout the time before (Push, Pull, Legs, Push...), else the latest one again.
+function nextTitle(history) {
+  const titles = history.map(w => w.title.trim()).filter(Boolean);
+  if (!titles.length) return null;
+  const key = titles[0].toLowerCase();
+  const before = titles.findIndex((t, i) => i > 0 && t.toLowerCase() === key);
+  return before > 0 ? titles[before - 1] : titles[0];
+}
+
 const clock = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 
 // A short double beep when rest is over. Quietly does nothing where audio isn't allowed.
@@ -95,6 +105,8 @@ const fromWorkout = w => ({
 export default function WorkoutLog({ user, editing, onNavigate }) {
   const [draft] = useState(() => (editing ? fromWorkout(editing) : readDraft(user)));
   const [title, setTitle] = useState(draft?.title ?? "Push");
+  // Until a name is picked, the form suggests one from the workout history.
+  const [named, setNamed] = useState(!!draft);
   const [date, setDate] = useState(() => (draft?.date && draft.date <= todayISO() ? draft.date : todayISO()));
   const [duration, setDuration] = useState(draft?.duration ?? "");
   const [pickingDur, setPickingDur] = useState(false);
@@ -103,6 +115,7 @@ export default function WorkoutLog({ user, editing, onNavigate }) {
   const [history, setHistory] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const name = named ? title : nextTitle(history) || title;
 
   useEffect(() => {
     supabase
@@ -117,16 +130,17 @@ export default function WorkoutLog({ user, editing, onNavigate }) {
   useEffect(() => {
     if (editing) return;
     try {
-      if (exercises.length) localStorage.setItem(draftKey(user), JSON.stringify({ title, date, duration, exercises, rest }));
+      if (exercises.length) localStorage.setItem(draftKey(user), JSON.stringify({ title: name, date, duration, exercises, rest }));
       else localStorage.removeItem(draftKey(user));
     } catch { /* storage blocked */ }
-  }, [user, editing, title, date, duration, exercises, rest]);
+  }, [user, editing, name, date, duration, exercises, rest]);
 
   function discard() {
     if (!window.confirm("Discard this workout? What you've entered will be lost.")) return;
     clearDraft(user);
     setExercises([]);
     setTitle("Push");
+    setNamed(false);
     setDate(todayISO());
     setDuration("");
     setRest(null);
@@ -168,10 +182,21 @@ export default function WorkoutLog({ user, editing, onNavigate }) {
     if (!s.done) startRest();
   }
 
-  const last = history.find(w => w.title.toLowerCase() === title.trim().toLowerCase());
+  function pickTitle(t) {
+    setTitle(t);
+    setNamed(true);
+  }
 
-  function repeatLast() {
-    setExercises(last.exercises.map(e => ({ name: e.name, sets: e.sets.map(s => ({ reps: s.reps, weight: s.weight })) })));
+  // The last few different workouts, the suggested one first, to start from.
+  const repeats = [];
+  history.forEach(w => {
+    if (repeats.length < 3 && w.exercises?.length && !repeats.some(r => r.title.toLowerCase() === w.title.toLowerCase())) repeats.push(w);
+  });
+  if (!named) repeats.sort((a, b) => Number(b.title.toLowerCase() === name.toLowerCase()) - Number(a.title.toLowerCase() === name.toLowerCase()));
+
+  function repeat(w) {
+    pickTitle(w.title);
+    setExercises(w.exercises.map(e => ({ name: e.name, sets: e.sets.map(s => ({ reps: s.reps, weight: s.weight })) })));
   }
 
   // Start a new exercise with the sets from the last time it was done.
@@ -221,7 +246,7 @@ export default function WorkoutLog({ user, editing, onNavigate }) {
     const keepTime = editing && date === localISO(new Date(editing.performed_at));
     const performed = keepTime ? new Date(editing.performed_at) : isToday ? new Date() : new Date(`${date}T12:00:00`);
     const row = {
-      title: title.trim() || "Workout",
+      title: name.trim() || "Workout",
       performed_at: performed.toISOString(),
       duration_min: Number(duration) || null,
       exercises: cleaned,
@@ -241,7 +266,7 @@ export default function WorkoutLog({ user, editing, onNavigate }) {
       return;
     }
     clearDraft(user);
-    track("workout_logged", { title: title.trim() || "Workout", exercises: cleaned.length, sets: cleaned.reduce((a, e) => a + e.sets.length, 0), backdated: !isToday });
+    track("workout_logged", { title: row.title, exercises: cleaned.length, sets: cleaned.reduce((a, e) => a + e.sets.length, 0), backdated: !isToday });
     onNavigate("home");
   }
 
@@ -260,11 +285,11 @@ export default function WorkoutLog({ user, editing, onNavigate }) {
       <section className="lift-card wl-meta">
         <div className="wl-chips">
           {WORKOUT_NAMES.map(n => (
-            <button key={n} className={title === n ? "on" : ""} onClick={() => setTitle(n)}>{n}</button>
+            <button key={n} className={name === n ? "on" : ""} onClick={() => pickTitle(n)}>{n}</button>
           ))}
         </div>
         <div className="wl-fields">
-          <label>Name<input value={title} onChange={e => setTitle(e.target.value)} maxLength={40} /></label>
+          <label>Name<input value={name} onChange={e => pickTitle(e.target.value)} maxLength={40} /></label>
           <label>Date<input type="date" value={date} max={todayISO()} onChange={e => setDate(e.target.value)} /></label>
           <label>Duration
             <button type="button" className={`wl-dur${duration ? "" : " empty"}`} onClick={() => setPickingDur(true)}>
@@ -279,10 +304,21 @@ export default function WorkoutLog({ user, editing, onNavigate }) {
             onDone={min => { setDuration(min ? String(min) : ""); setPickingDur(false); }}
           />
         )}
-        {last && !editing && exercises.length === 0 && (
-          <button className="wl-repeat" onClick={repeatLast}>
-            Repeat last {last.title} · {last.exercises.length} exercises
-          </button>
+        {!editing && exercises.length === 0 && repeats.length > 0 && (
+          <div className="wl-repeats">
+            <p>Start from a recent workout</p>
+            {repeats.map(w => (
+              <button key={w.id} className="wl-repeat" onClick={() => repeat(w)}>
+                <span>
+                  <b>{w.title}</b>
+                  <small>
+                    {new Date(w.performed_at).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · {w.exercises.length} {w.exercises.length === 1 ? "exercise" : "exercises"}
+                  </small>
+                </span>
+                <i>Repeat</i>
+              </button>
+            ))}
+          </div>
         )}
       </section>
 
