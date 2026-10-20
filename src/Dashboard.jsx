@@ -6,6 +6,8 @@ import Home from "./Home";
 import LiftHome from "./LiftHome";
 import LiftProgress from "./LiftProgress";
 import WorkoutLog from "./WorkoutLog";
+import Plan from "./Plan";
+import { hasDraft } from "./plan";
 import News from "./News";
 import FoodHome from "./FoodHome";
 import FoodLog from "./FoodLog";
@@ -103,8 +105,16 @@ export default function Dashboard({ user }) {
   const [owner, setOwner] = useState(false);
   // A logged workout being changed; the log form opens filled in with it.
   const [editWorkout, setEditWorkout] = useState(null);
+  // A day of the workout plan; the log form opens filled in with its sets.
+  const [planWorkout, setPlanWorkout] = useState(null);
 
-  const go = t => { setTab(t === "workout" ? "log" : t); setFocus(null); setEditWorkout(null); if (t === "log") setFoodMeal(null); };
+  const go = t => { setTab(t === "workout" ? "log" : t); setFocus(null); setEditWorkout(null); setPlanWorkout(null); if (t === "log") setFoodMeal(null); };
+  function startPlan(preset) {
+    if (hasDraft(user) && !window.confirm("Replace the workout you already started with this one from your plan?")) { go("log"); return; }
+    setEditWorkout(null);
+    setPlanWorkout({ ...preset, key: Date.now() });
+    setTab("log");
+  }
   useEffect(() => { window.scrollTo(0, 0); }, [tab, sport]);
   // Only owners (public.app_owners) get a Stats row; the stats themselves are checked again on the server.
   // Keeps reminder time zone and weekly goal current for people who turned notifications on.
@@ -155,9 +165,10 @@ export default function Dashboard({ user }) {
       </header>
 
       <main className="dash-content">
-        {lifting && tab === "home" && <LiftHome user={user} onNavigate={go} onEdit={w => { setEditWorkout(w); setTab("log"); }} onOpenExercise={k => { setFocus(k); setTab("progress"); }} />}
+        {lifting && tab === "home" && <LiftHome user={user} onNavigate={go} onEdit={w => { setEditWorkout(w); setTab("log"); }} onOpenExercise={k => { setFocus(k); setTab("progress"); }} onStartPlan={startPlan} />}
+        {lifting && tab === "plan" && <><button className="you-back" onClick={() => go("home")}>‹ Home</button><Plan user={user} onStart={startPlan} /></>}
         {lifting && tab === "progress" && <LiftProgress user={user} focus={focus} onFocus={setFocus} onNavigate={go} />}
-        {lifting && tab === "log" && <WorkoutLog key={editWorkout?.id || "new"} user={user} editing={editWorkout} onNavigate={go} />}
+        {lifting && tab === "log" && <WorkoutLog key={editWorkout?.id || planWorkout?.key || "new"} user={user} editing={editWorkout} preset={planWorkout} onNavigate={go} />}
         {food && tab === "home" && <FoodHome user={user} day={foodDay} onDay={setFoodDay} onAdd={m => { setTab("log"); setFoodMeal(m); }} />}
         {food && tab === "progress" && <FoodProgress user={user} />}
         {food && tab === "log" && <FoodLog key={`${foodDay.toDateString()}-${foodMeal}`} user={user} day={foodDay} meal={foodMeal} onDone={() => go("home")} />}

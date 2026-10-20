@@ -92,8 +92,9 @@ const fromWorkout = w => ({
 
 // With `editing`, the form changes that logged workout instead of adding a new one,
 // and leaves any half-logged new workout on the phone alone.
-export default function WorkoutLog({ user, editing, onNavigate }) {
-  const [draft] = useState(() => (editing ? fromWorkout(editing) : readDraft(user)));
+// With `preset` (a day of the workout plan), it starts filled in with that day's sets.
+export default function WorkoutLog({ user, editing, preset, onNavigate }) {
+  const [draft] = useState(() => (editing ? fromWorkout(editing) : preset ? { ...preset, fromPlan: true } : readDraft(user)));
   const [title, setTitle] = useState(draft?.title ?? "Push");
   const [date, setDate] = useState(() => (draft?.date && draft.date <= todayISO() ? draft.date : todayISO()));
   const [duration, setDuration] = useState(draft?.duration ?? "");
@@ -240,7 +241,7 @@ export default function WorkoutLog({ user, editing, onNavigate }) {
         <div>
           <p className="lift-date">
             {editing ? new Date(editing.performed_at).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })
-              : draft?.exercises?.length && exercises.length ? "Picking up where you left off" : "New workout"}
+              : draft?.fromPlan && exercises.length ? "From your plan" : draft?.exercises?.length && exercises.length ? "Picking up where you left off" : "New workout"}
           </p>
           <h1 className="lift-title">{editing ? "Edit workout" : "Log workout"}</h1>
         </div>
