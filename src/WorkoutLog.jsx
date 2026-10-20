@@ -187,6 +187,17 @@ export default function WorkoutLog({ user, editing, onNavigate }) {
   const update = (ei, fn) => setExercises(xs => xs.map((x, i) => (i === ei ? fn(x) : x)));
   const setField = (ei, si, field, value) =>
     update(ei, x => ({ ...x, sets: x.sets.map((s, j) => (j === si ? { ...s, [field]: value } : s)) }));
+  // Typing reps or weight fills the sets below that are still blank or were
+  // copying this one, so a 3 × 8 at 135 is typed once. Ticked sets are left alone.
+  const typeField = (ei, si, field, value) =>
+    update(ei, x => {
+      const was = x.sets[si][field];
+      return {
+        ...x,
+        sets: x.sets.map((s, j) =>
+          j === si || (j > si && !s.done && (s[field] === "" || s[field] === was)) ? { ...s, [field]: value } : s),
+      };
+    });
 
   async function save() {
     if (date > todayISO()) { setError("The date is in the future. Pick today or an earlier day."); return; }
@@ -297,8 +308,8 @@ export default function WorkoutLog({ user, editing, onNavigate }) {
               {ex.sets.map((s, si) => (
                 <div className={`wl-set${s.done ? " done" : ""}`} key={si}>
                   <span className="wl-n">{si + 1}</span>
-                  <input type="number" inputMode="numeric" min="0" aria-label={`Set ${si + 1} reps`} value={s.reps} onChange={e => setField(ei, si, "reps", e.target.value)} placeholder="8" />
-                  <input type="number" inputMode="decimal" min="0" step="2.5" aria-label={`Set ${si + 1} weight`} value={s.weight} onChange={e => setField(ei, si, "weight", e.target.value)} placeholder="0" />
+                  <input type="number" inputMode="numeric" min="0" aria-label={`Set ${si + 1} reps`} value={s.reps} onChange={e => typeField(ei, si, "reps", e.target.value)} placeholder="8" />
+                  <input type="number" inputMode="decimal" min="0" step="2.5" aria-label={`Set ${si + 1} weight`} value={s.weight} onChange={e => typeField(ei, si, "weight", e.target.value)} placeholder="0" />
                   <button
                     className={`wl-done${s.done ? " on" : ""}`}
                     aria-label={s.done ? `Set ${si + 1} done, tap to undo` : `Mark set ${si + 1} done and start rest`}
