@@ -4,8 +4,8 @@ import "./Plan.css";
 import { track } from "./tracking";
 import MuscleThumb from "./MuscleThumb";
 import {
-  DAY_CHOICES, GOALS, INTENSITIES, LEVELS, MINUTE_CHOICES,
-  buildPlan, estimateMinutes, loadPlan, nextDayIndex, nextTarget, presetFor, removePlan, repText, savePlan, tweakPlan,
+  DAY_CHOICES, GOALS, INTENSITIES, LEVELS, MINUTE_CHOICES, SEXES,
+  applyNutrition, buildPlan, estimateMinutes, loadPlan, nextDayIndex, nextTarget, nutritionFor, presetFor, removePlan, repText, savePlan, tweakPlan,
 } from "./plan";
 
 const DAY = 86400000;
@@ -34,7 +34,9 @@ function Chips({ values, value, onChange, unit, label }) {
 
 function Setup({ initial, onCancel, onBuilt }) {
   const p = initial || {};
-  const [goal, setGoal] = useState(p.goal || "strength");
+  const [goal, setGoal] = useState(p.goal || "cut");
+  const [sex, setSex] = useState(p.sex || null);
+  const [age, setAge] = useState(p.age ? String(p.age) : "");
   const [level, setLevel] = useState(p.level || "beginner");
   const [ft, setFt] = useState(p.heightIn ? String(Math.floor(p.heightIn / 12)) : "");
   const [inch, setInch] = useState(p.heightIn ? String(p.heightIn % 12) : "");
@@ -51,8 +53,10 @@ function Setup({ initial, onCancel, onBuilt }) {
     const weightLb = Number(weight) || 0;
     if (heightIn && (heightIn < 48 || heightIn > 96)) { setError("Check your height. It should be between 4 ft and 8 ft."); return; }
     if (weightLb && (weightLb < 70 || weightLb > 500)) { setError("Check your weight. It should be between 70 and 500 lb."); return; }
+    const years = Number(age) || 0;
+    if (years && (years < 13 || years > 100)) { setError("Check your age. It should be between 13 and 100."); return; }
     setError("");
-    const profile = { goal, level, heightIn: heightIn || null, weightLb: weightLb || null, intensity, days, minutes };
+    const profile = { goal, level, sex, age: years || null, heightIn: heightIn || null, weightLb: weightLb || null, intensity, days, minutes };
     let plan = buildPlan(profile);
     let summary = "";
     if (note.trim()) {
@@ -72,7 +76,7 @@ function Setup({ initial, onCancel, onBuilt }) {
       <header className="lift-head">
         <div>
           <p className="lift-date">{initial ? "Change your answers" : "A few quick questions"}</p>
-          <h1 className="lift-title">Your workout plan</h1>
+          <h1 className="lift-title">Your plan</h1>
         </div>
       </header>
 
@@ -93,8 +97,18 @@ function Setup({ initial, onCancel, onBuilt }) {
           <label>Weight
             <span className="pl-unit"><input type="number" inputMode="decimal" min="70" max="500" value={weight} onChange={e => setWeight(e.target.value)} placeholder="165" aria-label="Weight in pounds" /><i>lb</i></span>
           </label>
+          <label>Age
+            <span className="pl-unit"><input type="number" inputMode="numeric" min="13" max="100" value={age} onChange={e => setAge(e.target.value)} placeholder="28" aria-label="Age in years" /><i>yrs</i></span>
+          </label>
+          <label>Sex
+            <span className="pl-sex" role="radiogroup" aria-label="Sex">
+              {Object.entries(SEXES).map(([id, s]) => (
+                <button key={id} role="radio" aria-checked={sex === id} className={sex === id ? "on" : ""} onClick={() => setSex(sex === id ? null : id)}>{s.name}</button>
+              ))}
+            </span>
+          </label>
         </div>
-        <p className="lift-sub">Your weight sets the starting weights. Both are optional.</p>
+        <p className="lift-sub">These set your daily calories and starting weights. Without height and weight you get the workouts only.</p>
         <h3 className="pl-h3">How long have you been lifting?</h3>
         <Choice options={LEVELS} value={level} onChange={setLevel} label="Experience" />
       </section>
@@ -127,6 +141,36 @@ function Setup({ initial, onCancel, onBuilt }) {
   );
 }
 
+// Daily calories and macros that go with the goal. They're copied into the Food tab's goals.
+function Nutrition({ plan, onAdd }) {
+  const n = plan.nutrition;
+  if (!n) {
+    return (
+      <section className="lift-card pl-q">
+        <h2 className="lift-h2">Calories and macros</h2>
+        <p className="lift-sub">Get daily calorie and macro targets for your goal. They become your Food goals.</p>
+        <button className="lift-start pl-ask" onClick={onAdd}>{plan.profile.weightLb && plan.profile.heightIn ? "Add targets" : "Add height and weight"}</button>
+      </section>
+    );
+  }
+  const change = n.weeklyLb < 0 ? `lose about ${Math.abs(n.weeklyLb)} lb a week` : n.weeklyLb > 0 ? `gain about ${n.weeklyLb} lb a week` : "keep your weight steady";
+  return (
+    <section className="lift-card pl-q pl-food">
+      <div className="lift-row">
+        <h2 className="lift-h2">Eat each day</h2>
+        <span className="pl-badge off">Food goals</span>
+      </div>
+      <div className="pl-kcal"><b>{n.kcal.toLocaleString()}</b> kcal</div>
+      <div className="pl-macros">
+        <span><b>{n.protein} g</b>Protein</span>
+        <span><b>{n.carbs} g</b>Carbs</span>
+        <span><b>{n.fat} g</b>Fat</span>
+      </div>
+      <p className="lift-sub">You burn about {n.maintenance.toLocaleString()} kcal a day. Eating this much should {change}. These are set as your goals on the Food tab.</p>
+    </section>
+  );
+}
+
 export default function Plan({ user, onStart }) {
   const [plan, setPlan] = useState(undefined);
   const [workouts, setWorkouts] = useState([]);
@@ -150,6 +194,8 @@ export default function Plan({ user, onStart }) {
   }, [user]);
 
   function keep(next, message, previous) {
+    // New targets from building, changing or undoing become the Food goals.
+    if (next.nutrition && next.nutrition !== plan?.nutrition) applyNutrition(next, user, true);
     setPlan(next);
     savePlan(user, next);
     setNote(message ? { text: message, error: false } : null);
@@ -212,6 +258,12 @@ export default function Plan({ user, onStart }) {
 
       {note && !undo && !asked && Note}
 
+      <Nutrition plan={plan} onAdd={() => {
+        const nutrition = nutritionFor(p);
+        if (nutrition) keep({ ...plan, nutrition }, "Calorie targets added. They're your Food goals now.", null);
+        else { setEditing(true); window.scrollTo(0, 0); }
+      }} />
+
       {plan.days.map((d, di) => (
         <section className={`lift-card pl-day${di === next ? " next" : ""}`} key={di}>
           <div className="lift-row">
@@ -247,8 +299,8 @@ export default function Plan({ user, onStart }) {
 
       <section className="lift-card pl-q">
         <h2 className="lift-h2">Change something</h2>
-        <p className="lift-sub">Tell AI what to change and it rewrites the plan. You can undo it.</p>
-        <textarea className="pl-note" rows={2} maxLength={500} value={ask} onChange={e => setAsk(e.target.value)} placeholder="Like: swap squats for leg press, my knee hurts" />
+        <p className="lift-sub">Tell AI what to change in your workouts or eating and it rewrites the plan. You can undo it.</p>
+        <textarea className="pl-note" rows={2} maxLength={500} value={ask} onChange={e => setAsk(e.target.value)} placeholder="Like: swap squats for leg press, or more carbs on a 2,000 calorie diet" />
         <button className="lift-start pl-ask" onClick={change} disabled={asking || !ask.trim()}>{asking ? "Changing your plan..." : "Change plan"}</button>
         {note && (undo || asked) && Note}
       </section>

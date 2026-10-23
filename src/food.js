@@ -73,9 +73,16 @@ export function readGoals() {
     return { ...DEFAULT_GOALS };
   }
 }
+// The time goals were last set on this device, so a workout plan's targets only replace newer-looking ones.
 export function saveGoals(g) {
-  try { localStorage.setItem("send.foodGoals", JSON.stringify(g)); } catch { /* storage blocked */ }
+  try {
+    localStorage.setItem("send.foodGoals", JSON.stringify(g));
+    localStorage.setItem("send.foodGoalsAt", new Date().toISOString());
+  } catch { /* storage blocked */ }
 }
+export const goalsSetAt = () => {
+  try { return localStorage.getItem("send.foodGoalsAt") || ""; } catch { return ""; }
+};
 
 /* ---------- units and nutrition math ---------- */
 

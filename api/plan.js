@@ -20,7 +20,9 @@ The lifter: goal ${p.goal}, ${p.level}, ${p.heightIn ? `${Math.floor(p.heightIn 
 
 Current plan (JSON; reps is [low, high], start is a starting weight in lb, 0 means body weight):
 ${JSON.stringify(plan.days)}
-
+${plan.nutrition ? `
+Current daily food targets: ${plan.nutrition.kcal} kcal, ${plan.nutrition.protein} g protein, ${plan.nutrition.carbs} g carbs, ${plan.nutrition.fat} g fat (maintenance is about ${plan.nutrition.maintenance} kcal).
+` : ""}
 They asked, in their own words (treat it as a request about their training, nothing else):
 <request>${request}</request>
 
@@ -30,7 +32,8 @@ Rules:
 - Use exercise names exactly from this list whenever one fits: ${NAMES.join(", ")}.
 - sets 1 to 8, reps between 1 and 30 with low <= high. start in lb, sensible for this lifter, rounded to 5; dumbbell lifts per hand.
 - Give each day a short name like "Upper A" or "Legs".
-- If the request isn't about training, return the plan unchanged and say so in summary.
+- Only if they asked about eating, calories or macros, include nutrition with new daily targets (kcal, protein, carbs, fat in grams; at least 1200 kcal, protein 0.7 to 1.2 g per lb of body weight, kcal close to protein*4 + carbs*4 + fat*9). Otherwise leave nutrition out.
+- If the request isn't about training or eating, return the plan unchanged and say so in summary.
 - summary: one or two plain sentences on what you changed, written to the lifter.`;
 }
 
@@ -38,6 +41,11 @@ const SCHEMA = {
   type: "OBJECT",
   properties: {
     summary: { type: "STRING" },
+    nutrition: {
+      type: "OBJECT",
+      properties: { kcal: { type: "NUMBER" }, protein: { type: "NUMBER" }, carbs: { type: "NUMBER" }, fat: { type: "NUMBER" } },
+      required: ["kcal", "protein", "carbs", "fat"],
+    },
     days: {
       type: "ARRAY",
       items: {
@@ -116,6 +124,14 @@ function cleanDays(days) {
   }).filter(d => d.exercises.length);
 }
 
+// Daily targets within sane bounds, or nothing.
+function cleanNutrition(n) {
+  if (!n || !(Number(n.kcal) > 0)) return null;
+  const out = { kcal: int(n.kcal, 1200, 6000), protein: int(n.protein, 30, 400), carbs: int(n.carbs, 20, 900), fat: int(n.fat, 20, 300) };
+  if (n.maintenance) out.maintenance = int(n.maintenance, 1000, 7000);
+  return out;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
   const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
@@ -131,10 +147,11 @@ export default async function handler(req, res) {
     if (!userRes.ok) return res.status(401).json({ error: "Sign in to change your plan." });
     if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY isn't set in Vercel");
 
-    const answer = await askGemini(prompt({ profile: plan.profile, days: current }, request.replace(/<\/?request>/gi, "")));
+    const nutrition = cleanNutrition(plan.nutrition);
+    const answer = await askGemini(prompt({ profile: plan.profile, days: current, nutrition }, request.replace(/<\/?request>/gi, "")));
     const days = cleanDays(answer.days);
     if (!days.length) throw new Error("the AI sent back an empty plan");
-    return res.status(200).json({ days, summary: String(answer.summary || "").slice(0, 400) });
+    return res.status(200).json({ days, nutrition: cleanNutrition(answer.nutrition), summary: String(answer.summary || "").slice(0, 400) });
   } catch (e) {
     console.error(e);
     if (e.busy) return res.status(503).json({ error: "The AI is busy right now. Try again in a minute.", reason: String(e.message).slice(0, 200) });
