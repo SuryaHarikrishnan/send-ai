@@ -106,8 +106,8 @@
 .you-signout:hover { background: rgba(255, 255, 255, 0.08); }
 .you-back { font: 600 14px 'Outfit', sans-serif; color: #fff; background: rgba(255, 255, 255, 0.14); border: 0; border-radius: 99px; padding: 7px 14px; margin-bottom: 16px; cursor: pointer; }
 
-/* keep the rest timer above the tab bar */
-.has-tabbar .wl-rest { bottom: calc(76px + env(safe-area-inset-bottom)); }
+/* keep the rest timer and Save bar above the tab bar */
+.has-tabbar .wl-dock { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 74px); }
 
 @media (prefers-reduced-motion: reduce) {
   .sheet, .sheet-wrap { animation: none; }

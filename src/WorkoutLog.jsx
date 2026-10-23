@@ -22,6 +22,16 @@ function clearDraft(user) {
   try { localStorage.removeItem(draftKey(user)); } catch { /* storage blocked */ }
 }
 
+// The workout someone most likely does next: whatever followed their latest
+// workout the time before (Push, Pull, Legs, Push...), else the latest one again.
+function nextTitle(history) {
+  const titles = history.map(w => w.title.trim()).filter(Boolean);
+  if (!titles.length) return null;
+  const key = titles[0].toLowerCase();
+  const before = titles.findIndex((t, i) => i > 0 && t.toLowerCase() === key);
+  return before > 0 ? titles[before - 1] : titles[0];
+}
+
 const clock = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 
 // A short double beep when rest is over. Quietly does nothing where audio isn't allowed.
@@ -96,6 +106,8 @@ const fromWorkout = w => ({
 export default function WorkoutLog({ user, editing, preset, onNavigate }) {
   const [draft] = useState(() => (editing ? fromWorkout(editing) : preset ? { ...preset, fromPlan: true } : readDraft(user)));
   const [title, setTitle] = useState(draft?.title ?? "Push");
+  // Until a name is picked, the form suggests one from the workout history.
+  const [named, setNamed] = useState(!!draft);
   const [date, setDate] = useState(() => (draft?.date && draft.date <= todayISO() ? draft.date : todayISO()));
   const [duration, setDuration] = useState(draft?.duration ?? "");
   const [pickingDur, setPickingDur] = useState(false);
@@ -104,6 +116,7 @@ export default function WorkoutLog({ user, editing, preset, onNavigate }) {
   const [history, setHistory] = useState([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const name = named ? title : nextTitle(history) || title;
 
   useEffect(() => {
     supabase
@@ -118,16 +131,17 @@ export default function WorkoutLog({ user, editing, preset, onNavigate }) {
   useEffect(() => {
     if (editing) return;
     try {
-      if (exercises.length) localStorage.setItem(draftKey(user), JSON.stringify({ title, date, duration, exercises, rest }));
+      if (exercises.length) localStorage.setItem(draftKey(user), JSON.stringify({ title: name, date, duration, exercises, rest }));
       else localStorage.removeItem(draftKey(user));
     } catch { /* storage blocked */ }
-  }, [user, editing, title, date, duration, exercises, rest]);
+  }, [user, editing, name, date, duration, exercises, rest]);
 
   function discard() {
     if (!window.confirm("Discard this workout? What you've entered will be lost.")) return;
     clearDraft(user);
     setExercises([]);
     setTitle("Push");
+    setNamed(false);
     setDate(todayISO());
     setDuration("");
     setRest(null);
@@ -169,10 +183,45 @@ export default function WorkoutLog({ user, editing, preset, onNavigate }) {
     if (!s.done) startRest();
   }
 
-  const last = history.find(w => w.title.toLowerCase() === title.trim().toLowerCase());
+  // The exercise picker is a full-screen sheet. Several can be added in one go,
+  // and closing it scrolls to the first one added.
+  // While open, `picking` is how many exercises there were when it opened.
+  const [picking, setPicking] = useState(null);
+  const open = picking !== null;
+  function openPicker() {
+    setPicking(exercises.length);
+  }
+  function closePicker() {
+    const at = picking;
+    setPicking(null);
+    requestAnimationFrame(() => document.querySelectorAll("section.wl-ex")[at]?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+  useEffect(() => {
+    if (!open) return;
+    const was = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = e => { if (e.key === "Escape") setPicking(null); };
+    window.addEventListener("keydown", onKey);
+    return () => { document.body.style.overflow = was; window.removeEventListener("keydown", onKey); };
+  }, [open]);
+  const setsTotal = exercises.reduce((a, e) => a + e.sets.length, 0);
+  const setsDone = exercises.reduce((a, e) => a + e.sets.filter(s => s.done).length, 0);
 
-  function repeatLast() {
-    setExercises(last.exercises.map(e => ({ name: e.name, sets: e.sets.map(s => ({ reps: s.reps, weight: s.weight })) })));
+  function pickTitle(t) {
+    setTitle(t);
+    setNamed(true);
+  }
+
+  // The last few different workouts, the suggested one first, to start from.
+  const repeats = [];
+  history.forEach(w => {
+    if (repeats.length < 3 && w.exercises?.length && !repeats.some(r => r.title.toLowerCase() === w.title.toLowerCase())) repeats.push(w);
+  });
+  if (!named) repeats.sort((a, b) => Number(b.title.toLowerCase() === name.toLowerCase()) - Number(a.title.toLowerCase() === name.toLowerCase()));
+
+  function repeat(w) {
+    pickTitle(w.title);
+    setExercises(w.exercises.map(e => ({ name: e.name, sets: e.sets.map(s => ({ reps: s.reps, weight: s.weight })) })));
   }
 
   // Start a new exercise with the sets from the last time it was done.
@@ -188,6 +237,17 @@ export default function WorkoutLog({ user, editing, preset, onNavigate }) {
   const update = (ei, fn) => setExercises(xs => xs.map((x, i) => (i === ei ? fn(x) : x)));
   const setField = (ei, si, field, value) =>
     update(ei, x => ({ ...x, sets: x.sets.map((s, j) => (j === si ? { ...s, [field]: value } : s)) }));
+  // Typing reps or weight fills the sets below that are still blank or were
+  // copying this one, so a 3 × 8 at 135 is typed once. Ticked sets are left alone.
+  const typeField = (ei, si, field, value) =>
+    update(ei, x => {
+      const was = x.sets[si][field];
+      return {
+        ...x,
+        sets: x.sets.map((s, j) =>
+          j === si || (j > si && !s.done && (s[field] === "" || s[field] === was)) ? { ...s, [field]: value } : s),
+      };
+    });
 
   async function save() {
     if (date > todayISO()) { setError("The date is in the future. Pick today or an earlier day."); return; }
@@ -211,7 +271,7 @@ export default function WorkoutLog({ user, editing, preset, onNavigate }) {
     const keepTime = editing && date === localISO(new Date(editing.performed_at));
     const performed = keepTime ? new Date(editing.performed_at) : isToday ? new Date() : new Date(`${date}T12:00:00`);
     const row = {
-      title: title.trim() || "Workout",
+      title: name.trim() || "Workout",
       performed_at: performed.toISOString(),
       duration_min: Number(duration) || null,
       exercises: cleaned,
@@ -231,7 +291,7 @@ export default function WorkoutLog({ user, editing, preset, onNavigate }) {
       return;
     }
     clearDraft(user);
-    track("workout_logged", { title: title.trim() || "Workout", exercises: cleaned.length, sets: cleaned.reduce((a, e) => a + e.sets.length, 0), backdated: !isToday });
+    track("workout_logged", { title: row.title, exercises: cleaned.length, sets: cleaned.reduce((a, e) => a + e.sets.length, 0), backdated: !isToday });
     onNavigate("home");
   }
 
@@ -250,11 +310,11 @@ export default function WorkoutLog({ user, editing, preset, onNavigate }) {
       <section className="lift-card wl-meta">
         <div className="wl-chips">
           {WORKOUT_NAMES.map(n => (
-            <button key={n} className={title === n ? "on" : ""} onClick={() => setTitle(n)}>{n}</button>
+            <button key={n} className={name === n ? "on" : ""} onClick={() => pickTitle(n)}>{n}</button>
           ))}
         </div>
         <div className="wl-fields">
-          <label>Name<input value={title} onChange={e => setTitle(e.target.value)} maxLength={40} /></label>
+          <label>Name<input value={name} onChange={e => pickTitle(e.target.value)} maxLength={40} /></label>
           <label>Date<input type="date" value={date} max={todayISO()} onChange={e => setDate(e.target.value)} /></label>
           <label>Duration
             <button type="button" className={`wl-dur${duration ? "" : " empty"}`} onClick={() => setPickingDur(true)}>
@@ -269,10 +329,21 @@ export default function WorkoutLog({ user, editing, preset, onNavigate }) {
             onDone={min => { setDuration(min ? String(min) : ""); setPickingDur(false); }}
           />
         )}
-        {last && !editing && exercises.length === 0 && (
-          <button className="wl-repeat" onClick={repeatLast}>
-            Repeat last {last.title} · {last.exercises.length} exercises
-          </button>
+        {!editing && exercises.length === 0 && repeats.length > 0 && (
+          <div className="wl-repeats">
+            <p>Start from a recent workout</p>
+            {repeats.map(w => (
+              <button key={w.id} className="wl-repeat" onClick={() => repeat(w)}>
+                <span>
+                  <b>{w.title}</b>
+                  <small>
+                    {new Date(w.performed_at).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · {w.exercises.length} {w.exercises.length === 1 ? "exercise" : "exercises"}
+                  </small>
+                </span>
+                <i>Repeat</i>
+              </button>
+            ))}
+          </div>
         )}
       </section>
 
@@ -298,8 +369,8 @@ export default function WorkoutLog({ user, editing, preset, onNavigate }) {
               {ex.sets.map((s, si) => (
                 <div className={`wl-set${s.done ? " done" : ""}`} key={si}>
                   <span className="wl-n">{si + 1}</span>
-                  <input type="number" inputMode="numeric" min="0" aria-label={`Set ${si + 1} reps`} value={s.reps} onChange={e => setField(ei, si, "reps", e.target.value)} placeholder="8" />
-                  <input type="number" inputMode="decimal" min="0" step="2.5" aria-label={`Set ${si + 1} weight`} value={s.weight} onChange={e => setField(ei, si, "weight", e.target.value)} placeholder="0" />
+                  <input type="number" inputMode="numeric" min="0" aria-label={`Set ${si + 1} reps`} value={s.reps} onChange={e => typeField(ei, si, "reps", e.target.value)} placeholder="8" />
+                  <input type="number" inputMode="decimal" min="0" step="2.5" aria-label={`Set ${si + 1} weight`} value={s.weight} onChange={e => typeField(ei, si, "weight", e.target.value)} placeholder="0" />
                   <button
                     className={`wl-done${s.done ? " on" : ""}`}
                     aria-label={s.done ? `Set ${si + 1} done, tap to undo` : `Mark set ${si + 1} done and start rest`}
@@ -318,17 +389,44 @@ export default function WorkoutLog({ user, editing, preset, onNavigate }) {
         );
       })}
 
-      <ExercisePicker recent={recent} taken={taken} onAdd={addExercise} />
-
-      {error && <p className="wl-error">{error}</p>}
-      <button className="lift-start wl-save" onClick={save} disabled={saving || !exercises.length}>
-        {saving ? "Saving..." : editing ? "Save changes" : "Save workout"}
+      <button className={`wl-add-ex${exercises.length ? "" : " first"}`} onClick={openPicker}>
+        <span aria-hidden="true">+</span>{exercises.length ? "Add exercise" : "Add your first exercise"}
       </button>
+
       {editing
         ? <button className="wl-discard" onClick={() => onNavigate("home")}>Cancel, keep it as it was</button>
         : exercises.length > 0 && <button className="wl-discard" onClick={discard}>Discard workout</button>}
-      {rest && <div className="wl-rest-space" />}
-      {rest && <RestTimer rest={rest} onChange={adjustRest} onDone={() => setRest(null)} />}
+
+      {(exercises.length > 0 || rest) && <div className={`wl-dock-space${rest ? " rest" : ""}`} />}
+      {(exercises.length > 0 || rest) && (
+        <div className="wl-dock">
+          {rest && <RestTimer rest={rest} onChange={adjustRest} onDone={() => setRest(null)} />}
+          {error && <p className="wl-error">{error}</p>}
+          {exercises.length > 0 && (
+            <div className="wl-finish">
+              <span>
+                <b>{name.trim() || "Workout"}</b>
+                <small>{setsDone} of {setsTotal} sets done</small>
+              </span>
+              <button className="lift-start" onClick={save} disabled={saving}>
+                {saving ? "Saving..." : editing ? "Save changes" : "Save workout"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {open && (
+        <div className="wl-picker" role="dialog" aria-modal="true" aria-label="Add exercises">
+          <div className="wl-picker-top">
+            <h2 className="lift-h2">Add exercises</h2>
+            <button className="lift-start" onClick={closePicker}>
+              {exercises.length > picking ? `Done · ${exercises.length - picking} added` : "Done"}
+            </button>
+          </div>
+          <ExercisePicker recent={recent} taken={taken} onAdd={addExercise} />
+        </div>
+      )}
     </div>
   );
 }
