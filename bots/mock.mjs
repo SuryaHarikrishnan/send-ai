@@ -269,6 +269,13 @@ export async function installMocks(context, { user, rows, latency = 0, failWrite
       photosUsed++;
       return json(route, 200, { items: PHOTO_ITEMS, remaining: 3 - photosUsed });
     }
+    // Plan changes come back as the same plan with leg press in place of squats.
+    if (url.pathname === "/api/plan") {
+      const { plan } = route.request().postDataJSON() || {};
+      const swap = n => (/squat/i.test(n) ? "Leg press" : n);
+      const days = (plan?.days || []).map(d => ({ ...d, exercises: d.exercises.map(e => ({ ...e, name: swap(e.name) })).filter((e, i, a) => a.findIndex(x => x.name === e.name) === i) }));
+      return json(route, 200, { days, summary: "Swapped squats for leg press so your knee gets a break. Everything else stays the same." });
+    }
     if (url.pathname === "/api/coach") return json(route, 401, { error: "Sign in to use the coach." });
     if (url.pathname === "/api/news" || url.pathname === "/api/youtube") return json(route, 200, { articles: [], videos: [] });
     return json(route, 404, { error: "no mock" });

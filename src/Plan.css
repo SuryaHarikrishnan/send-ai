@@ -1,0 +1,41 @@
+/* workout plan (setup, plan page and the Home card); builds on Lift.css */
+.pl-home { display: flex; flex-direction: column; gap: 12px; }
+.pl-home > div:first-child .lift-sub { line-height: 1.45; }
+.pl-home > .lift-start:only-of-type { align-self: flex-start; }
+.pl-kicker { font-size: 12px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--sky); margin-bottom: 4px; }
+.pl-ex { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--card-line); padding-top: 12px; }
+.pl-ex-row { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.pl-ex-name { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.pl-ex-row b { font-weight: 500; }
+.pl-ex-row small { font-size: 12px; color: var(--mut); margin-top: 2px; }
+.pl-dose { display: flex; flex-direction: column; align-items: flex-end; font-weight: 500; color: rgba(255, 255, 255, 0.85); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.pl-go { width: 100%; padding: 14px; }
+.pl-go svg, .lift-start svg { width: 16px; height: 16px; }
+.pl-go-alt { width: 100%; padding: 12px; border: 1px solid var(--card-line); background: var(--faint); border-radius: 16px; font-weight: 600; font-size: 15px !important; }
+.pl-day { display: flex; flex-direction: column; gap: 12px; }
+.pl-day.next { border-color: rgba(94, 240, 216, 0.45); }
+.pl-badge { flex: none; font-size: 12px; font-weight: 600; background: var(--sky); color: var(--navy); border-radius: 99px; padding: 5px 10px; }
+.pl-badge.off { background: var(--faint); color: var(--ink); }
+.pl-q { display: flex; flex-direction: column; gap: 12px; }
+.pl-h3 { font-size: 13px; font-weight: 600; color: var(--mut); margin-top: 4px; }
+.pl-choice { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; }
+.pl-choice button { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; border: 1px solid var(--card-line); background: transparent; border-radius: 16px; padding: 12px; min-height: 64px; }
+.pl-choice button b { font-size: 15px; font-weight: 600; }
+.pl-choice button small { font-size: 12px; color: var(--mut); line-height: 1.3; }
+.pl-choice button.on { background: #fff; border-color: #fff; color: var(--navy) !important; }
+.pl-choice button.on small { color: rgba(8, 22, 25, 0.7); }
+.pl-body { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pl-body label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: var(--mut); min-width: 0; }
+.pl-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.pl-unit { position: relative; display: block; }
+.pl-unit input { padding-right: 30px; height: 44px; }
+.pl-unit i { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-style: normal; font-size: 13px; color: var(--mut); pointer-events: none; }
+.pl-note { font: inherit; font-size: 16px; color: #fff; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--card-line); border-radius: 12px; padding: 10px 12px; width: 100%; resize: vertical; line-height: 1.4; }
+.pl-note::placeholder { color: rgba(255, 255, 255, 0.4); }
+.pl-ask { align-self: flex-start; }
+.pl-note-card { border-top: 1px solid var(--card-line); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 14px; line-height: 1.45; }
+.pl-note-card.err p { color: #ffd2cc; }
+.pl-how { font-size: 13px; color: var(--mut); line-height: 1.5; padding: 0 4px; }
+.pl-foot { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 4px; }
+.lift .pl-foot .wl-discard { margin: 0; }
+.pl-note-card.lift-card { border-top: 1px solid var(--card-line); padding-top: 16px; }

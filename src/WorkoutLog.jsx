@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import ExercisePicker from "./ExercisePicker";
 import DurationPicker from "./DurationPicker";
+import MuscleThumb from "./MuscleThumb";
 import { track } from "./tracking";
 import { MUSCLE_NAMES, WORKOUT_NAMES, findExercise, formatDuration, setSummary, workoutsError } from "./lifting";
 
@@ -102,8 +103,9 @@ const fromWorkout = w => ({
 
 // With `editing`, the form changes that logged workout instead of adding a new one,
 // and leaves any half-logged new workout on the phone alone.
-export default function WorkoutLog({ user, editing, onNavigate }) {
-  const [draft] = useState(() => (editing ? fromWorkout(editing) : readDraft(user)));
+// With `preset` (a day of the workout plan), it starts filled in with that day's sets.
+export default function WorkoutLog({ user, editing, preset, onNavigate }) {
+  const [draft] = useState(() => (editing ? fromWorkout(editing) : preset ? { ...preset, fromPlan: true } : readDraft(user)));
   const [title, setTitle] = useState(draft?.title ?? "Push");
   // Until a name is picked, the form suggests one from the workout history.
   const [named, setNamed] = useState(!!draft);
@@ -300,7 +302,7 @@ export default function WorkoutLog({ user, editing, onNavigate }) {
         <div>
           <p className="lift-date">
             {editing ? new Date(editing.performed_at).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })
-              : draft?.exercises?.length && exercises.length ? "Picking up where you left off" : "New workout"}
+              : draft?.fromPlan && exercises.length ? "From your plan" : draft?.exercises?.length && exercises.length ? "Picking up where you left off" : "New workout"}
           </p>
           <h1 className="lift-title">{editing ? "Edit workout" : "Log workout"}</h1>
         </div>
@@ -352,14 +354,17 @@ export default function WorkoutLog({ user, editing, onNavigate }) {
         return (
           <section className="lift-card wl-ex" key={ei}>
             <div className="lift-row wl-ex-head">
-              <div>
-                <h2 className="lift-h2">{ex.name}</h2>
-                {info && <p className="lift-sub">{info.primary.map(m => MUSCLE_NAMES[m]).join(" · ")}</p>}
-                {prev && (
-                  <p className="wl-last">
-                    Last time · {setSummary(prev.sets).replace(/^\d+ sets · /, "")} · {new Date(prev.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                  </p>
-                )}
+              <div className="wl-ex-id">
+                <MuscleThumb name={ex.name} size={60} />
+                <div>
+                  <h2 className="lift-h2">{ex.name}</h2>
+                  {info && <p className="lift-sub">{info.primary.map(m => MUSCLE_NAMES[m]).join(" · ")}</p>}
+                  {prev && (
+                    <p className="wl-last">
+                      Last time · {setSummary(prev.sets).replace(/^\d+ sets · /, "")} · {new Date(prev.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    </p>
+                  )}
+                </div>
               </div>
               <button className="lift-del" onClick={() => setExercises(xs => xs.filter((_, i) => i !== ei))}>Remove</button>
             </div>

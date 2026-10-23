@@ -34,7 +34,7 @@ Most fitness apps cover one sport and charge a premium for the charts. SendIt pu
 
 **Lifting**
 - Workout logger with templates (push, pull, legs and more), "last time" hints and a built-in rest timer
-- Searchable library of 95 exercises, each mapped to the muscles it works
+- Searchable library of 144 exercises, each mapped to the muscles it works and shown with a muscle picture
 - Front and back body map of the muscles you trained this week or last
 - Weekly goal with a streak counter
 - Progress tab: recent PRs, estimated one-rep max per lift (Epley), charts over 3 months to all time

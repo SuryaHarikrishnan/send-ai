@@ -1,4 +1,5 @@
 import { useState } from "react";
+import MuscleThumb from "./MuscleThumb";
 import { EXERCISES, GROUPS, MUSCLE_NAMES, findExercise, groupOf } from "./lifting";
 
 // Search the library, filter by muscle group, recent lifts first.
@@ -57,7 +58,8 @@ export default function ExercisePicker({ recent, taken, onAdd }) {
           const added = taken.has(e.name.toLowerCase());
           return (
             <button key={e.name} className="ep-row" onClick={() => add(e.name)}>
-              <span>
+              <MuscleThumb name={e.name} size={44} />
+              <span className="ep-name">
                 <b>{e.name}</b>
                 <small>{e.primary.length ? e.primary.map(m => MUSCLE_NAMES[m]).join(" · ") : "Custom"}</small>
               </span>

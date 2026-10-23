@@ -1,0 +1,12 @@
+/* Muscle picture next to an exercise */
+.mt { flex: none; display: inline-grid; place-items: center; overflow: hidden; padding: 4px; border-radius: 14px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.08); box-sizing: border-box; }
+.mt svg { width: 100%; height: 100%; display: block; }
+.mt-skin { fill: rgba(255, 255, 255, 0.14); }
+.mt-m { fill: rgba(255, 255, 255, 0.22); }
+.mt-s { fill: #ff8f85; opacity: 0.55; }
+.mt-p { fill: #ff4d4d; }
+.mt-none { padding: 0; }
+.ep-row > span.mt.mt { display: inline-grid; flex-direction: row; }
+.ep-row > .ep-name { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.wl-ex-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.wl-ex-id > div { min-width: 0; }

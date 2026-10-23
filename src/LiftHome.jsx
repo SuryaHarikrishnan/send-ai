@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import BodyMap from "./BodyMap";
 import { syncReminderInfo } from "./notify";
+import "./Plan.css";
+import MuscleThumb from "./MuscleThumb";
+import { loadPlan, nextDayIndex, nextTarget, presetFor, repText } from "./plan";
 import { MUSCLE_NAMES, muscleSets, prFlags, setSummary, totalSets, totalVolume, weekStart, weekStreak, workoutsError } from "./lifting";
 
 const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
@@ -45,8 +48,53 @@ const Dumbbell = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6.5 6.5v11M3.5 9v6M17.5 6.5v11M20.5 9v6M6.5 12h11" /></svg>
 );
 
-export default function LiftHome({ user, onNavigate, onEdit, onOpenExercise }) {
+// The next workout of the plan, or an offer to make one.
+function PlanCard({ plan, workouts, onOpen, onStart }) {
+  if (!plan) {
+    return (
+      <section className="lift-card pl-home">
+        <div>
+          <h2 className="lift-h2">Get a workout plan</h2>
+          <p className="lift-sub">Answer a few questions and get a plan for your goal, with weights that go up as you get stronger.</p>
+        </div>
+        <button className="lift-start" onClick={onOpen}>Make my plan</button>
+      </section>
+    );
+  }
+  const { index, doneToday } = nextDayIndex(plan, workouts);
+  const day = plan.days[index];
+  return (
+    <section className="lift-card pl-home">
+      <div className="lift-row">
+        <div>
+          <p className="pl-kicker">{doneToday != null ? `Done today: ${plan.days[doneToday].name}. Next up` : "Next up in your plan"}</p>
+          <h2 className="lift-h2">{day.name}</h2>
+        </div>
+        <button className="lift-today" onClick={onOpen}>See plan</button>
+      </div>
+      <div className="pl-ex">
+        {day.exercises.map((ex, i) => {
+          const t = nextTarget(ex, workouts, plan.profile);
+          return (
+            <div key={i} className="pl-ex-row">
+              <MuscleThumb name={ex.name} size={44} />
+              <span className="pl-ex-name"><b>{ex.name}</b></span>
+              <span className="pl-dose">{ex.sets} × {repText(ex.reps)}<small>{t.weight === 0 ? "body weight" : t.weight ? `${t.weight} lb` : "your pick"}</small></span>
+            </div>
+          );
+        })}
+      </div>
+      <button className="lift-start pl-go" onClick={() => onStart(presetFor(day, workouts, plan.profile))}>
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" /></svg>
+        Start {day.name}
+      </button>
+    </section>
+  );
+}
+
+export default function LiftHome({ user, onNavigate, onEdit, onOpenExercise, onStartPlan }) {
   const [workouts, setWorkouts] = useState([]);
+  const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [goal, setGoal] = useState(readGoal);
@@ -71,6 +119,7 @@ export default function LiftHome({ user, onNavigate, onEdit, onOpenExercise }) {
         setWorkouts(data || []);
         setLoading(false);
       });
+    loadPlan(user).then(setPlan, () => {});
   }, [user]);
 
   function changeGoal(n) {
@@ -148,6 +197,8 @@ export default function LiftHome({ user, onNavigate, onEdit, onOpenExercise }) {
           <p>{loadError.detail}</p>
         </div>
       )}
+
+      <PlanCard plan={plan} workouts={workouts} onOpen={() => onNavigate("plan")} onStart={onStartPlan} />
 
       <section className="lift-card lift-week">
         <div className="lift-row">
