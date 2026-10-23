@@ -203,7 +203,14 @@
 .lift input[type="date"]::-webkit-date-and-time-value { text-align: left; margin: 0; }
 .lift input[type="date"]::-webkit-calendar-picker-indicator { margin: 0; }
 .wl-fields input { height: 44px; }
-.wl-repeat { align-self: flex-start; background: var(--faint); border: 1px dashed rgba(255, 255, 255, 0.4); border-radius: 12px; padding: 10px 14px; font-size: 14px !important; font-weight: 600; }
+.wl-repeats { display: flex; flex-direction: column; gap: 8px; }
+.wl-repeats > p { font-size: 12px; font-weight: 600; color: var(--mut); }
+.wl-repeat { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; text-align: left; background: var(--faint); border: 1px solid var(--card-line); border-radius: 14px; padding: 10px 10px 10px 14px; }
+.wl-repeat > span { display: flex; flex-direction: column; min-width: 0; }
+.wl-repeat b { font-size: 15px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wl-repeat small { font-size: 12px; color: var(--mut); margin-top: 1px; }
+.wl-repeat i { flex: none; font-style: normal; font-size: 13px; font-weight: 700; background: #fff; color: var(--navy); border-radius: 99px; padding: 7px 14px; }
+.wl-repeat:hover { background: rgba(255, 255, 255, 0.16); }
 .wl-ex { display: flex; flex-direction: column; gap: 12px; }
 .wl-sets { display: flex; flex-direction: column; gap: 8px; }
 .wl-set { display: grid; grid-template-columns: 36px 1fr 1fr 32px; gap: 8px; align-items: center; }
@@ -217,7 +224,6 @@
 .wl-pick-row button { flex: none; border: 0; border-radius: 12px; padding: 0 18px; background: #fff; color: var(--navy) !important; font-weight: 700; }
 .wl-pick-row button:disabled { opacity: 0.5; }
 .wl-error { color: #ffd2cc; font-size: 14px; }
-.wl-save { width: 100%; padding: 16px; font-size: 16px; }
 
 @media (max-width: 480px) {
   .lift-title { font-size: 26px; }
@@ -267,11 +273,48 @@
 .wl-set.done .wl-n { background: #fff; color: var(--navy); }
 .wl-set button:last-child { width: 28px; }
 
-/* rest timer */
-.wl-rest-space { height: 92px; }
-.wl-rest {
+/* add exercise button and the picker sheet */
+.wl-add-ex { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 15px; background: transparent; border: 1.5px dashed rgba(255, 255, 255, 0.4); border-radius: 20px; font-weight: 700; font-size: 16px !important; }
+.wl-add-ex span { font-size: 22px; line-height: 1; font-weight: 600; }
+.wl-add-ex:hover { background: var(--faint); }
+.wl-add-ex.first { background: #fff; color: var(--navy) !important; border: 0; padding: 18px; }
+.wl-picker {
+  position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; gap: 12px;
+  background:
+    radial-gradient(120% 55% at 10% 0%, rgba(24, 92, 96, 0.55) 0%, rgba(24, 92, 96, 0) 60%),
+    radial-gradient(90% 50% at 100% 75%, rgba(60, 46, 104, 0.45) 0%, rgba(60, 46, 104, 0) 65%)
+    #081619;
+  padding: max(14px, env(safe-area-inset-top)) max(16px, calc((100vw - 560px) / 2)) max(16px, env(safe-area-inset-bottom));
+  animation: wl-picker-in 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.wl-picker-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.wl-picker-top .lift-h2 { font-size: 24px; }
+.wl-picker .ep { flex: 1; min-height: 0; background: transparent; border: 0; padding: 0; }
+.wl-picker .ep > label { display: none; }
+.wl-picker .ep-list { max-height: none; flex: 1; min-height: 0; }
+@keyframes wl-picker-in { from { transform: translateY(24px); opacity: 0; } }
+
+/* the bar pinned to the bottom: rest timer over the Save button */
+.wl-dock-space { height: 84px; }
+.wl-dock-space.rest { height: 176px; }
+.wl-dock {
   position: fixed; left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); transform: translateX(-50%);
-  width: min(528px, calc(100% - 32px)); z-index: 50; overflow: hidden;
+  width: min(528px, calc(100% - 32px)); z-index: 50; display: flex; flex-direction: column; gap: 8px;
+}
+.wl-dock .wl-error { background: rgba(14, 34, 39, 0.95); border: 1px solid rgba(255, 210, 204, 0.5); border-radius: 16px; padding: 10px 14px; }
+.wl-finish {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 10px 10px 18px;
+  background: rgba(14, 34, 39, 0.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 22px; box-shadow: 0 18px 40px -10px rgba(0, 0, 0, 0.7);
+}
+.wl-finish > span { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.wl-finish b { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wl-finish small { font-size: 12px; color: var(--mut); font-variant-numeric: tabular-nums; }
+.wl-finish .lift-start { padding: 13px 20px; font-size: 15px; }
+
+/* rest timer */
+.wl-rest {
+  position: relative; overflow: hidden;
   background: rgba(14, 34, 39, 0.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 22px; box-shadow: 0 18px 40px -10px rgba(0, 0, 0, 0.7);
   animation: wl-rest-in 0.25s ease;
@@ -288,7 +331,7 @@
 .wl-rest .wl-rest-skip { background: #fff; color: var(--navy) !important; padding: 10px 16px; }
 .wl-rest.over button { background: rgba(14, 34, 39, 0.1); color: var(--navy) !important; }
 .wl-rest.over .wl-rest-skip { background: var(--navy); color: #fff !important; }
-@keyframes wl-rest-in { from { transform: translate(-50%, 20px); opacity: 0; } }
+@keyframes wl-rest-in { from { transform: translateY(20px); opacity: 0; } }
 
 /* progress page */
 .lp-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -369,7 +412,7 @@
   .wl-set { grid-template-columns: 30px 1fr 1fr 40px 26px; gap: 6px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .wl-rest { animation: none; }
+  .wl-rest, .wl-picker { animation: none; }
   .wl-rest-bar i, .tc-dot { transition: none; }
 }
 .lp-more { align-self: center; margin: 4px 0 8px; background: var(--faint); border: 0; border-radius: 99px; padding: 8px 16px; font-size: 14px !important; font-weight: 600; }
@@ -472,3 +515,7 @@
 .ring-in { position: relative; display: flex; flex-direction: column; align-items: center; line-height: 1.05; text-align: center; padding: 0 14px; }
 .ring-in b { font-family: 'Outfit', sans-serif; font-weight: 600; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; color: #fff; }
 .ring-in small { font-size: 11px; font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; color: rgba(255, 255, 255, 0.85); margin-top: 4px; }
+/* .lift button resets font, so these keep their bold weight explicitly */
+.lift .wl-add-ex, .lift .wl-finish .lift-start, .lift .wl-picker-top .lift-start { font-weight: 700; }
+/* scroll a newly added exercise into view below the top bar */
+.wl-ex { scroll-margin-top: calc(76px + env(safe-area-inset-top)); }
