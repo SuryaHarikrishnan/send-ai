@@ -3,6 +3,7 @@ import { supabase } from "./supabase";
 import BodyMap from "./BodyMap";
 import { syncReminderInfo } from "./notify";
 import "./Plan.css";
+import MuscleThumb from "./MuscleThumb";
 import { loadPlan, nextDayIndex, nextTarget, presetFor, repText } from "./plan";
 import { MUSCLE_NAMES, muscleSets, prFlags, setSummary, totalSets, totalVolume, weekStart, weekStreak, workoutsError } from "./lifting";
 
@@ -76,7 +77,8 @@ function PlanCard({ plan, workouts, onOpen, onStart }) {
           const t = nextTarget(ex, workouts, plan.profile);
           return (
             <div key={i} className="pl-ex-row">
-              <span><b>{ex.name}</b></span>
+              <MuscleThumb name={ex.name} size={44} />
+              <span className="pl-ex-name"><b>{ex.name}</b></span>
               <span className="pl-dose">{ex.sets} × {repText(ex.reps)}<small>{t.weight === 0 ? "body weight" : t.weight ? `${t.weight} lb` : "your pick"}</small></span>
             </div>
           );

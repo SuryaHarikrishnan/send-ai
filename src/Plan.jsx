@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import "./Plan.css";
 import { track } from "./tracking";
+import MuscleThumb from "./MuscleThumb";
 import {
   DAY_CHOICES, GOALS, INTENSITIES, LEVELS, MINUTE_CHOICES,
   buildPlan, estimateMinutes, loadPlan, nextDayIndex, nextTarget, presetFor, removePlan, repText, savePlan, tweakPlan,
@@ -227,7 +228,8 @@ export default function Plan({ user, onStart }) {
               const t = nextTarget(ex, workouts, p);
               return (
                 <div key={i} className="pl-ex-row">
-                  <span><b>{ex.name}</b><small>{t.why}</small></span>
+                  <MuscleThumb name={ex.name} />
+                  <span className="pl-ex-name"><b>{ex.name}</b><small>{t.why}</small></span>
                   <span className="pl-dose">{ex.sets} × {repText(ex.reps)}<small>{t.weight === 0 ? "body weight" : t.weight ? `${t.weight} lb` : "your pick"}</small></span>
                 </div>
               );

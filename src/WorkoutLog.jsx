@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import ExercisePicker from "./ExercisePicker";
 import DurationPicker from "./DurationPicker";
+import MuscleThumb from "./MuscleThumb";
 import { track } from "./tracking";
 import { MUSCLE_NAMES, WORKOUT_NAMES, findExercise, formatDuration, setSummary, workoutsError } from "./lifting";
 
@@ -353,14 +354,17 @@ export default function WorkoutLog({ user, editing, preset, onNavigate }) {
         return (
           <section className="lift-card wl-ex" key={ei}>
             <div className="lift-row wl-ex-head">
-              <div>
-                <h2 className="lift-h2">{ex.name}</h2>
-                {info && <p className="lift-sub">{info.primary.map(m => MUSCLE_NAMES[m]).join(" · ")}</p>}
-                {prev && (
-                  <p className="wl-last">
-                    Last time · {setSummary(prev.sets).replace(/^\d+ sets · /, "")} · {new Date(prev.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                  </p>
-                )}
+              <div className="wl-ex-id">
+                <MuscleThumb name={ex.name} size={60} />
+                <div>
+                  <h2 className="lift-h2">{ex.name}</h2>
+                  {info && <p className="lift-sub">{info.primary.map(m => MUSCLE_NAMES[m]).join(" · ")}</p>}
+                  {prev && (
+                    <p className="wl-last">
+                      Last time · {setSummary(prev.sets).replace(/^\d+ sets · /, "")} · {new Date(prev.date).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    </p>
+                  )}
+                </div>
               </div>
               <button className="lift-del" onClick={() => setExercises(xs => xs.filter((_, i) => i !== ei))}>Remove</button>
             </div>
