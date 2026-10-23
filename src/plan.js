@@ -1,11 +1,17 @@
-// Workout plans: built from a few answers, then each workout's weights come from what was logged.
+// Plans: built from a few answers. The workouts' weights come from what was logged, and the
+// goal also sets daily calories and macros, which become the Food tab's goals.
 import { supabase } from "./supabase";
 import { findExercise } from "./lifting";
+import { goalsSetAt, saveGoals } from "./food";
+import { syncReminderInfo } from "./notify";
 
 export const GOALS = {
-  strength: { name: "Strength", line: "Lift heavier. Fewer reps, more rest." },
-  muscle: { name: "Muscle", line: "Build size. More reps and sets." },
+  cut: { name: "Lose fat", line: "Lean out and keep your muscle." },
+  muscle: { name: "Build muscle", line: "Gain size. More reps and sets." },
+  strength: { name: "Get stronger", line: "Lift heavier. Fewer reps, more rest." },
+  maintain: { name: "Maintain", line: "Stay fit at the weight you are." },
 };
+export const SEXES = { male: { name: "Male" }, female: { name: "Female" } };
 export const LEVELS = {
   beginner: { name: "Beginner", line: "Under a year", mult: 1 },
   intermediate: { name: "Intermediate", line: "1 to 3 years", mult: 1.5 },
@@ -39,6 +45,9 @@ const SPLITS = {
   strength: { 2: ["fullA", "fullB"], 3: ["fullA", "fullB", "fullC"], 4: ["upperA", "lowerA", "upperB", "lowerB"], 5: ["upperA", "lowerA", "push", "pull", "legs"], 6: ["push", "pull", "legs", "pushB", "pullB", "legsB"] },
   muscle: { 2: ["fullA", "fullB"], 3: ["push", "pull", "legs"], 4: ["upperA", "lowerA", "upperB", "lowerB"], 5: ["push", "pull", "legs", "upperB", "lowerB"], 6: ["push", "pull", "legs", "pushB", "pullB", "legsB"] },
 };
+// Losing fat trains each muscle often and heavy, the way strength plans do; maintaining is a lighter muscle plan.
+SPLITS.cut = SPLITS.strength;
+SPLITS.maintain = SPLITS.muscle;
 
 // Starting weight for a beginner, as a share of body weight. Dumbbell lifts are per hand.
 // 0 means a body weight exercise.
@@ -65,24 +74,67 @@ export function startWeight(name, profile) {
   if (r === 0) return 0;
   if (r == null) return null;
   const bw = Number(profile.weightLb) || 160;
-  const goalMult = profile.goal === "muscle" ? 0.85 : 1;
+  const goalMult = { muscle: 0.85, maintain: 0.85, cut: 0.9 }[profile.goal] || 1;
   const w = round5(bw * r * (LEVELS[profile.level]?.mult || 1) * goalMult);
   return BARBELL.has(name) ? Math.max(45, w) : w;
 }
 
+// Sets and rep ranges per goal: [main lift sets, main reps, accessory sets, accessory reps].
+// On a fat loss diet the heavy lifts stay (they're what keeps the muscle) and volume drops a little.
+const DOSE = {
+  strength: [5, null, 3, [8, 10]],
+  muscle: [4, [6, 10], 3, [10, 15]],
+  cut: [4, [5, 8], 3, [8, 12]],
+  maintain: [3, [6, 10], 3, [10, 15]],
+};
 // Sets and rep range for the nth exercise of a day. The first two are the main lifts.
-// Light takes a set off everything; hard adds one to the accessories (and to main lifts when building muscle).
+// Light takes a set off everything; hard adds one to the accessories (and to main lifts except on strength plans).
 function dose(i, profile) {
   const main = i < 2;
   const strength = profile.goal === "strength";
-  let sets = strength ? (main ? 5 : 3) : main ? 4 : 3;
+  const [mainSets, mainReps, accSets, accReps] = DOSE[profile.goal] || DOSE.strength;
+  let sets = main ? mainSets : accSets;
   if (profile.intensity === "light") sets -= 1;
   if (profile.intensity === "hard" && (!main || !strength)) sets += 1;
-  const reps = strength ? (main ? (profile.level === "beginner" ? [5, 5] : [3, 5]) : [8, 10]) : main ? [6, 10] : [10, 15];
+  const reps = main ? mainReps || (profile.level === "beginner" ? [5, 5] : [3, 5]) : accReps;
   return { sets: Math.max(2, sets), reps };
 }
 // Minutes a set takes with its rest.
 const setMinutes = (profile, main) => (profile.goal === "strength" ? (main ? 3.5 : 2.5) : main ? 3 : 2.2);
+
+/* ---------- calories and macros ---------- */
+
+// Training days a week to an activity multiplier on resting calories.
+const ACTIVITY = { 2: 1.375, 3: 1.45, 4: 1.55, 5: 1.65, 6: 1.725 };
+const CALORIE_SHIFT = { cut: -0.2, muscle: 0.1, strength: 0, maintain: 0 };
+const round50 = n => Math.round(n / 50) * 50;
+
+// Daily targets from the Mifflin-St Jeor estimate of resting calories. Needs height and weight;
+// age falls back to 30, and without a sex it uses the midpoint of the two formulas.
+export function nutritionFor(profile) {
+  const lb = Number(profile.weightLb);
+  const inches = Number(profile.heightIn);
+  if (!lb || !inches) return null;
+  const age = Number(profile.age) || 30;
+  const sexTerm = profile.sex === "male" ? 5 : profile.sex === "female" ? -161 : -78;
+  const resting = 10 * lb * 0.4536 + 6.25 * inches * 2.54 - 5 * age + sexTerm;
+  const maintenance = round50(resting * (ACTIVITY[profile.days] || 1.45));
+  const kcal = Math.max(profile.sex === "male" ? 1500 : 1200, round50(maintenance * (1 + (CALORIE_SHIFT[profile.goal] || 0))));
+  // Protein about 1 g per lb on a diet, a bit less otherwise; capped for very heavy people.
+  const protein = Math.min(250, Math.round(lb * (profile.goal === "cut" ? 1 : 0.9) / 5) * 5);
+  const fat = Math.round(Math.max(lb * 0.3, (kcal * 0.25) / 9) / 5) * 5;
+  const carbs = Math.max(50, Math.round((kcal - protein * 4 - fat * 9) / 4 / 5) * 5);
+  return { kcal, protein, carbs, fat, maintenance, weeklyLb: Math.round(((kcal - maintenance) * 7) / 3500 * 10) / 10, set_at: new Date().toISOString() };
+}
+
+// Makes the plan's targets the Food tab's goals, unless the goals were changed on this device since.
+export function applyNutrition(plan, user, force = false) {
+  const n = plan?.nutrition;
+  if (!n || (!force && goalsSetAt() > (n.set_at || ""))) return false;
+  saveGoals({ kcal: n.kcal, protein: n.protein, carbs: n.carbs, fat: n.fat });
+  if (user) syncReminderInfo(user.id);
+  return true;
+}
 
 export function estimateMinutes(day, profile) {
   return Math.round(5 + day.exercises.reduce((a, e, i) => a + e.sets * setMinutes(profile, i < 2), 0));
@@ -96,6 +148,7 @@ export function buildPlan(profile) {
     version: 1,
     profile,
     created_at: new Date().toISOString(),
+    nutrition: nutritionFor(profile),
     days: split.map(key => {
       const [name, pool] = DAYS[key];
       const exercises = [];
@@ -205,7 +258,8 @@ function writeLocal(user, plan) {
 export async function loadPlan(user) {
   const { data, error } = await supabase.from("workout_plans").select("plan").eq("user_id", user.id).maybeSingle();
   if (error) return readLocal(user);
-  if (data?.plan) { writeLocal(user, data.plan); return data.plan; }
+  // A plan made or changed on another device brings its calorie targets with it.
+  if (data?.plan) { writeLocal(user, data.plan); applyNutrition(data.plan, user); return data.plan; }
   // Made before the table existed: move it up.
   const local = readLocal(user);
   if (local) supabase.from("workout_plans").upsert({ user_id: user.id, plan: local, updated_at: new Date().toISOString() }).then(() => {}, () => {});
@@ -235,7 +289,7 @@ export async function tweakPlan(plan, request) {
     res = await fetch("/api/plan", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session?.access_token || ""}` },
-      body: JSON.stringify({ plan: { profile: plan.profile, days: plan.days }, request }),
+      body: JSON.stringify({ plan: { profile: plan.profile, days: plan.days, nutrition: plan.nutrition }, request }),
     });
     body = await res.json().catch(() => ({}));
   } catch {
@@ -252,5 +306,12 @@ export async function tweakPlan(plan, request) {
       return { ...e, start: was !== undefined ? was : ours ?? e.start };
     }),
   }));
-  return { plan: { ...plan, days, tweaks: [...(plan.tweaks || []), request].slice(-10), updated_at: new Date().toISOString() }, summary: body.summary };
+  // The AI only sends nutrition back when the request was about eating.
+  let nutrition = plan.nutrition;
+  const n = body.nutrition;
+  if (n && n.kcal > 0) {
+    const maintenance = plan.nutrition?.maintenance || n.kcal;
+    nutrition = { kcal: n.kcal, protein: n.protein, carbs: n.carbs, fat: n.fat, maintenance, weeklyLb: Math.round(((n.kcal - maintenance) * 7) / 3500 * 10) / 10, set_at: new Date().toISOString() };
+  }
+  return { plan: { ...plan, days, nutrition, tweaks: [...(plan.tweaks || []), request].slice(-10), updated_at: new Date().toISOString() }, summary: body.summary };
 }

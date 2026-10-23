@@ -39,3 +39,11 @@
 .pl-foot { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 4px; }
 .lift .pl-foot .wl-discard { margin: 0; }
 .pl-note-card.lift-card { border-top: 1px solid var(--card-line); padding-top: 16px; }
+.pl-sex { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.pl-sex button { height: 44px; border: 1px solid var(--card-line); background: rgba(255, 255, 255, 0.06); border-radius: 12px; font-size: 14px !important; font-weight: 600; padding: 0; }
+.pl-sex button.on { background: #fff; border-color: #fff; color: var(--navy) !important; }
+.pl-kcal { font-size: 15px; color: var(--mut); }
+.pl-kcal b { font-size: 40px; font-weight: 600; line-height: 1; color: #fff; margin-right: 4px; font-variant-numeric: tabular-nums; }
+.pl-macros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pl-macros span { display: flex; flex-direction: column; gap: 2px; background: rgba(255, 255, 255, 0.06); border: 1px solid var(--card-line); border-radius: 14px; padding: 10px 12px; font-size: 12px; color: var(--mut); }
+.pl-macros b { font-size: 18px; font-weight: 600; color: #fff; font-variant-numeric: tabular-nums; }
